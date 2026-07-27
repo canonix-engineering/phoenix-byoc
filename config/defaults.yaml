@@ -1,0 +1,192 @@
+namespace: phoenix
+clusterDomain: cluster.local
+
+registry:
+  charts: oci://ghcr.io/canonix-engineering/phoenix-byoc
+
+imagePullPolicy: IfNotPresent
+imagePullSecrets: []
+
+ingressNginx:
+  enabled: false
+  namespace: ingress-nginx
+  service:
+    type: LoadBalancer
+  nodeSelector: {}
+  tolerations: []
+
+postgresql:
+  bundled:
+    enabled: false
+    imageTag: "18.4-trixie"
+    persistence:
+      size: 10Gi
+      storageClass: ""
+  external:
+    host: ""
+    port: 5432
+    sslmode: require
+  hooks:
+    phoenixWeb: true
+    workflowEngine: true
+  databases:
+    primary: phoenix_web_production
+    cache: phoenix_web_production_cache
+    queue: phoenix_web_production_queue
+    cable: phoenix_web_production_cable
+    internal: phoenix_workflow_engine_internal
+  users:
+    application: phoenix_web
+    internal: phoenix_workflow_engine_internal
+
+redis:
+  bundled:
+    enabled: true
+    persistence:
+      size: 2Gi
+      storageClass: ""
+
+cortex:
+  bundled:
+    enabled: true
+    database: cortex
+    username: cortex
+    persistence:
+      size: 5Gi
+      storageClass: ""
+  migrations:
+    enabled: true
+    requiredRlsScopeVersion: "1"
+
+application:
+  tenantId: phoenix
+  appHost: phoenix.example.com
+  allowedHosts: phoenix.example.com,localhost
+  toolboxId: ""
+  workflowDefinitions:
+    - workflow_definitions/v1/sdlc.yaml
+    - workflow_definitions/v1/repo-onboarding.yaml
+    - workflow_definitions/v1/eval.yaml
+
+services:
+  web:
+    replicas: 1
+  worker:
+    replicas: 1
+  gateway:
+    replicas: 1
+    allowUnauthenticatedIngress: false
+  workflowEngine:
+    apiReplicas: 1
+    artifactApiReplicas: 1
+    orchestratorReplicas: 1
+    operatorReplicas: 1
+  opensandbox:
+    executionTimeout: 360m
+    sandboxCreateTimeoutSeconds: 300
+    persistence:
+      size: 30Gi
+      storageClass: ""
+
+ingress:
+  className: ""
+  web:
+    enabled: false
+    host: phoenix.example.com
+    annotations: {}
+    tls: []
+  frontend:
+    enabled: false
+    host: app.phoenix.example.com
+    annotations: {}
+    tls: []
+  gateway:
+    enabled: false
+    host: gateway.phoenix.example.com
+    annotations: {}
+    tls: []
+  workflowApi:
+    enabled: false
+    host: workflow.phoenix.example.com
+    annotations: {}
+    tls: []
+  artifactApi:
+    enabled: false
+    host: artifacts.phoenix.example.com
+    annotations: {}
+    tls: []
+
+scheduling:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  sandboxResourceClasses:
+    default:
+      resources:
+        requests:
+          cpu: "2000m"
+          memory: "4Gi"
+        limits:
+          cpu: "2000m"
+          memory: "4Gi"
+    supervisor:
+      resources:
+        requests:
+          cpu: "1000m"
+          memory: "1Gi"
+        limits:
+          cpu: "1000m"
+          memory: "1Gi"
+    high-cpu:
+      resources:
+        requests:
+          cpu: "10000m"
+          memory: "4Gi"
+        limits:
+          cpu: "10000m"
+          memory: "4Gi"
+    high-cpu-memory:
+      resources:
+        requests:
+          cpu: "5000m"
+          memory: "24Gi"
+        limits:
+          cpu: "5000m"
+          memory: "24Gi"
+    high-memory:
+      resources:
+        requests:
+          cpu: "2000m"
+          memory: "12Gi"
+        limits:
+          cpu: "2000m"
+          memory: "12Gi"
+
+storage:
+  artifactApi:
+    size: 5Gi
+    storageClass: ""
+
+secrets:
+  postgresql:
+    superuserPassword: ""
+    applicationPassword: ""
+    internalPassword: ""
+    adminUrl: ""
+  redis:
+    url: ""
+  cortex:
+    password: ""
+    url: ""
+  application:
+    secretKeyBase: ""
+    workflowEngineArtifactApiToken: ""
+    workflowEngineToken: ""
+    internalServiceTokens: ""
+  agents:
+    claudeCodeOauthToken: ""
+    anthropicApiKey: ""
+    githubPat: ""
+    githubToken: ""
+    openaiApiKey: ""
+    geminiApiKey: ""

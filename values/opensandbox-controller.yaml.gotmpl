@@ -1,0 +1,28 @@
+namespaceOverride: {{ .Values.namespace | quote }}
+
+controller:
+  image:
+    repository: {{ .Values.images.opensandboxController.repository | quote }}
+    tag: {{ .Values.images.opensandboxController.tag | quote }}
+    pullPolicy: {{ .Values.imagePullPolicy }}
+  replicaCount: 1
+  logLevel: info
+  kubeClient:
+    qps: 0
+    burst: 0
+  snapshot:
+    imageCommitterImage: ""
+    commitJobTimeout: ""
+  nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 4 }}
+  tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 4 }}
+  affinity:
+{{ toYaml .Values.scheduling.affinity | indent 4 }}
+
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+
+crds:
+  install: true
+  keep: true

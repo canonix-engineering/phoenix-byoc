@@ -1,0 +1,44 @@
+# Copy this file to ../values.yaml and adapt it to the customer cluster.
+
+namespace: phoenix
+
+ingressNginx:
+  enabled: false
+
+postgresql:
+  bundled:
+    enabled: false
+  external:
+    host: postgresql.customer.example
+    port: 5432
+    sslmode: require
+  hooks:
+    phoenixWeb: true
+    workflowEngine: true
+
+redis:
+  bundled:
+    enabled: true
+
+cortex:
+  bundled:
+    enabled: true
+
+application:
+  tenantId: customer
+  appHost: phoenix.customer.example
+  allowedHosts: phoenix.customer.example,localhost
+  toolboxId: ""
+
+ingress:
+  className: nginx
+  frontend:
+    enabled: true
+    host: phoenix.customer.example
+    annotations: {}
+    tls: []
+
+scheduling:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

@@ -1,0 +1,17 @@
+ingressNginx:
+  enabled: false
+
+postgresql:
+  bundled:
+    enabled: false
+  hooks:
+    phoenixWeb: false
+    workflowEngine: false
+
+redis:
+  bundled:
+    enabled: false
+
+cortex:
+  bundled:
+    enabled: false

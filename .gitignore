@@ -1,0 +1,5 @@
+.DS_Store
+.rendered/
+.tmp/
+/values.yaml
+/values.secrets.yaml

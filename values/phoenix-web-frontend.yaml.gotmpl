@@ -1,0 +1,37 @@
+image:
+  repository: {{ .Values.images.phoenixWebFrontend.repository | quote }}
+  tag: {{ .Values.images.phoenixWebFrontend.tag | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+
+frontend:
+  apiUrl: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
+
+server:
+  replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: {{ .Values.ingress.frontend.enabled }}
+  className: {{ .Values.ingress.className | quote }}
+  annotations:
+{{ toYaml .Values.ingress.frontend.annotations | indent 4 }}
+  hosts:
+    - host: {{ .Values.ingress.frontend.host | quote }}
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+{{ toYaml .Values.ingress.frontend.tls | indent 4 }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

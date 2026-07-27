@@ -1,0 +1,17 @@
+architecture: standalone
+
+auth:
+  enabled: false
+
+standalone:
+  persistence:
+    enabled: true
+    size: {{ .Values.redis.bundled.persistence.size | quote }}
+    storageClass: {{ .Values.redis.bundled.persistence.storageClass | quote }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

@@ -1,0 +1,96 @@
+{{- $databaseHost := .Values.postgresql.external.host }}
+{{- if .Values.postgresql.bundled.enabled }}
+{{- $databaseHost = "postgresql-postgresql" }}
+{{- end }}
+{{- $redisUrl := required "secrets.redis.url is required" .Values.secrets.redis.url }}
+{{- $internalServiceTokens := .Values.secrets.application.internalServiceTokens }}
+{{- if not $internalServiceTokens }}
+{{- $internalServiceTokens = printf `[{"identity":"phoenix-workflow-engine","token":%q,"scopes":["conversation:append","conversation:queue","workflow:context:read","workflow:feedback","workflow:feedback_capture"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
+{{- end }}
+
+image:
+  repository: {{ .Values.images.phoenixWeb.repository | quote }}
+  tag: {{ .Values.images.phoenixWeb.tag | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+
+web:
+  railsEnv: production
+  logLevel: info
+  skipCsrf: false
+  allowedHosts: {{ .Values.application.allowedHosts | quote }}
+  appHost: {{ .Values.application.appHost | quote }}
+  tenantId: {{ .Values.application.tenantId | quote }}
+  cortex:
+    host: ""
+    scheme: http
+  clickhouse:
+    url: ""
+  mcp:
+    host: {{ printf "http://phoenix-gateway.%s.svc.%s:3002" .Values.namespace .Values.clusterDomain | quote }}
+  phoenixGateway:
+    url: {{ printf "http://phoenix-gateway.%s.svc.%s:3002" .Values.namespace .Values.clusterDomain | quote }}
+  phoenixWeb:
+    internalBaseUrl: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
+  workflowEngine:
+    databaseUrl: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary .Values.postgresql.external.sslmode | quote }}
+    artifactApiUrl: {{ printf "http://phoenix-workflow-engine-artifact-api.%s.svc.%s:8081" .Values.namespace .Values.clusterDomain | quote }}
+    workflowApiUrl: {{ printf "http://phoenix-workflow-engine-api.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
+    startUrl: {{ printf "http://phoenix-workflow-engine-api.%s.svc.%s:8080/workflow-runs" .Values.namespace .Values.clusterDomain | quote }}
+  redisUrl: {{ $redisUrl | quote }}
+  mailer:
+    from: {{ printf "Phoenix <%s>" (printf "noreply@%s" .Values.application.appHost) | quote }}
+    domain: {{ .Values.application.appHost | quote }}
+
+conversationStream:
+  redisUrl: {{ $redisUrl | quote }}
+
+worker:
+  enabled: true
+  replicaCount: {{ .Values.services.worker.replicas }}
+
+server:
+  replicaCount: {{ .Values.services.web.replicas }}
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: {{ .Values.ingress.web.enabled }}
+  className: {{ .Values.ingress.className | quote }}
+  annotations:
+{{ toYaml .Values.ingress.web.annotations | indent 4 }}
+  hosts:
+    - host: {{ .Values.ingress.web.host | quote }}
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+{{ toYaml .Values.ingress.web.tls | indent 4 }}
+
+externalDatabase:
+  host: {{ required "postgresql.external.host is required when bundled PostgreSQL is disabled" $databaseHost | quote }}
+  port: {{ .Values.postgresql.external.port }}
+  password: {{ required "secrets.postgresql.applicationPassword is required" .Values.secrets.postgresql.applicationPassword | quote }}
+  init:
+    enabled: {{ .Values.postgresql.hooks.phoenixWeb }}
+    reloadWorkflowDefinitions: true
+    runSeed: false
+    adminUrl: {{ .Values.secrets.postgresql.adminUrl | quote }}
+
+secret:
+  secretKeyBase: {{ required "secrets.application.secretKeyBase is required" .Values.secrets.application.secretKeyBase | quote }}
+  workflowEngineArtifactApiToken: {{ required "secrets.application.workflowEngineArtifactApiToken is required" .Values.secrets.application.workflowEngineArtifactApiToken | quote }}
+  phoenixWorkflowEngineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
+  phoenixInternalServiceTokens: {{ $internalServiceTokens | quote }}
+  githubPat: {{ .Values.secrets.agents.githubPat | quote }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

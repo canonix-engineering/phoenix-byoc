@@ -1,0 +1,16 @@
+namespace: phoenix
+
+postgresql:
+  external:
+    host: postgresql.test.invalid
+    port: 5432
+    sslmode: verify-full
+
+redis:
+  bundled:
+    enabled: false
+
+application:
+  tenantId: phoenix_test
+  appHost: phoenix.test.invalid
+  allowedHosts: phoenix.test.invalid,localhost

@@ -1,0 +1,26 @@
+image:
+  repository: {{ .Values.images.cortexPostgresql.repository | quote }}
+  tag: {{ .Values.images.cortexPostgresql.tag | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+
+auth:
+  database: {{ .Values.cortex.bundled.database | quote }}
+  username: {{ .Values.cortex.bundled.username | quote }}
+  password: {{ required "secrets.cortex.password is required for bundled Cortex PostgreSQL" .Values.secrets.cortex.password | quote }}
+
+persistence:
+  size: {{ .Values.cortex.bundled.persistence.size | quote }}
+  storageClassName: {{ .Values.cortex.bundled.persistence.storageClass | quote }}
+
+externalService:
+  enabled: false
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

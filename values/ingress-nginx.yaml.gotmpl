@@ -1,0 +1,7 @@
+controller:
+  service:
+    type: {{ .Values.ingressNginx.service.type | quote }}
+  nodeSelector:
+{{ toYaml .Values.ingressNginx.nodeSelector | indent 4 }}
+  tolerations:
+{{ toYaml .Values.ingressNginx.tolerations | indent 4 }}

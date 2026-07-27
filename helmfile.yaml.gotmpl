@@ -1,0 +1,162 @@
+environments:
+  default:
+    values:
+      - releases/stable.yaml
+      - config/defaults.yaml
+      - {{ env "PHOENIX_BYOC_VALUES_FILE" | default "values.yaml" | quote }}
+      - {{ env "PHOENIX_BYOC_SECRETS_FILE" | default "values.secrets.yaml" | quote }}
+    missingFileHandler: Warn
+  external:
+    values:
+      - releases/stable.yaml
+      - config/defaults.yaml
+      - profiles/external.yaml
+      - {{ env "PHOENIX_BYOC_VALUES_FILE" | default "values.yaml" | quote }}
+      - {{ env "PHOENIX_BYOC_SECRETS_FILE" | default "values.secrets.yaml" | quote }}
+    missingFileHandler: Warn
+  kind:
+    values:
+      - releases/stable.yaml
+      - config/defaults.yaml
+      - profiles/kind.yaml
+      - {{ env "PHOENIX_BYOC_VALUES_FILE" | default "values.yaml" | quote }}
+      - {{ env "PHOENIX_BYOC_SECRETS_FILE" | default "values.secrets.yaml" | quote }}
+    missingFileHandler: Warn
+
+---
+
+repositories:
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+
+helmDefaults:
+  atomic: false
+  cleanupOnFail: true
+  createNamespace: true
+  wait: true
+  waitForJobs: true
+  timeout: 600
+
+{{- $namespace := .Values.namespace | default "phoenix" }}
+{{- $controllerNamespace := .Values.ingressNginx.namespace | default $namespace }}
+{{- $localCharts := env "PHOENIX_BYOC_LOCAL_CHARTS" }}
+{{- $chartRegistry := .Values.registry.charts }}
+
+releases:
+  - name: ingress-nginx
+    namespace: {{ $controllerNamespace }}
+    installed: {{ .Values.ingressNginx.enabled }}
+    chart: ingress-nginx/ingress-nginx
+    version: {{ .Values.versions.ingressNginx | quote }}
+    values:
+      - values/ingress-nginx.yaml.gotmpl
+
+  - name: postgresql
+    namespace: {{ $namespace }}
+    installed: {{ .Values.postgresql.bundled.enabled }}
+    chart: oci://ghcr.io/helmforgedev/helm/postgresql
+    version: {{ .Values.versions.postgresql | quote }}
+    values:
+      - values/postgresql.yaml.gotmpl
+
+  - name: redis
+    namespace: {{ $namespace }}
+    installed: {{ .Values.redis.bundled.enabled }}
+    chart: oci://ghcr.io/helmforgedev/helm/redis
+    version: {{ .Values.versions.redis | quote }}
+    values:
+      - values/redis.yaml.gotmpl
+
+  - name: cortex-postgresql
+    namespace: {{ $namespace }}
+    installed: {{ .Values.cortex.bundled.enabled }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/cortex-postgresql" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/cortex-postgresql" $chartRegistry | quote }}
+    version: {{ .Values.versions.cortexPostgresql | quote }}
+{{- end }}
+    values:
+      - values/cortex-postgresql.yaml.gotmpl
+
+  - name: opensandbox-controller
+    namespace: {{ $namespace }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/opensandbox-controller" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/opensandbox-controller" $chartRegistry | quote }}
+    version: {{ .Values.versions.opensandboxController | quote }}
+{{- end }}
+    values:
+      - values/opensandbox-controller.yaml.gotmpl
+
+  - name: phoenix-web
+    namespace: {{ $namespace }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/phoenix-web" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/phoenix-web" $chartRegistry | quote }}
+    version: {{ .Values.versions.phoenixWeb | quote }}
+{{- end }}
+    values:
+      - values/phoenix-web.yaml.gotmpl
+    needs:
+{{- if .Values.postgresql.bundled.enabled }}
+      - {{ $namespace }}/postgresql
+{{- end }}
+{{- if .Values.redis.bundled.enabled }}
+      - {{ $namespace }}/redis
+{{- end }}
+    wait: false
+
+  - name: phoenix-web-frontend
+    namespace: {{ $namespace }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/phoenix-web-frontend" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/phoenix-web-frontend" $chartRegistry | quote }}
+    version: {{ .Values.versions.phoenixWebFrontend | quote }}
+{{- end }}
+    values:
+      - values/phoenix-web-frontend.yaml.gotmpl
+    needs:
+      - {{ $namespace }}/phoenix-web
+
+  - name: phoenix-gateway
+    namespace: {{ $namespace }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/phoenix-gateway" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/phoenix-gateway" $chartRegistry | quote }}
+    version: {{ .Values.versions.phoenixGateway | quote }}
+{{- end }}
+    values:
+      - values/phoenix-gateway.yaml.gotmpl
+    needs:
+      - {{ $namespace }}/phoenix-web
+    wait: false
+
+  - name: phoenix-workflow-engine
+    namespace: {{ $namespace }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/phoenix-workflow-engine" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/phoenix-workflow-engine" $chartRegistry | quote }}
+    version: {{ .Values.versions.phoenixWorkflowEngine | quote }}
+{{- end }}
+    values:
+      - values/phoenix-workflow-engine.yaml.gotmpl
+    needs:
+      - {{ $namespace }}/opensandbox-controller
+      - {{ $namespace }}/phoenix-web
+{{- if .Values.cortex.bundled.enabled }}
+      - {{ $namespace }}/cortex-postgresql
+{{- end }}
+{{- if .Values.postgresql.bundled.enabled }}
+      - {{ $namespace }}/postgresql
+{{- end }}
+{{- if .Values.redis.bundled.enabled }}
+      - {{ $namespace }}/redis
+{{- end }}
+    wait: false
+    timeout: 1860

@@ -1,0 +1,23 @@
+architecture: standalone
+
+image:
+  tag: {{ .Values.postgresql.bundled.imageTag | quote }}
+
+auth:
+  postgresPassword: {{ required "secrets.postgresql.superuserPassword is required for bundled PostgreSQL" .Values.secrets.postgresql.superuserPassword | quote }}
+  database: {{ .Values.postgresql.databases.primary | quote }}
+  username: {{ .Values.postgresql.users.application | quote }}
+  password: {{ required "secrets.postgresql.applicationPassword is required for bundled PostgreSQL" .Values.secrets.postgresql.applicationPassword | quote }}
+
+standalone:
+  persistence:
+    enabled: true
+    size: {{ .Values.postgresql.bundled.persistence.size | quote }}
+    storageClass: {{ .Values.postgresql.bundled.persistence.storageClass | quote }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

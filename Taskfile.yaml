@@ -1,0 +1,40 @@
+version: "3"
+
+vars:
+  ENVIRONMENT: '{{default "default" .ENVIRONMENT}}'
+
+tasks:
+  default:
+    silent: true
+    cmds:
+      - task --list
+
+  bootstrap:
+    desc: Create local values files from the public examples
+    cmds:
+      - ./scripts/bootstrap.sh
+
+  preflight:
+    desc: Validate configuration and read-only cluster prerequisites
+    cmds:
+      - ./scripts/preflight.sh --environment {{.ENVIRONMENT}}
+
+  render:
+    desc: Render all Kubernetes resources without applying them
+    cmds:
+      - ./scripts/render.sh --environment {{.ENVIRONMENT}}
+
+  install:
+    desc: Install or upgrade Phoenix; pass CLI_ARGS=--yes for non-interactive use
+    cmds:
+      - ./scripts/install.sh --environment {{.ENVIRONMENT}} {{.CLI_ARGS}}
+
+  verify:
+    desc: Show Helm status for every enabled release
+    cmds:
+      - ./scripts/verify.sh --environment {{.ENVIRONMENT}}
+
+  test:
+    desc: Run local static validation and render checks
+    cmds:
+      - ./scripts/test.sh
