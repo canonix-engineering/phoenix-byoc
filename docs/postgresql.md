@@ -36,6 +36,3 @@ the internal deployment charts.
 
 If the hooks are disabled, the customer is responsible for creating the roles
 and databases and running the required migrations.
-
-Bundled PostgreSQL is intended only for kind/demo validation and is disabled in
-the customer-managed default.

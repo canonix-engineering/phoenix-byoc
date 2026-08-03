@@ -2,9 +2,13 @@
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
 {{- end }}
+{{- $repository := .Values.images.phoenixGateway.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.phoenixGateway.name }}
+{{- end }}
 
 image:
-  repository: {{ .Values.images.phoenixGateway.repository | quote }}
+  repository: {{ $repository | quote }}
   tag: {{ .Values.images.phoenixGateway.tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 

@@ -5,7 +5,7 @@ image:
 
 auth:
   postgresPassword: {{ required "secrets.postgresql.superuserPassword is required for bundled PostgreSQL" .Values.secrets.postgresql.superuserPassword | quote }}
-  database: {{ .Values.postgresql.databases.primary | quote }}
+  database: {{ .Values.postgresql.bundled.bootstrapDatabase | quote }}
   username: {{ .Values.postgresql.users.application | quote }}
   password: {{ required "secrets.postgresql.applicationPassword is required for bundled PostgreSQL" .Values.secrets.postgresql.applicationPassword | quote }}
 

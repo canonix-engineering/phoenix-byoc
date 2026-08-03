@@ -1,8 +1,16 @@
+{{- $repository := .Values.images.opensandboxController.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.opensandboxController.name }}
+{{- end }}
+
 namespaceOverride: {{ .Values.namespace | quote }}
+
+rbac:
+  clusterRoleName: {{ printf "opensandbox-manager-role-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
 
 controller:
   image:
-    repository: {{ .Values.images.opensandboxController.repository | quote }}
+    repository: {{ $repository | quote }}
     tag: {{ .Values.images.opensandboxController.tag | quote }}
     pullPolicy: {{ .Values.imagePullPolicy }}
   replicaCount: 1
@@ -24,5 +32,5 @@ imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 2 }}
 
 crds:
-  install: true
-  keep: true
+  install: {{ .Values.opensandboxController.crds.install }}
+  keep: {{ .Values.opensandboxController.crds.keep }}

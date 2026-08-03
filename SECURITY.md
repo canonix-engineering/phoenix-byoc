@@ -3,8 +3,8 @@
 ## Secrets
 
 Never commit `values.secrets.yaml`, `.rendered/` or generated Kubernetes Secret
-manifests. `bootstrap.sh` creates the local secret file with mode `0600`, and
-both paths are ignored by Git.
+manifests. The supplied `values.secrets.yaml` must have mode `0600`; the
+installer enforces that mode before rendering. Both paths are ignored by Git.
 
 The current upstream application charts receive sensitive values through Helm
 and render Kubernetes Secrets. Helm stores release data in Secrets in the
@@ -24,7 +24,7 @@ isolated and `services.gateway.allowUnauthenticatedIngress` is explicitly set.
 
 ## Supply chain
 
-Use only the exact versions in `releases/stable.yaml`. Publication workflows
+Use only the exact versions in `release.yaml`. Publication workflows
 refuse to overwrite an existing chart or image version and verify anonymous
 public access after publication.
 

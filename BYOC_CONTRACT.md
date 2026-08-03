@@ -2,8 +2,8 @@
 
 ## Phoenix provides
 
-- immutable public OCI Helm charts listed in `releases/stable.yaml`;
-- immutable public container images for the same release;
+- immutable public OCI Helm charts listed in `release.yaml`;
+- exact container image references for the release and tools to mirror them;
 - Helmfile orchestration and example values;
 - configuration for the database hooks already provided by the application charts;
 - render, preflight, install and verification scripts;
@@ -37,11 +37,15 @@ PostgreSQL URL, or disable the hooks and create users/databases independently.
 When the hooks are disabled, database provisioning and migrations are the
 customer's responsibility.
 
-Bundled PostgreSQL is available only for kind/demo validation. It is not the
-supported production database topology.
+Bundled PostgreSQL is optional and is not the supported production database
+topology.
 
 ## Release support
 
-Only chart and image versions committed to a non-development release manifest
+Only chart and image versions committed to a stable `release.yaml`
 are supported. Floating chart ranges, `latest` image tags and mutable releases
 are prohibited.
+
+Development snapshots may point to restricted source registries for validation.
+They are not customer handoff releases until every artifact is accessible to
+the customer and the release channel is changed to `stable`.

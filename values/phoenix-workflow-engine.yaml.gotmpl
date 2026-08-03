@@ -2,11 +2,36 @@
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
 {{- end }}
-{{- $redisUrl := required "secrets.redis.url is required" .Values.secrets.redis.url }}
-{{- $cortexUrl := required "secrets.cortex.url is required" .Values.secrets.cortex.url }}
+{{- $registry := trimSuffix "/" .Values.imageRegistry }}
+{{- $engineRepository := .Values.images.phoenixWorkflowEngine.repository }}
+{{- $agentRepository := .Values.images.phoenixAgent.repository }}
+{{- $labRepository := .Values.images.phoenixLab.repository }}
+{{- $opensandboxRepository := .Values.images.phoenixOpensandbox.repository }}
+{{- if $registry }}
+{{- $engineRepository = printf "%s/%s" $registry .Values.images.phoenixWorkflowEngine.name }}
+{{- $agentRepository = printf "%s/%s" $registry .Values.images.phoenixAgent.name }}
+{{- $labRepository = printf "%s/%s" $registry .Values.images.phoenixLab.name }}
+{{- $opensandboxRepository = printf "%s/%s" $registry .Values.images.phoenixOpensandbox.name }}
+{{- end }}
+{{- $redisUrl := .Values.secrets.redis.url }}
+{{- if .Values.redis.bundled.enabled }}
+{{- $redisUrl = printf "redis://redis-client.%s.svc.%s:6379/1" .Values.namespace .Values.clusterDomain }}
+{{- else }}
+{{- $redisUrl = required "secrets.redis.url is required when bundled Redis is disabled" $redisUrl }}
+{{- end }}
+{{- $cortexUrl := .Values.secrets.cortex.url }}
+{{- if .Values.cortex.bundled.enabled }}
+{{- $cortexUrl = printf "postgresql://%s:%s@cortex-postgresql.%s.svc.%s:5432/%s?sslmode=disable" .Values.cortex.bundled.username .Values.secrets.cortex.password .Values.namespace .Values.clusterDomain .Values.cortex.bundled.database }}
+{{- else }}
+{{- $cortexUrl = required "secrets.cortex.url is required when bundled Cortex PostgreSQL is disabled" $cortexUrl }}
+{{- end }}
+{{- $adminUrl := .Values.secrets.postgresql.adminUrl }}
+{{- if .Values.postgresql.bundled.enabled }}
+{{- $adminUrl = printf "postgresql://postgres:%s@postgresql-postgresql:%v/postgres?sslmode=disable" .Values.secrets.postgresql.superuserPassword .Values.postgresql.external.port }}
+{{- end }}
 
 image:
-  repository: {{ .Values.images.phoenixWorkflowEngine.repository | quote }}
+  repository: {{ $engineRepository | quote }}
   tag: {{ .Values.images.phoenixWorkflowEngine.tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
@@ -18,8 +43,8 @@ workflow:
   definitions:
 {{ toYaml .Values.application.workflowDefinitions | indent 4 }}
   runtimeImages:
-    phoenix-agent: {{ printf "%s:%s" .Values.images.phoenixAgent.repository .Values.images.phoenixAgent.tag | quote }}
-    phoenix-lab: {{ printf "%s:%s" .Values.images.phoenixLab.repository .Values.images.phoenixLab.tag | quote }}
+    phoenix-agent: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
+    phoenix-lab: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
 
 workflowEventsStreaming:
   enabled: true
@@ -40,14 +65,14 @@ sandboxScheduling:
 {{ toYaml .Values.scheduling.sandboxResourceClasses | indent 4 }}
 
 agent:
-  image: {{ printf "%s:%s" .Values.images.phoenixAgent.repository .Values.images.phoenixAgent.tag | quote }}
+  image: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
 
 cortexMigration:
   enabled: {{ .Values.cortex.migrations.enabled }}
   requiredRlsScopeVersion: {{ .Values.cortex.migrations.requiredRlsScopeVersion | quote }}
 
 lab:
-  image: {{ printf "%s:%s" .Values.images.phoenixLab.repository .Values.images.phoenixLab.tag | quote }}
+  image: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
 
 database:
   host: {{ required "postgresql.external.host is required when bundled PostgreSQL is disabled" $databaseHost | quote }}
@@ -66,7 +91,7 @@ internalDatabase:
   sslmode: {{ .Values.postgresql.external.sslmode | quote }}
   init:
     enabled: {{ .Values.postgresql.hooks.workflowEngine }}
-    adminUrl: {{ .Values.secrets.postgresql.adminUrl | quote }}
+    adminUrl: {{ $adminUrl | quote }}
 
 cortexDatabase:
   url: {{ $cortexUrl | quote }}
@@ -93,10 +118,11 @@ operator:
 
 opensandbox:
   enabled: true
+  clusterRoleName: {{ printf "phoenix-workflow-engine-opensandbox-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
   endpoint: {{ printf "http://phoenix-workflow-engine-opensandbox.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
   executionTimeout: {{ .Values.services.opensandbox.executionTimeout | quote }}
   image:
-    repository: {{ .Values.images.phoenixOpensandbox.repository | quote }}
+    repository: {{ $opensandboxRepository | quote }}
     tag: {{ .Values.images.phoenixOpensandbox.tag | quote }}
     pullPolicy: {{ .Values.imagePullPolicy }}
   server:

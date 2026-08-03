@@ -1,17 +1,18 @@
-# Agent instructions
+# AI agent instructions
 
-Operate only on the Kubernetes context and namespace explicitly approved by the
-user.
+These instructions are vendor-neutral and apply to any AI agent operating this
+repository.
 
 Before any mutation:
 
 1. Read `BYOC_CONTRACT.md` and `docs/installation.md`.
-2. Read the selected profile and both local values files.
-3. Run `./scripts/preflight.sh --environment <environment>`.
-4. Run `./scripts/render.sh --environment <environment>`.
-5. Show the user the current context, namespace, enabled bundled dependencies
+2. Read `release.yaml` and `values.yaml`.
+3. Confirm that `values.secrets.yaml` exists without printing its contents.
+4. Run `./scripts/preflight.sh`.
+5. Run `./scripts/render.sh`.
+6. Show the user the current context, namespace, enabled bundled dependencies
    and rendered manifest location.
-6. Obtain explicit confirmation before running install, upgrade, rollback or
+7. Obtain explicit confirmation before running install, upgrade, rollback or
    uninstall commands.
 
 Never:
@@ -24,5 +25,5 @@ Never:
 - delete PVCs, namespaces, CRDs or customer-managed databases;
 - claim success before `verify.sh` passes.
 
-Use exact versions from `releases/stable.yaml`. Stop if the release channel is
-`development`, unless the user explicitly authorizes pre-release validation.
+Use exact versions from `release.yaml`. Never invent image or chart versions.
+Report the release channel and source environment before applying it.

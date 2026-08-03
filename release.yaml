@@ -1,0 +1,58 @@
+release:
+  version: "0.1.0-development.1"
+  channel: development
+  sourceEnvironment: test
+  observedAt: "2026-08-03"
+
+# Exact Helm chart versions in this Phoenix BYOC release.
+versions:
+  cortexPostgresql: "0.1.0"
+  ingressNginx: "4.12.2"
+  opensandboxController: "0.1.0"
+  phoenixGateway: "0.1.0"
+  phoenixWeb: "0.1.0"
+  phoenixWebFrontend: "0.1.0"
+  phoenixWorkflowEngine: "0.1.0"
+  postgresql: "2.0.4"
+  redis: "1.6.18"
+
+# Exact runtime images observed in the cnx-dev-eks/test environment on
+# 2026-08-03. Set imageRegistry in values.yaml after copying every image to a
+# customer registry while preserving these names and tags.
+images:
+  cortexPostgresql:
+    name: cortex-postgresql
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/cortex-postgresql
+    tag: "61b95bb"
+  opensandboxController:
+    name: phoenix-opensandbox-controller
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller
+    tag: "dev-20260528-135905-b8ebb9f"
+  phoenixAgent:
+    name: phoenix-agent
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
+    tag: "sha-cfd67a1e42b06eaf11cf6ed8f80beb64b4b9f59f"
+  phoenixGateway:
+    name: phoenix-gateway
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
+    tag: "sha-cde8400167d434bc5f5af976a584aeb4b896c87e"
+  phoenixLab:
+    name: phoenix-lab
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab
+    tag: "sha-a9f6cf4830ebec96438eb450b1311c7313d6cc06"
+  phoenixOpensandbox:
+    name: phoenix-opensandbox
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
+    tag: "sha-a9f6cf4830ebec96438eb450b1311c7313d6cc06"
+  phoenixWeb:
+    name: phoenix-web
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
+    tag: "sha-b4fc429507684ee05e209dfe7d2a8c5ea497fc76"
+  phoenixWebFrontend:
+    name: phoenix-web-frontend
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
+    tag: "sha-b4fc429507684ee05e209dfe7d2a8c5ea497fc76"
+  phoenixWorkflowEngine:
+    name: phoenix-workflow-engine
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
+    tag: "sha-a9f6cf4830ebec96438eb450b1311c7313d6cc06"

@@ -4,6 +4,9 @@ clusterDomain: cluster.local
 registry:
   charts: oci://ghcr.io/canonix-engineering/phoenix-byoc
 
+# Leave empty to use repositories pinned in release.yaml. Set to a registry
+# path such as registry.customer.example/phoenix after mirroring every image.
+imageRegistry: ""
 imagePullPolicy: IfNotPresent
 imagePullSecrets: []
 
@@ -15,9 +18,15 @@ ingressNginx:
   nodeSelector: {}
   tolerations: []
 
+opensandboxController:
+  crds:
+    install: true
+    keep: true
+
 postgresql:
   bundled:
     enabled: false
+    bootstrapDatabase: phoenix
     imageTag: "18.4-trixie"
     persistence:
       size: 10Gi
@@ -63,6 +72,14 @@ application:
   appHost: phoenix.example.com
   allowedHosts: phoenix.example.com,localhost
   toolboxId: ""
+  cortex:
+    host: ""
+    scheme: http
+  clickhouse:
+    url: ""
+  mailer:
+    from: ""
+    domain: ""
   workflowDefinitions:
     - workflow_definitions/v1/sdlc.yaml
     - workflow_definitions/v1/repo-onboarding.yaml
@@ -183,6 +200,10 @@ secrets:
     workflowEngineArtifactApiToken: ""
     workflowEngineToken: ""
     internalServiceTokens: ""
+    mailgunApiKey: ""
+    guardrailsTestToken: ""
+    jsTransformTestToken: ""
+    toolInvocationTestToken: ""
   agents:
     claudeCodeOauthToken: ""
     anthropicApiKey: ""

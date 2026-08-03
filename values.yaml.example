@@ -1,0 +1,119 @@
+# Phoenix BYOC installation configuration.
+# Phoenix/customer administrators prepare values.yaml before handoff. The
+# installer receives the namespace as a command argument.
+
+# Leave empty to use the exact repositories from release.yaml. Set after every
+# Phoenix image has been copied to a customer registry with its original name
+# and tag.
+imageRegistry: ""
+imagePullSecrets: []
+
+ingressNginx:
+  enabled: false
+
+opensandboxController:
+  crds:
+    install: true
+    keep: true
+
+postgresql:
+  bundled:
+    enabled: false
+    persistence:
+      size: 10Gi
+      storageClass: ""
+  external:
+    host: CHANGE_ME_POSTGRES_HOST
+    port: 5432
+    sslmode: require
+  hooks:
+    phoenixWeb: true
+    workflowEngine: true
+
+redis:
+  bundled:
+    enabled: true
+    persistence:
+      size: 2Gi
+      storageClass: ""
+
+cortex:
+  bundled:
+    enabled: true
+    persistence:
+      size: 5Gi
+      storageClass: ""
+
+application:
+  tenantId: CHANGE_ME_TENANT
+  appHost: CHANGE_ME_PHOENIX_HOST
+  allowedHosts: CHANGE_ME_PHOENIX_HOST,localhost
+  toolboxId: ""
+  cortex:
+    host: CHANGE_ME_CORTEX_HOST
+    scheme: http
+  clickhouse:
+    url: CHANGE_ME_CLICKHOUSE_URL
+  mailer:
+    from: CHANGE_ME_MAIL_FROM
+    domain: CHANGE_ME_MAIL_DOMAIN
+
+services:
+  web:
+    replicas: 1
+  worker:
+    replicas: 1
+  gateway:
+    replicas: 1
+    allowUnauthenticatedIngress: false
+  workflowEngine:
+    apiReplicas: 1
+    artifactApiReplicas: 1
+    orchestratorReplicas: 1
+    operatorReplicas: 1
+  opensandbox:
+    executionTimeout: 360m
+    sandboxCreateTimeoutSeconds: 300
+    persistence:
+      size: 30Gi
+      storageClass: ""
+
+ingress:
+  className: ""
+  frontend:
+    enabled: false
+    host: CHANGE_ME_PHOENIX_HOST
+    annotations: {}
+    tls: []
+  web:
+    enabled: false
+    host: CHANGE_ME_PHOENIX_API_HOST
+    annotations: {}
+    tls: []
+  gateway:
+    enabled: false
+    host: CHANGE_ME_GATEWAY_HOST
+    annotations: {}
+    tls: []
+  workflowApi:
+    enabled: false
+    host: CHANGE_ME_WORKFLOW_HOST
+    annotations: {}
+    tls: []
+  artifactApi:
+    enabled: false
+    host: CHANGE_ME_ARTIFACT_HOST
+    annotations: {}
+    tls: []
+
+# The customer owns all workload placement decisions. Empty values use the
+# cluster's normal scheduler behavior and never modify node labels.
+scheduling:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+storage:
+  artifactApi:
+    size: 5Gi
+    storageClass: ""

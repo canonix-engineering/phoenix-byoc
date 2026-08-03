@@ -1,4 +1,0 @@
-interface:
-  display_name: "Install Phoenix BYOC"
-  short_description: "Safely install and verify Phoenix BYOC"
-  default_prompt: "Use $install-phoenix-byoc to validate, render, install, and verify Phoenix in my Kubernetes cluster."

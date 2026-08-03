@@ -10,6 +10,9 @@
 
 `mise install` installs the versions declared in `.mise.toml`.
 
+`crane` is optional and required only when verifying or mirroring runtime
+images.
+
 ## Cluster
 
 The installing identity must be able to create namespaced workloads, Secrets,

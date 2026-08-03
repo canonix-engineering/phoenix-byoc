@@ -2,14 +2,27 @@
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
 {{- end }}
-{{- $redisUrl := required "secrets.redis.url is required" .Values.secrets.redis.url }}
+{{- $repository := .Values.images.phoenixWeb.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.phoenixWeb.name }}
+{{- end }}
+{{- $redisUrl := .Values.secrets.redis.url }}
+{{- if .Values.redis.bundled.enabled }}
+{{- $redisUrl = printf "redis://redis-client.%s.svc.%s:6379/1" .Values.namespace .Values.clusterDomain }}
+{{- else }}
+{{- $redisUrl = required "secrets.redis.url is required when bundled Redis is disabled" $redisUrl }}
+{{- end }}
+{{- $adminUrl := .Values.secrets.postgresql.adminUrl }}
+{{- if .Values.postgresql.bundled.enabled }}
+{{- $adminUrl = printf "postgresql://postgres:%s@postgresql-postgresql:%v/postgres?sslmode=disable" .Values.secrets.postgresql.superuserPassword .Values.postgresql.external.port }}
+{{- end }}
 {{- $internalServiceTokens := .Values.secrets.application.internalServiceTokens }}
 {{- if not $internalServiceTokens }}
 {{- $internalServiceTokens = printf `[{"identity":"phoenix-workflow-engine","token":%q,"scopes":["conversation:append","conversation:queue","workflow:context:read","workflow:feedback","workflow:feedback_capture"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
 {{- end }}
 
 image:
-  repository: {{ .Values.images.phoenixWeb.repository | quote }}
+  repository: {{ $repository | quote }}
   tag: {{ .Values.images.phoenixWeb.tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
@@ -24,10 +37,10 @@ web:
   appHost: {{ .Values.application.appHost | quote }}
   tenantId: {{ .Values.application.tenantId | quote }}
   cortex:
-    host: ""
-    scheme: http
+    host: {{ required "application.cortex.host is required" .Values.application.cortex.host | quote }}
+    scheme: {{ .Values.application.cortex.scheme | quote }}
   clickhouse:
-    url: ""
+    url: {{ required "application.clickhouse.url is required" .Values.application.clickhouse.url | quote }}
   mcp:
     host: {{ printf "http://phoenix-gateway.%s.svc.%s:3002" .Values.namespace .Values.clusterDomain | quote }}
   phoenixGateway:
@@ -41,8 +54,8 @@ web:
     startUrl: {{ printf "http://phoenix-workflow-engine-api.%s.svc.%s:8080/workflow-runs" .Values.namespace .Values.clusterDomain | quote }}
   redisUrl: {{ $redisUrl | quote }}
   mailer:
-    from: {{ printf "Phoenix <%s>" (printf "noreply@%s" .Values.application.appHost) | quote }}
-    domain: {{ .Values.application.appHost | quote }}
+    from: {{ required "application.mailer.from is required" .Values.application.mailer.from | quote }}
+    domain: {{ required "application.mailer.domain is required" .Values.application.mailer.domain | quote }}
 
 conversationStream:
   redisUrl: {{ $redisUrl | quote }}
@@ -79,7 +92,7 @@ externalDatabase:
     enabled: {{ .Values.postgresql.hooks.phoenixWeb }}
     reloadWorkflowDefinitions: true
     runSeed: false
-    adminUrl: {{ .Values.secrets.postgresql.adminUrl | quote }}
+    adminUrl: {{ $adminUrl | quote }}
 
 secret:
   secretKeyBase: {{ required "secrets.application.secretKeyBase is required" .Values.secrets.application.secretKeyBase | quote }}
@@ -87,6 +100,10 @@ secret:
   phoenixWorkflowEngineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
   phoenixInternalServiceTokens: {{ $internalServiceTokens | quote }}
   githubPat: {{ .Values.secrets.agents.githubPat | quote }}
+  mailgunApiKey: {{ required "secrets.application.mailgunApiKey is required" .Values.secrets.application.mailgunApiKey | quote }}
+  guardrailsTestToken: {{ required "secrets.application.guardrailsTestToken is required" .Values.secrets.application.guardrailsTestToken | quote }}
+  jsTransformTestToken: {{ required "secrets.application.jsTransformTestToken is required" .Values.secrets.application.jsTransformTestToken | quote }}
+  toolInvocationTestToken: {{ required "secrets.application.toolInvocationTestToken is required" .Values.secrets.application.toolInvocationTestToken | quote }}
 
 nodeSelector:
 {{ toYaml .Values.scheduling.nodeSelector | indent 2 }}

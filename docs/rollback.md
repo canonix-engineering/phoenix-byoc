@@ -1,7 +1,7 @@
 # Rollback
 
-Application rollback means restoring the previous exact chart and image
-versions in `releases/stable.yaml`, rendering the result and applying it again.
+Application rollback means checking out the previous supported repository tag,
+rendering its `release.yaml` and applying it again.
 
 Database migrations are not automatically reversed. Before upgrading:
 

@@ -1,55 +1,45 @@
 # Installation
 
-## 1. Choose a profile
+## Inputs supplied before installation
 
-- `default`: external primary PostgreSQL, bundled Redis and bundled Cortex.
-- `external`: external PostgreSQL, Redis and Cortex.
-- `kind`: bundled ingress-nginx, PostgreSQL, Redis and Cortex for testing.
+The installation package must already contain populated `values.yaml` and
+`values.secrets.yaml`. Registry credentials and kubeconfig access are supplied
+out of band. The customer does not select an installation profile.
 
-## 2. Create local configuration
-
-```bash
-./scripts/bootstrap.sh
-```
-
-Edit `values.yaml` and `values.secrets.yaml`. Neither file should be committed.
-Replace every `CHANGE_ME` value.
-
-## 3. Prepare PostgreSQL
-
-Choose one method:
-
-- enable both DB hooks and provide `secrets.postgresql.adminUrl`;
-- disable both hooks and let the customer manage database provisioning and
-  migrations.
-
-See [postgresql.md](postgresql.md).
-
-## 4. Validate and render
+The kubeconfig current context must point to the intended cluster:
 
 ```bash
-./scripts/preflight.sh --environment default
-./scripts/render.sh --environment default
+kubectl config current-context
 ```
 
-Review `.rendered/default/all.yaml`. It contains rendered Secrets and must
-remain local.
+The installer never selects or changes a context.
 
-## 5. Install
+## Install
+
+Run the only installation command with the target namespace:
 
 ```bash
-./scripts/install.sh --environment default
+./scripts/install.sh --namespace phoenix
 ```
 
-The script repeats preflight and rendering, shows the current context, requests
-confirmation, and runs Helmfile. Enabled database hooks run as part of the
-corresponding chart installation.
+The script:
 
-## 6. Verify again
+1. validates tools, configuration and cluster access;
+2. rejects unresolved `CHANGE_ME` placeholders;
+3. renders `.rendered/all.yaml`;
+4. displays the release, context, namespace and bundled components;
+5. installs or upgrades enabled Helm releases;
+6. waits for Deployments and prints Pods, Services and PVCs.
+
+The rendered file contains Kubernetes Secrets and remains local with mode
+`0600`.
+
+## Access the UI
+
+When the customer has not enabled an Ingress, use port-forwarding:
 
 ```bash
-./scripts/verify.sh --environment default
+kubectl -n phoenix port-forward service/phoenix-web-frontend 8080:80
 ```
 
-Configure DNS only after Services and ingress resources have the expected
-addresses.
+Open <http://localhost:8080>.

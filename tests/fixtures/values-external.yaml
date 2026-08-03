@@ -1,12 +1,21 @@
 namespace: phoenix
 
 postgresql:
+  bundled:
+    enabled: false
   external:
     host: postgresql.test.invalid
     port: 5432
     sslmode: verify-full
+  hooks:
+    phoenixWeb: false
+    workflowEngine: false
 
 redis:
+  bundled:
+    enabled: false
+
+cortex:
   bundled:
     enabled: false
 
@@ -14,3 +23,10 @@ application:
   tenantId: phoenix_test
   appHost: phoenix.test.invalid
   allowedHosts: phoenix.test.invalid,localhost
+  cortex:
+    host: cortex.test.invalid
+  clickhouse:
+    url: http://clickhouse.test.invalid:8123/phoenix_test
+  mailer:
+    from: Phoenix <noreply@test.invalid>
+    domain: test.invalid

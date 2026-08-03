@@ -12,8 +12,8 @@ redis:
 ```
 
 The pinned upstream chart deploys one persistent Redis instance without
-authentication, matching the internal Phoenix environments. Set
-`secrets.redis.url` to its in-cluster address.
+authentication, matching the internal Phoenix environments. The in-cluster URL
+is derived automatically; leave `secrets.redis.url` empty.
 
 This mode is not highly available.
 
@@ -26,4 +26,4 @@ redis:
 ```
 
 Set `secrets.redis.url` to `redis://` or `rediss://`, including credentials and
-the selected database number. The external profile disables bundled Redis.
+the selected database number.

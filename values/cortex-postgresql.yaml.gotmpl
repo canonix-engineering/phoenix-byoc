@@ -1,5 +1,10 @@
+{{- $repository := .Values.images.cortexPostgresql.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.cortexPostgresql.name }}
+{{- end }}
+
 image:
-  repository: {{ .Values.images.cortexPostgresql.repository | quote }}
+  repository: {{ $repository | quote }}
   tag: {{ .Values.images.cortexPostgresql.tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 

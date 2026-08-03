@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-environment=default
-confirmed=false
+requested_namespace=""
 while (($# > 0)); do
   case "$1" in
-    --environment)
-      environment=${2:-}
+    --namespace)
+      if (($# < 2)) || [[ -z "$2" ]]; then
+        echo "ERROR: --namespace requires a value." >&2
+        exit 2
+      fi
+      requested_namespace=$2
       shift 2
-      ;;
-    --yes)
-      confirmed=true
-      shift
       ;;
     *)
       echo "ERROR: unknown argument: $1" >&2
@@ -20,25 +19,67 @@ while (($# > 0)); do
   esac
 done
 
+if [[ -z "$requested_namespace" ]]; then
+  echo "Usage: ./scripts/install.sh --namespace <name>" >&2
+  exit 2
+fi
+if [[ ! "$requested_namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
+  echo "ERROR: namespace must be a valid lowercase Kubernetes DNS label." >&2
+  exit 2
+fi
+
+export PHOENIX_BYOC_NAMESPACE="$requested_namespace"
+
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 context=$(kubectl config current-context)
 
-"$repo_root/scripts/preflight.sh" --environment "$environment"
-"$repo_root/scripts/render.sh" --environment "$environment"
+"$repo_root/scripts/preflight.sh"
+"$repo_root/scripts/render.sh"
 
-if [[ "$confirmed" != true ]]; then
-  echo "Ready to install or upgrade Phoenix."
-  echo "Context:     $context"
-  echo "Environment: $environment"
-  echo "Rendered:    $repo_root/.rendered/$environment/all.yaml"
-  read -r -p "Apply these releases? [y/N] " answer
-  [[ "$answer" == "y" || "$answer" == "Y" ]] || exit 1
+values_file=${PHOENIX_BYOC_VALUES_FILE:-"$repo_root/values.yaml"}
+if [[ "$values_file" != /* ]]; then
+  values_file="$repo_root/$values_file"
 fi
+namespace=$requested_namespace
+release_version=$(awk '$1 == "version:" {gsub(/"/, "", $2); print $2; exit}' \
+  "$repo_root/release.yaml")
+pull_secrets=$(awk '
+  /^imagePullSecrets:/ { in_secrets=1; next }
+  in_secrets && /^[^ ]/ { exit }
+  in_secrets && $1 == "-" && $2 == "name:" { print $3 }
+' "$values_file")
+
+echo
+echo "Installing or upgrading Phoenix $release_version."
+echo "Context:     $context"
+echo "Namespace:   $namespace"
+echo "Rendered:    $repo_root/.rendered/all.yaml"
 
 cache_dir="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
+
+# OpenSandbox creates runtime Pods after Helm installation. Linking the same
+# customer-provided pull secrets to the namespace default ServiceAccount lets
+# those dynamic Pods pull from the configured private registry.
+if [[ -n "$pull_secrets" ]]; then
+  service_account_manifest=$(mktemp)
+  trap 'rm -f "$service_account_manifest"' EXIT
+  {
+    echo "apiVersion: v1"
+    echo "kind: ServiceAccount"
+    echo "metadata:"
+    echo "  name: default"
+    echo "  namespace: $namespace"
+    echo "imagePullSecrets:"
+    while IFS= read -r secret_name; do
+      echo "  - name: $secret_name"
+    done <<<"$pull_secrets"
+  } >"$service_account_manifest"
+  kubectl apply -f "$service_account_manifest"
+fi
+
 (
   cd "$repo_root"
-  HELMFILE_CACHE_HOME="$cache_dir" helmfile --environment "$environment" apply --suppress-diff
+  HELMFILE_CACHE_HOME="$cache_dir" helmfile sync
 )
 
-"$repo_root/scripts/verify.sh" --environment "$environment"
+"$repo_root/scripts/verify.sh"

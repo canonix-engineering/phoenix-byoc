@@ -5,16 +5,16 @@
 Run:
 
 ```bash
-./scripts/render.sh --environment default
+./scripts/render.sh
 ```
 
-Replace all placeholders and confirm that the selected profile matches the
-external or bundled services.
+Replace all placeholders and confirm that `values.yaml` matches the external or
+bundled services.
 
 ## Chart pull is unauthorized
 
 Confirm that the referenced GHCR package is public and that the exact version
-exists. A supported release must be pullable without organization credentials.
+exists. Run `./scripts/images.sh verify` for runtime images.
 
 ## Phoenix Web migration fails
 

@@ -1,5 +1,10 @@
+{{- $repository := .Values.images.phoenixWebFrontend.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.phoenixWebFrontend.name }}
+{{- end }}
+
 image:
-  repository: {{ .Values.images.phoenixWebFrontend.repository | quote }}
+  repository: {{ $repository | quote }}
   tag: {{ .Values.images.phoenixWebFrontend.tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
