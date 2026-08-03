@@ -40,11 +40,25 @@ locations.
 
 ## Mirror to a customer registry
 
-Install `crane`, authenticate to the destination registry, then copy all nine
-images:
+The supplier provides per-customer AWS access keys for a read-only IAM user.
+Store them in an AWS CLI profile using your approved credential-storage process;
+do not put them in `values.yaml`, `values.secrets.yaml`, or Kubernetes.
+
+Install the AWS CLI and `crane`, authenticate `crane` to the destination
+registry, then copy all nine images. The mirror command obtains a short-lived
+source ECR token using the selected AWS profile without printing it:
 
 ```bash
-./scripts/images.sh mirror --to registry.customer.example/phoenix
+./scripts/images.sh mirror \
+  --source-ecr-profile phoenix-byoc-source \
+  --to registry.customer.example/phoenix
+```
+
+You may authenticate to the source separately when diagnosing access:
+
+```bash
+./scripts/images.sh ecr-login --profile phoenix-byoc-source
+./scripts/images.sh verify
 ```
 
 Preview without copying:
@@ -72,7 +86,16 @@ links them to the namespace default ServiceAccount. This is required because
 OpenSandbox creates runtime Pods dynamically. Static Phoenix workloads receive
 the same pull-secret names through their Helm values.
 
-For Amazon ECR, authenticate `crane` with:
+Amazon ECR authorization tokens expire after 12 hours. The source IAM user is
+therefore intended for copying the release into the customer registry. Do not
+turn its short-lived token into a permanent Kubernetes `imagePullSecret`.
+
+Direct pulls from the supplier ECR are supported only when the customer configures
+node-level dynamic ECR authentication, such as an ECR kubelet credential provider.
+That cluster-specific configuration remains customer-owned.
+
+For a customer-owned destination Amazon ECR, authenticate `crane` separately
+with credentials for that destination:
 
 ```bash
 aws ecr get-login-password --region REGION |

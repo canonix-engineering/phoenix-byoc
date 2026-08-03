@@ -63,11 +63,14 @@ Print the exact Phoenix image inventory:
 To use another registry, copy the images without changing names or tags:
 
 ```bash
-./scripts/images.sh mirror --to registry.customer.example/phoenix
+./scripts/images.sh mirror \
+  --source-ecr-profile phoenix-byoc-source \
+  --to registry.customer.example/phoenix
 ```
 
 Then set `imageRegistry` and, when required, `imagePullSecrets` in
-`values.yaml`. See [Container images](docs/images.md).
+`values.yaml`. The source AWS credentials are used only on the mirroring host
+and are never stored in Kubernetes. See [Container images](docs/images.md).
 
 ## Tools
 

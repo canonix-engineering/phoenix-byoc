@@ -1,4 +1,6 @@
 [tools]
+"aqua:aws/aws-cli" = "2.36.14"
+"aqua:google/go-containerregistry" = "0.21.8"
 helm = "3.18"
 helmfile = "0.171"
 kind = "0.30"

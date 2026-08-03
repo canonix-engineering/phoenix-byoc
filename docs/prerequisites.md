@@ -13,6 +13,12 @@
 `crane` is optional and required only when verifying or mirroring runtime
 images.
 
+The AWS CLI is required when the release images are read from the supplier's
+private Amazon ECR. Configure the supplier-provided read-only IAM credentials in
+a local profile before running `images.sh ecr-login` or
+`images.sh mirror --source-ecr-profile`. Those credentials are not Kubernetes
+installation inputs.
+
 ## Cluster
 
 The installing identity must be able to create namespaced workloads, Secrets,
