@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ecr-pull-secret-refresh
+description: Refresh a Kubernetes image pull secret for direct Amazon ECR pulls.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

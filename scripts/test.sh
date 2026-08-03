@@ -10,7 +10,7 @@ if [[ ! -d "$devops_charts/phoenix-web" ]]; then
   exit 1
 fi
 
-for scenario in bundled external private-registry; do
+for scenario in bundled external private-registry direct-ecr; do
   render_dir="$repo_root/.rendered/test-$scenario"
   values_file="tests/fixtures/values.yaml"
   secrets_file="tests/fixtures/values.secrets.yaml"
@@ -19,6 +19,9 @@ for scenario in bundled external private-registry; do
     secrets_file="tests/fixtures/values.secrets-external.yaml"
   elif [[ "$scenario" == "private-registry" ]]; then
     values_file="tests/fixtures/values-private-registry.yaml"
+  elif [[ "$scenario" == "direct-ecr" ]]; then
+    values_file="tests/fixtures/values-direct-ecr.yaml"
+    secrets_file="tests/fixtures/values.secrets-direct-ecr.yaml"
   fi
 
   mkdir -p "$cache_dir" "$render_dir"
@@ -62,6 +65,27 @@ for scenario in bundled external private-registry; do
         exit 1
       }
     done
+  elif [[ "$scenario" == "direct-ecr" ]]; then
+    grep -q 'kind: CronJob' "$render_dir/all.yaml" || {
+      echo "ERROR: direct ECR render is missing the token refresh CronJob" >&2
+      exit 1
+    }
+    grep -q 'name: ecr-pull-secret-refresh' "$render_dir/all.yaml" || {
+      echo "ERROR: direct ECR render is missing the refresh release resources" >&2
+      exit 1
+    }
+    grep -q 'name: phoenix-ecr-pull' "$render_dir/all.yaml" || {
+      echo "ERROR: direct ECR render is missing the managed pull Secret" >&2
+      exit 1
+    }
+    grep -q 'public.ecr.aws/aws-cli/aws-cli:2.36.14@sha256:' "$render_dir/all.yaml" || {
+      echo "ERROR: direct ECR render is missing the pinned AWS CLI image" >&2
+      exit 1
+    }
+    grep -q 'registry.k8s.io/kubectl:v1.32.13@sha256:' "$render_dir/all.yaml" || {
+      echo "ERROR: direct ECR render is missing the pinned kubectl image" >&2
+      exit 1
+    }
   fi
 done
 
@@ -73,6 +97,7 @@ if command -v yamllint >/dev/null 2>&1; then
   yamllint \
     --config-file "$repo_root/.yamllint.yaml" \
     "$repo_root/defaults" \
+    "$repo_root/examples" \
     "$repo_root/release.yaml" \
     "$repo_root/tests" \
     "$repo_root/Taskfile.yaml" \

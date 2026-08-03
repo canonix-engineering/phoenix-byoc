@@ -4,6 +4,7 @@
 
 - immutable public OCI Helm charts listed in `release.yaml`;
 - exact container image references for the release and tools to mirror them;
+- an optional in-cluster refresher for direct pulls from the Phoenix private ECR;
 - Helmfile orchestration and example values;
 - configuration for the database hooks already provided by the application charts;
 - render, preflight, install and verification scripts;
@@ -18,7 +19,9 @@
 - DNS, TLS certificates and the preferred ingress controller;
 - Redis when bundled Redis is disabled;
 - Cortex PostgreSQL when bundled Cortex is disabled;
-- application/API credentials required by the enabled workflows.
+- application/API credentials required by the enabled workflows;
+- protected storage for the per-customer IAM access key when direct ECR refresh
+  is enabled.
 
 ## Explicitly out of scope
 

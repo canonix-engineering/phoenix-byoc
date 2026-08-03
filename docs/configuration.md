@@ -29,8 +29,20 @@ Confirm that at least one node can satisfy every enabled class.
 
 `release.yaml` owns image names and tags. `imageRegistry` changes only their
 registry prefix after all nine images are mirrored. `imagePullSecrets` names
-customer-created Kubernetes pull secrets; Phoenix never creates registry
-credentials.
+Kubernetes pull secrets used by static Phoenix workloads and dynamic OpenSandbox
+Pods.
+
+For direct pulls from the Phoenix private ECR, set
+`registry.ecrRefresh.enabled=true`, leave `imageRegistry` empty, and include
+`registry.ecrRefresh.pullSecretName` in `imagePullSecrets`. The helper creates
+the pull Secret, populates it before Phoenix workloads start, and refreshes its
+12-hour ECR token on `registry.ecrRefresh.schedule` (every six hours by default).
+
+The read-only IAM credentials can come from the protected
+`secrets.registry.ecr` values or from a pre-created Secret selected by
+`registry.ecrRefresh.credentialsSecretName`. An existing Secret must contain
+`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and optional `AWS_SESSION_TOKEN`.
+It may be managed by an ExternalSecret.
 
 ## Ingress
 
@@ -40,8 +52,10 @@ Individual application ingress resources are controlled under `ingress.*`.
 ## Secrets
 
 `values.secrets.yaml` supplies the existing secret and database fields of the
-application charts. There is no additional BYOC runtime Secret or configuration
-translation layer.
+application charts. When direct ECR refresh is enabled without an existing
+credentials Secret, it also supplies the read-only IAM access key used by the
+refresh helper. The populated file and `.rendered/all.yaml` must remain
+protected because both contain that long-lived credential.
 
 Bundled PostgreSQL, Redis and Cortex URLs are derived automatically. External
 services require explicit URLs or credentials.

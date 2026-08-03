@@ -16,6 +16,20 @@ bundled services.
 Confirm that the referenced GHCR package is public and that the exact version
 exists. Run `./scripts/images.sh verify` for runtime images.
 
+## Direct ECR pulls fail
+
+Check the refresh schedule and recent Jobs without printing either Secret:
+
+```bash
+kubectl -n phoenix get cronjob/ecr-pull-secret-refresh
+kubectl -n phoenix get jobs -l app.kubernetes.io/name=ecr-pull-secret-refresh
+```
+
+If the refresh Job reports `AccessDenied`, confirm that the per-customer IAM
+access key is active and still has `ecr:GetAuthorizationToken`. If the pull
+Secret is missing, confirm that `registry.ecrRefresh.pullSecretName` is also
+listed under `imagePullSecrets`.
+
 ## Phoenix Web migration fails
 
 Inspect:

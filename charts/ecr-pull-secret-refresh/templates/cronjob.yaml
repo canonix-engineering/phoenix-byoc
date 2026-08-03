@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "ecr-pull-secret-refresh.name" . }}
+  labels:
+{{ include "ecr-pull-secret-refresh.labels" . | indent 4 }}
+spec:
+  schedule: {{ required "schedule is required" .Values.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+{{ include "ecr-pull-secret-refresh.labels" . | indent 12 }}
+        spec:
+{{ include "ecr-pull-secret-refresh.podSpec" . | indent 10 }}

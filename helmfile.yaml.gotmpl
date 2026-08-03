@@ -30,6 +30,13 @@ helmDefaults:
 {{- $chartRegistry := .Values.registry.charts }}
 
 releases:
+  - name: ecr-pull-secret-refresh
+    namespace: {{ $namespace }}
+    installed: {{ .Values.registry.ecrRefresh.enabled }}
+    chart: ./charts/ecr-pull-secret-refresh
+    values:
+      - values/ecr-pull-secret-refresh.yaml.gotmpl
+
   - name: ingress-nginx
     namespace: {{ $controllerNamespace }}
     installed: {{ .Values.ingressNginx.enabled }}
@@ -65,6 +72,10 @@ releases:
 {{- end }}
     values:
       - values/cortex-postgresql.yaml.gotmpl
+{{- if .Values.registry.ecrRefresh.enabled }}
+    needs:
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
 
   - name: opensandbox-controller
     namespace: {{ $namespace }}
@@ -76,6 +87,10 @@ releases:
 {{- end }}
     values:
       - values/opensandbox-controller.yaml.gotmpl
+{{- if .Values.registry.ecrRefresh.enabled }}
+    needs:
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
 
   - name: phoenix-web
     namespace: {{ $namespace }}
@@ -88,6 +103,9 @@ releases:
     values:
       - values/phoenix-web.yaml.gotmpl
     needs:
+{{- if .Values.registry.ecrRefresh.enabled }}
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
 {{- if .Values.postgresql.bundled.enabled }}
       - {{ $namespace }}/postgresql
 {{- end }}
@@ -107,6 +125,9 @@ releases:
     values:
       - values/phoenix-web-frontend.yaml.gotmpl
     needs:
+{{- if .Values.registry.ecrRefresh.enabled }}
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
       - {{ $namespace }}/phoenix-web
 
   - name: phoenix-gateway
@@ -120,6 +141,9 @@ releases:
     values:
       - values/phoenix-gateway.yaml.gotmpl
     needs:
+{{- if .Values.registry.ecrRefresh.enabled }}
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
       - {{ $namespace }}/phoenix-web
     wait: false
 
@@ -134,6 +158,9 @@ releases:
     values:
       - values/phoenix-workflow-engine.yaml.gotmpl
     needs:
+{{- if .Values.registry.ecrRefresh.enabled }}
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
       - {{ $namespace }}/opensandbox-controller
       - {{ $namespace }}/phoenix-web
 {{- if .Values.cortex.bundled.enabled }}

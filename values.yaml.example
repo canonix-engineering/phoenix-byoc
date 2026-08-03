@@ -8,6 +8,20 @@
 imageRegistry: ""
 imagePullSecrets: []
 
+# Optional direct pull from the Phoenix private ECR. When enabled, also add
+# registry.ecrRefresh.pullSecretName to imagePullSecrets. Leave disabled when
+# mirroring images into a customer registry.
+registry:
+  ecrRefresh:
+    enabled: false
+    region: us-east-1
+    schedule: "0 */6 * * *"
+    pullSecretName: phoenix-ecr-pull
+    # Set to a pre-created Secret or ExternalSecret target containing
+    # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and optional AWS_SESSION_TOKEN.
+    # Leave empty to read the credentials from values.secrets.yaml.
+    credentialsSecretName: ""
+
 ingressNginx:
   enabled: false
 

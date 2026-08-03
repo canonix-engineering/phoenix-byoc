@@ -1,0 +1,40 @@
+namespace: phoenix
+imageRegistry: ""
+imagePullSecrets:
+  - name: phoenix-ecr-pull
+
+registry:
+  ecrRefresh:
+    enabled: true
+    region: us-east-1
+    schedule: "0 */6 * * *"
+    pullSecretName: phoenix-ecr-pull
+    credentialsSecretName: ""
+
+postgresql:
+  bundled:
+    enabled: true
+  external:
+    host: postgresql-postgresql
+    port: 5432
+    sslmode: disable
+
+redis:
+  bundled:
+    enabled: true
+
+cortex:
+  bundled:
+    enabled: true
+
+application:
+  tenantId: phoenix_test
+  appHost: localhost
+  allowedHosts: localhost,127.0.0.1
+  cortex:
+    host: cortex.test.invalid
+  clickhouse:
+    url: http://clickhouse.test.invalid:8123/phoenix_test
+  mailer:
+    from: Phoenix <noreply@test.invalid>
+    domain: test.invalid

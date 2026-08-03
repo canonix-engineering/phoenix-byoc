@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ecr-pull-secret-refresh.name" . }}-initial
+  labels:
+{{ include "ecr-pull-secret-refresh.labels" . | indent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "10"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+{{ include "ecr-pull-secret-refresh.labels" . | indent 8 }}
+    spec:
+{{ include "ecr-pull-secret-refresh.podSpec" . | indent 6 }}

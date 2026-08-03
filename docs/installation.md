@@ -34,6 +34,11 @@ The script:
 The rendered file contains Kubernetes Secrets and remains local with mode
 `0600`.
 
+When `registry.ecrRefresh.enabled=true`, Helmfile installs the ECR refresh helper
+first. Its initial Job must successfully populate the configured pull Secret
+before any Phoenix release that uses a private image is installed. The scheduled
+CronJob then renews the token automatically.
+
 ## Access the UI
 
 When the customer has not enabled an Ingress, use port-forwarding:

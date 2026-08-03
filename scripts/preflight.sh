@@ -97,15 +97,115 @@ bundled_ingress=$(awk '
 pull_secrets=$(awk '
   /^imagePullSecrets:/ { in_secrets=1; next }
   in_secrets && /^[^ ]/ { exit }
-  in_secrets && $1 == "-" && $2 == "name:" { print $3 }
+  in_secrets && $1 == "-" && $2 == "name:" {
+    gsub(/"/, "", $3)
+    print $3
+  }
+' "$values_file")
+image_registry=$(awk '$1 == "imageRegistry:" {gsub(/"/, "", $2); print $2; exit}' \
+  "$values_file")
+ecr_refresh_enabled=$(awk '
+  /^registry:/ { in_registry=1; next }
+  in_registry && /^[^ ]/ { exit }
+  in_registry && /^  ecrRefresh:/ { in_refresh=1; next }
+  in_refresh && /^    enabled:/ { print $2; exit }
+' "$values_file")
+ecr_refresh_pull_secret=$(awk '
+  /^registry:/ { in_registry=1; next }
+  in_registry && /^[^ ]/ { exit }
+  in_registry && /^  ecrRefresh:/ { in_refresh=1; next }
+  in_refresh && /^    pullSecretName:/ {
+    gsub(/"/, "", $2)
+    print $2
+    exit
+  }
+' "$values_file")
+ecr_credentials_secret=$(awk '
+  /^registry:/ { in_registry=1; next }
+  in_registry && /^[^ ]/ { exit }
+  in_registry && /^  ecrRefresh:/ { in_refresh=1; next }
+  in_refresh && /^    credentialsSecretName:/ {
+    gsub(/"/, "", $2)
+    print $2
+    exit
+  }
 ' "$values_file")
 
+managed_pull_secret=""
+if [[ "$ecr_refresh_enabled" == "true" ]]; then
+  if [[ -n "$image_registry" ]]; then
+    echo "ERROR: imageRegistry must be empty when registry.ecrRefresh.enabled=true." >&2
+    exit 1
+  fi
+  if [[ -z "$ecr_refresh_pull_secret" ]]; then
+    echo "ERROR: registry.ecrRefresh.pullSecretName is required." >&2
+    exit 1
+  fi
+  if ! grep -Fxq "$ecr_refresh_pull_secret" <<<"$pull_secrets"; then
+    echo "ERROR: imagePullSecrets must include '$ecr_refresh_pull_secret' when ECR refresh is enabled." >&2
+    exit 1
+  fi
+  managed_pull_secret=$ecr_refresh_pull_secret
+
+  if [[ -n "$ecr_credentials_secret" ]]; then
+    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+      echo "ERROR: namespace '$namespace' must exist when using an existing ECR credentials Secret." >&2
+      exit 1
+    fi
+    kubectl -n "$namespace" get secret "$ecr_credentials_secret" >/dev/null || {
+      echo "ERROR: ECR credentials Secret '$ecr_credentials_secret' does not exist in namespace '$namespace'." >&2
+      exit 1
+    }
+    for credential_key in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
+      credential_value=$(kubectl -n "$namespace" get secret "$ecr_credentials_secret" \
+        -o "jsonpath={.data.$credential_key}")
+      if [[ -z "$credential_value" ]]; then
+        echo "ERROR: ECR credentials Secret '$ecr_credentials_secret' is missing key '$credential_key'." >&2
+        exit 1
+      fi
+    done
+  else
+    ecr_access_key_id=$(awk '
+      /^secrets:/ { in_secrets=1; next }
+      in_secrets && /^  registry:/ { in_registry=1; next }
+      in_registry && /^    ecr:/ { in_ecr=1; next }
+      in_ecr && /^      accessKeyId:/ {
+        sub(/^[^:]+:[[:space:]]*/, "")
+        gsub(/"/, "")
+        print
+        exit
+      }
+    ' "$secrets_file")
+    ecr_secret_access_key=$(awk '
+      /^secrets:/ { in_secrets=1; next }
+      in_secrets && /^  registry:/ { in_registry=1; next }
+      in_registry && /^    ecr:/ { in_ecr=1; next }
+      in_ecr && /^      secretAccessKey:/ {
+        sub(/^[^:]+:[[:space:]]*/, "")
+        gsub(/"/, "")
+        print
+        exit
+      }
+    ' "$secrets_file")
+    if [[ -z "$ecr_access_key_id" || -z "$ecr_secret_access_key" ]]; then
+      echo "ERROR: ECR refresh requires accessKeyId and secretAccessKey in values.secrets.yaml or credentialsSecretName." >&2
+      exit 1
+    fi
+  fi
+fi
+
 if [[ -n "$pull_secrets" ]]; then
-  if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+  unmanaged_pull_secrets=$(awk -v managed="$managed_pull_secret" \
+    'NF && $0 != managed { print }' <<<"$pull_secrets")
+  if [[ -n "$unmanaged_pull_secrets" ]] && \
+      ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
     echo "ERROR: namespace '$namespace' must exist before creating registry pull secrets." >&2
     exit 1
   fi
   while IFS= read -r secret_name; do
+    if [[ "$secret_name" == "$managed_pull_secret" ]]; then
+      continue
+    fi
     kubectl -n "$namespace" get secret "$secret_name" >/dev/null || {
       echo "ERROR: image pull secret '$secret_name' does not exist in namespace '$namespace'." >&2
       exit 1
@@ -120,4 +220,5 @@ echo "Bundled PostgreSQL: ${bundled_postgresql:-false}"
 echo "Bundled Redis:      ${bundled_redis:-true}"
 echo "Bundled Cortex:     ${bundled_cortex:-true}"
 echo "Bundled ingress:    ${bundled_ingress:-false}"
+echo "ECR token refresh:  ${ecr_refresh_enabled:-false}"
 echo "Preflight passed."

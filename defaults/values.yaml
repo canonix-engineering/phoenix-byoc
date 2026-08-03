@@ -3,6 +3,15 @@ clusterDomain: cluster.local
 
 registry:
   charts: oci://ghcr.io/canonix-engineering/phoenix-byoc
+  ecrRefresh:
+    enabled: false
+    region: us-east-1
+    schedule: "0 */6 * * *"
+    pullSecretName: phoenix-ecr-pull
+    credentialsSecretName: ""
+    images:
+      awsCli: public.ecr.aws/aws-cli/aws-cli:2.36.14@sha256:72180b996fad939e764434d9a69a9512ed699a061cd5db198feeb2e9533fd750
+      kubectl: registry.k8s.io/kubectl:v1.32.13@sha256:fbfd671cd51f0be98174170f2000cbb97d2788e2270bc1697323d401558307e1
 
 # Leave empty to use repositories pinned in release.yaml. Set to a registry
 # path such as registry.customer.example/phoenix after mirroring every image.
@@ -185,6 +194,11 @@ storage:
     storageClass: ""
 
 secrets:
+  registry:
+    ecr:
+      accessKeyId: ""
+      secretAccessKey: ""
+      sessionToken: ""
   postgresql:
     superuserPassword: ""
     applicationPassword: ""

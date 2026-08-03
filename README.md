@@ -72,6 +72,22 @@ Then set `imageRegistry` and, when required, `imagePullSecrets` in
 `values.yaml`. The source AWS credentials are used only on the mirroring host
 and are never stored in Kubernetes. See [Container images](docs/images.md).
 
+To pull directly from the Phoenix ECR instead, enable the optional token
+refresher and reference its managed pull Secret:
+
+```yaml
+imageRegistry: ""
+imagePullSecrets:
+  - name: phoenix-ecr-pull
+registry:
+  ecrRefresh:
+    enabled: true
+    pullSecretName: phoenix-ecr-pull
+```
+
+The installer populates the Secret before Phoenix workloads start and refreshes
+the 12-hour ECR token every six hours. See [Container images](docs/images.md).
+
 ## Tools
 
 Install the pinned tool versions with:

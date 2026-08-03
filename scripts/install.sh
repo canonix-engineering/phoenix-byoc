@@ -46,7 +46,10 @@ release_version=$(awk '$1 == "version:" {gsub(/"/, "", $2); print $2; exit}' \
 pull_secrets=$(awk '
   /^imagePullSecrets:/ { in_secrets=1; next }
   in_secrets && /^[^ ]/ { exit }
-  in_secrets && $1 == "-" && $2 == "name:" { print $3 }
+  in_secrets && $1 == "-" && $2 == "name:" {
+    gsub(/"/, "", $3)
+    print $3
+  }
 ' "$values_file")
 
 echo
@@ -57,9 +60,15 @@ echo "Rendered:    $repo_root/.rendered/all.yaml"
 
 cache_dir="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
 
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" helmfile sync
+)
+
 # OpenSandbox creates runtime Pods after Helm installation. Linking the same
-# customer-provided pull secrets to the namespace default ServiceAccount lets
-# those dynamic Pods pull from the configured private registry.
+# pull secrets to the namespace default ServiceAccount lets those dynamic Pods
+# pull from the configured registry. This runs after Helmfile so the optional
+# ECR refresh release can create and populate its managed pull Secret first.
 if [[ -n "$pull_secrets" ]]; then
   service_account_manifest=$(mktemp)
   trap 'rm -f "$service_account_manifest"' EXIT
@@ -76,10 +85,5 @@ if [[ -n "$pull_secrets" ]]; then
   } >"$service_account_manifest"
   kubectl apply -f "$service_account_manifest"
 fi
-
-(
-  cd "$repo_root"
-  HELMFILE_CACHE_HOME="$cache_dir" helmfile sync
-)
 
 "$repo_root/scripts/verify.sh"

@@ -29,7 +29,10 @@ Helm apply operations as approval boundaries.
 3. Use `./scripts/images.sh list` for the exact runtime inventory.
 4. When the customer mirrors images, use `./scripts/images.sh mirror --to
    <registry/path>` and set only `imageRegistry` plus `imagePullSecrets`.
-5. Do not change `release.yaml`.
+5. When direct ECR refresh is enabled, verify that `imageRegistry` is empty,
+   `imagePullSecrets` contains the managed Secret name, and the IAM credential
+   source exists without printing or decoding it.
+6. Do not change `release.yaml`.
 
 ## Validate and apply
 
