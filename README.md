@@ -15,9 +15,6 @@ Kubernetes cluster. Phoenix engineers do not require access to that cluster.
 - optional PostgreSQL and ingress-nginx when enabled in the selected values
   file.
 
-Twenty HQ, Mattermost, Headlamp, observability, production HA and
-infrastructure provisioning are not installed.
-
 ## Installation contract
 
 The installation package contains:
