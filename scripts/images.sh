@@ -13,7 +13,7 @@ Usage:
   ./scripts/images.sh mirror --to <registry/path> [--source-ecr-profile <aws-profile>] [--dry-run]
 
 Commands:
-  list     Print the nine Phoenix runtime image references.
+  list     Print every image reference required by the release.
   verify   Resolve every image with crane and fail if one is unavailable.
   ecr-login
            Authenticate crane to the release's source Amazon ECR registry.
@@ -28,9 +28,20 @@ EOF
 
 read_images() {
   awk '
+    function flush() {
+      if (name == "" || repository == "" || tag == "") return
+      reference=repository ":" tag
+      if (digest != "") reference=reference "@" digest
+      print name "\t" reference "\t" tag "\t" digest
+      name=""
+      repository=""
+      tag=""
+      digest=""
+    }
     /^images:$/ { in_images=1; next }
-    in_images && /^[^ ]/ { exit }
+    in_images && /^[^ ]/ { flush(); exit }
     in_images && /^    name:/ {
+      flush()
       name=$2
       gsub(/"/, "", name)
     }
@@ -41,8 +52,12 @@ read_images() {
     in_images && /^    tag:/ {
       tag=$2
       gsub(/"/, "", tag)
-      print name "\t" repository ":" tag "\t" tag
     }
+    in_images && /^    digest:/ {
+      digest=$2
+      gsub(/"/, "", digest)
+    }
+    END { if (in_images) flush() }
   ' "$release_file"
 }
 
@@ -52,9 +67,13 @@ source_ecr_registry() {
   local name
   local source
   local tag
+  local digest
 
-  while IFS=$'\t' read -r name source tag; do
+  while IFS=$'\t' read -r name source tag digest; do
     current_registry=${source%%/*}
+    if [[ ! "$current_registry" =~ ^[0-9]{12}\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com$ ]]; then
+      continue
+    fi
     if [[ -z "$source_registry" ]]; then
       source_registry=$current_registry
     elif [[ "$current_registry" != "$source_registry" ]]; then
@@ -63,7 +82,8 @@ source_ecr_registry() {
     fi
   done < <(read_images)
 
-  if [[ ! "$source_registry" =~ ^[0-9]{12}\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com$ ]]; then
+  if [[ -z "$source_registry" ]] || \
+      [[ ! "$source_registry" =~ ^[0-9]{12}\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com$ ]]; then
     echo "ERROR: release source is not a supported Amazon ECR registry: $source_registry" >&2
     return 1
   fi
@@ -143,9 +163,13 @@ destination=${destination%/}
 
 case "$command" in
   list)
-    while IFS=$'\t' read -r name source tag; do
+    while IFS=$'\t' read -r name source tag digest; do
       if [[ -n "$registry" ]]; then
-        printf '%s/%s:%s\n' "$registry" "$name" "$tag"
+        reference="$registry/$name:$tag"
+        if [[ -n "$digest" ]]; then
+          reference="$reference@$digest"
+        fi
+        printf '%s\n' "$reference"
       else
         printf '%s\n' "$source"
       fi
@@ -156,7 +180,7 @@ case "$command" in
       echo "ERROR: crane is required for image verification." >&2
       exit 1
     }
-    while IFS=$'\t' read -r name source tag; do
+    while IFS=$'\t' read -r name source tag digest; do
       reference=$source
       if [[ -n "$registry" ]]; then
         reference="$registry/$name:$tag"
@@ -182,7 +206,7 @@ case "$command" in
         login_source_ecr "$source_ecr_profile"
       fi
     fi
-    while IFS=$'\t' read -r name source tag; do
+    while IFS=$'\t' read -r name source tag digest; do
       target="$destination/$name:$tag"
       if [[ "$dry_run" == true ]]; then
         printf 'crane copy %q %q\n' "$source" "$target"

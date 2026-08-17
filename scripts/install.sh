@@ -2,6 +2,8 @@
 set -euo pipefail
 
 requested_namespace=""
+requested_values=""
+requested_secrets=""
 while (($# > 0)); do
   case "$1" in
     --namespace)
@@ -12,6 +14,22 @@ while (($# > 0)); do
       requested_namespace=$2
       shift 2
       ;;
+    --values)
+      if (($# < 2)) || [[ -z "$2" ]]; then
+        echo "ERROR: --values requires a path." >&2
+        exit 2
+      fi
+      requested_values=$2
+      shift 2
+      ;;
+    --secrets)
+      if (($# < 2)) || [[ -z "$2" ]]; then
+        echo "ERROR: --secrets requires a path." >&2
+        exit 2
+      fi
+      requested_secrets=$2
+      shift 2
+      ;;
     *)
       echo "ERROR: unknown argument: $1" >&2
       exit 2
@@ -19,8 +37,8 @@ while (($# > 0)); do
   esac
 done
 
-if [[ -z "$requested_namespace" ]]; then
-  echo "Usage: ./scripts/install.sh --namespace <name>" >&2
+if [[ -z "$requested_namespace" || -z "$requested_values" || -z "$requested_secrets" ]]; then
+  echo "Usage: ./scripts/install.sh --namespace <name> --values <path> --secrets <path>" >&2
   exit 2
 fi
 if [[ ! "$requested_namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
@@ -29,6 +47,8 @@ if [[ ! "$requested_namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
 fi
 
 export PHOENIX_BYOC_NAMESPACE="$requested_namespace"
+export PHOENIX_BYOC_VALUES_FILE="$requested_values"
+export PHOENIX_BYOC_SECRETS_FILE="$requested_secrets"
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 context=$(kubectl config current-context)
@@ -36,9 +56,13 @@ context=$(kubectl config current-context)
 "$repo_root/scripts/preflight.sh"
 "$repo_root/scripts/render.sh"
 
-values_file=${PHOENIX_BYOC_VALUES_FILE:-"$repo_root/values.yaml"}
+values_file=$requested_values
 if [[ "$values_file" != /* ]]; then
   values_file="$repo_root/$values_file"
+fi
+secrets_file=$requested_secrets
+if [[ "$secrets_file" != /* ]]; then
+  secrets_file="$repo_root/$secrets_file"
 fi
 namespace=$requested_namespace
 release_version=$(awk '$1 == "version:" {gsub(/"/, "", $2); print $2; exit}' \
@@ -56,6 +80,8 @@ echo
 echo "Installing or upgrading Phoenix $release_version."
 echo "Context:     $context"
 echo "Namespace:   $namespace"
+echo "Values:      $values_file"
+echo "Secrets:     $secrets_file"
 echo "Rendered:    $repo_root/.rendered/all.yaml"
 
 cache_dir="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
@@ -86,4 +112,7 @@ if [[ -n "$pull_secrets" ]]; then
   kubectl apply -f "$service_account_manifest"
 fi
 
-"$repo_root/scripts/verify.sh"
+"$repo_root/scripts/verify.sh" \
+  --namespace "$namespace" \
+  --values "$values_file" \
+  --secrets "$secrets_file"

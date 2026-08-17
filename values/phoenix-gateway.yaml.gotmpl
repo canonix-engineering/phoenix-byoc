@@ -1,6 +1,8 @@
 {{- $databaseHost := .Values.postgresql.external.host }}
+{{- $databaseSslmode := .Values.postgresql.external.sslmode }}
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
+{{- $databaseSslmode = "disable" }}
 {{- end }}
 {{- $repository := .Values.images.phoenixGateway.repository }}
 {{- if .Values.imageRegistry }}
@@ -18,7 +20,7 @@ imagePullSecrets:
 gateway:
   allowUnauthenticatedIngress: {{ .Values.services.gateway.allowUnauthenticatedIngress }}
   logLevel: info
-  dbDsn: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary .Values.postgresql.external.sslmode | quote }}
+  dbDsn: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary $databaseSslmode | quote }}
 
 server:
   replicaCount: {{ .Values.services.gateway.replicas }}

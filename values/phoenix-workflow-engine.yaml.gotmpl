@@ -1,6 +1,8 @@
 {{- $databaseHost := .Values.postgresql.external.host }}
+{{- $databaseSslmode := .Values.postgresql.external.sslmode }}
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
+{{- $databaseSslmode = "disable" }}
 {{- end }}
 {{- $registry := trimSuffix "/" .Values.imageRegistry }}
 {{- $engineRepository := .Values.images.phoenixWorkflowEngine.repository }}
@@ -80,7 +82,7 @@ database:
   name: {{ .Values.postgresql.databases.primary | quote }}
   user: {{ .Values.postgresql.users.application | quote }}
   password: {{ required "secrets.postgresql.applicationPassword is required" .Values.secrets.postgresql.applicationPassword | quote }}
-  sslmode: {{ .Values.postgresql.external.sslmode | quote }}
+  sslmode: {{ $databaseSslmode | quote }}
 
 internalDatabase:
   host: {{ required "postgresql.external.host is required when bundled PostgreSQL is disabled" $databaseHost | quote }}
@@ -88,7 +90,7 @@ internalDatabase:
   name: {{ .Values.postgresql.databases.internal | quote }}
   user: {{ .Values.postgresql.users.internal | quote }}
   password: {{ required "secrets.postgresql.internalPassword is required" .Values.secrets.postgresql.internalPassword | quote }}
-  sslmode: {{ .Values.postgresql.external.sslmode | quote }}
+  sslmode: {{ $databaseSslmode | quote }}
   init:
     enabled: {{ .Values.postgresql.hooks.workflowEngine }}
     adminUrl: {{ $adminUrl | quote }}
@@ -118,6 +120,7 @@ operator:
 
 opensandbox:
   enabled: true
+  agentHarnessToken: {{ required "secrets.application.agentHarnessToken is required" .Values.secrets.application.agentHarnessToken | quote }}
   clusterRoleName: {{ printf "phoenix-workflow-engine-opensandbox-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
   endpoint: {{ printf "http://phoenix-workflow-engine-opensandbox.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
   executionTimeout: {{ .Values.services.opensandbox.executionTimeout | quote }}

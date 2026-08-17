@@ -7,6 +7,7 @@
 - Helmfile 0.171
 - kubectl compatible with the cluster
 - kubeconform for local schema validation
+- yq 4.49
 
 `mise install` installs the versions declared in `.mise.toml`.
 
@@ -26,8 +27,8 @@ Services, Jobs, PVCs and RBAC resources. OpenSandbox also installs CRDs and
 cluster-scoped RBAC.
 
 A default StorageClass, or an explicit StorageClass for every enabled PVC, is
-required whenever bundled Redis, PostgreSQL, Cortex or Workflow Engine
-persistence is enabled.
+required whenever bundled Redis, PostgreSQL, Cortex PostgreSQL, ClickHouse or
+Workflow Engine persistence is enabled.
 
 The customer chooses node labels, tolerations and affinity. This repository
 provides no scheduling defaults beyond resource requests.

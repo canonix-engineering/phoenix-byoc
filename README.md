@@ -8,27 +8,33 @@ Kubernetes cluster. Phoenix engineers do not require access to that cluster.
 - Phoenix Web and Web Frontend;
 - Phoenix Gateway;
 - Phoenix Workflow Engine;
-- OpenSandbox server and controller;
+- OpenSandbox server and, on a fresh cluster, its cluster-wide controller;
 - Redis;
 - Cortex PostgreSQL;
-- optional PostgreSQL and ingress-nginx when enabled in `values.yaml`.
+- ClickHouse;
+- optional PostgreSQL and ingress-nginx when enabled in the selected values
+  file.
 
 Twenty HQ, Mattermost, Headlamp, observability, production HA and
 infrastructure provisioning are not installed.
 
 ## Installation contract
 
-Before handoff, the installation package contains:
+The installation package contains:
 
 - this repository;
-- populated `values.yaml` and `values.secrets.yaml`;
+- complete values and secrets examples under `examples/`;
 - access to the exact chart and image repositories from `release.yaml`;
 - a kubeconfig whose current context points to the intended cluster.
 
-The customer selects only the target namespace and runs one command:
+The customer copies the examples, fills the customer-specific settings and
+secrets, selects the target namespace and runs one command:
 
 ```bash
-./scripts/install.sh --namespace phoenix
+./scripts/install.sh \
+  --namespace phoenix \
+  --values ./customer-values.yaml \
+  --secrets ./customer-secrets.yaml
 ```
 
 The script performs preflight validation, renders the complete manifest,
@@ -40,17 +46,18 @@ result. It never changes kube-context, node labels or customer infrastructure.
 Phoenix/customer administrators prepare the two files before installation:
 
 ```bash
-cp values.yaml.example values.yaml
-cp values.secrets.yaml.example values.secrets.yaml
-chmod 600 values.secrets.yaml
+cp examples/values.yaml customer-values.yaml
+cp examples/values.secrets.yaml customer-secrets.yaml
+chmod 600 customer-secrets.yaml
 ```
 
-`values.yaml` contains PostgreSQL, Redis, Cortex, ingress, storage and
-scheduling settings. `values.secrets.yaml` contains credentials and must never
-be committed.
+The values file contains PostgreSQL, Redis, Cortex PostgreSQL, ClickHouse,
+ingress, storage and scheduling settings. The secrets file contains credentials
+and must never be committed.
 
-The exact versions configured in `cnx-dev-eks/test` are recorded in
-`release.yaml`. Do not replace them during installation.
+The exact release versions are recorded in `release.yaml`. Do not replace them
+during installation. See [Configuration](docs/configuration.md#bundled-data-service-versions)
+for the bundled PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse versions.
 
 ## Images
 
@@ -68,9 +75,9 @@ To use another registry, copy the images without changing names or tags:
   --to registry.customer.example/phoenix
 ```
 
-Then set `imageRegistry` and, when required, `imagePullSecrets` in
-`values.yaml`. The source AWS credentials are used only on the mirroring host
-and are never stored in Kubernetes. See [Container images](docs/images.md).
+Then set `imageRegistry` and, when required, `imagePullSecrets` in the selected
+values file. The source AWS credentials are used only on the mirroring host and
+are never stored in Kubernetes. See [Container images](docs/images.md).
 
 To pull directly from the Phoenix ECR instead, enable the optional token
 refresher and reference its managed pull Secret:
@@ -104,6 +111,7 @@ See [Prerequisites](docs/prerequisites.md) for cluster requirements.
 - [Configuration](docs/configuration.md)
 - [Container images](docs/images.md)
 - [PostgreSQL](docs/postgresql.md)
+- [ClickHouse](docs/clickhouse.md)
 - [Ingress](docs/ingress.md)
 - [Scheduling](docs/scheduling.md)
 - [Troubleshooting](docs/troubleshooting.md)

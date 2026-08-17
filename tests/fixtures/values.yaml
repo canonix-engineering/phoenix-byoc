@@ -6,7 +6,8 @@ postgresql:
   external:
     host: postgresql-postgresql
     port: 5432
-    sslmode: disable
+    # The adapter must override this to disable for bundled PostgreSQL.
+    sslmode: require
 
 redis:
   bundled:
@@ -16,14 +17,17 @@ cortex:
   bundled:
     enabled: true
 
+clickhouse:
+  bundled:
+    enabled: true
+
 application:
   tenantId: phoenix_test
   appHost: localhost
+  spaHost: localhost
   allowedHosts: localhost,127.0.0.1
   cortex:
     host: cortex.test.invalid
-  clickhouse:
-    url: http://clickhouse.test.invalid:8123/phoenix_test
   mailer:
     from: Phoenix <noreply@test.invalid>
     domain: test.invalid

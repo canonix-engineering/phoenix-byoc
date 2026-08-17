@@ -1,5 +1,0 @@
-# Optional overlay to copy into values.yaml after mirroring all Phoenix images.
-# Tags remain pinned by release.yaml; only the registry path changes.
-imageRegistry: registry.customer.example/phoenix
-imagePullSecrets:
-  - name: phoenix-registry

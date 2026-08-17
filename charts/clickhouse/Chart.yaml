@@ -1,0 +1,6 @@
+apiVersion: v2
+name: clickhouse
+description: Single-node ClickHouse dependency for Phoenix BYOC.
+type: application
+version: 0.1.0
+appVersion: "25.1.8.25"

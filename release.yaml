@@ -6,6 +6,8 @@ release:
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
+  clickhouse: "25.1.8.25"
+  clickhouseChart: "0.1.0"
   cortexPostgresql: "0.1.0"
   ingressNginx: "4.12.2"
   opensandboxController: "0.1.0"
@@ -16,10 +18,15 @@ versions:
   postgresql: "2.0.4"
   redis: "1.6.18"
 
-# Exact runtime images observed in the cnx-dev-eks/test environment on
-# 2026-08-03. Set imageRegistry in values.yaml after copying every image to a
-# customer registry while preserving these names and tags.
+# Exact runtime images observed in the source environment declared above on
+# 2026-08-03. Set imageRegistry in the selected values file after copying every
+# image to a customer registry while preserving these names and tags.
 images:
+  clickhouse:
+    name: clickhouse
+    repository: clickhouse/clickhouse-server
+    tag: "25.1-alpine"
+    digest: "sha256:22cec0a6f21245b62bc243d458b65fc6c940ae22eeaaecdd789a63da91b57cbc"
   cortexPostgresql:
     name: cortex-postgresql
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/cortex-postgresql

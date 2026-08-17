@@ -1,0 +1,100 @@
+{{- if .Values.bundled.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "clickhouse.name" . }}
+  labels:
+{{ include "clickhouse.labels" . | indent 4 }}
+spec:
+  serviceName: {{ include "clickhouse.name" . }}
+  replicas: 1
+  selector:
+    matchLabels:
+{{ include "clickhouse.selectorLabels" . | indent 6 }}
+  template:
+    metadata:
+      labels:
+{{ include "clickhouse.selectorLabels" . | indent 8 }}
+      annotations:
+        checksum/credentials: {{ printf "%s:%s:%s" .Values.credentials.username .Values.credentials.password .Values.credentials.database | sha256sum }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+{{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml . | indent 8 }}
+{{- end }}
+      containers:
+        - name: clickhouse
+          image: {{ include "clickhouse.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          envFrom:
+            - secretRef:
+                name: {{ include "clickhouse.name" . }}
+          ports:
+            - name: http
+              containerPort: 8123
+            - name: native
+              containerPort: 9000
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - clickhouse-client --user "$CLICKHOUSE_USER" --password "$CLICKHOUSE_PASSWORD" --query "SELECT 1"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - clickhouse-client --user "$CLICKHOUSE_USER" --password "$CLICKHOUSE_PASSWORD" --query "SELECT 1"
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clickhouse
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+{{ include "clickhouse.labels" . | indent 10 }}
+      spec:
+        accessModes:
+          - ReadWriteOnce
+{{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+{{- end }}
+        resources:
+          requests:
+            storage: {{ required "persistence.size is required" .Values.persistence.size }}
+{{- end }}

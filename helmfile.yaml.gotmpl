@@ -3,8 +3,8 @@ environments:
     values:
       - release.yaml
       - defaults/values.yaml
-      - {{ env "PHOENIX_BYOC_VALUES_FILE" | default "values.yaml" | quote }}
-      - {{ env "PHOENIX_BYOC_SECRETS_FILE" | default "values.secrets.yaml" | quote }}
+      - {{ required "PHOENIX_BYOC_VALUES_FILE is required; use scripts/install.sh --values <path>" (env "PHOENIX_BYOC_VALUES_FILE") | quote }}
+      - {{ required "PHOENIX_BYOC_SECRETS_FILE is required; use scripts/install.sh --secrets <path>" (env "PHOENIX_BYOC_SECRETS_FILE") | quote }}
 {{- if env "PHOENIX_BYOC_NAMESPACE" }}
       - namespace: {{ env "PHOENIX_BYOC_NAMESPACE" | quote }}
 {{- end }}
@@ -77,8 +77,17 @@ releases:
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}
 
+  - name: clickhouse
+    namespace: {{ $namespace }}
+    installed: true
+    chart: ./charts/clickhouse
+    version: {{ .Values.versions.clickhouseChart | quote }}
+    values:
+      - values/clickhouse.yaml.gotmpl
+
   - name: opensandbox-controller
     namespace: {{ $namespace }}
+    installed: {{ .Values.opensandboxController.enabled }}
 {{- if $localCharts }}
     chart: {{ printf "%s/opensandbox-controller" $localCharts | quote }}
 {{- else }}
@@ -112,6 +121,7 @@ releases:
 {{- if .Values.redis.bundled.enabled }}
       - {{ $namespace }}/redis
 {{- end }}
+      - {{ $namespace }}/clickhouse
     wait: false
 
   - name: phoenix-web-frontend
@@ -161,7 +171,9 @@ releases:
 {{- if .Values.registry.ecrRefresh.enabled }}
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}
+{{- if .Values.opensandboxController.enabled }}
       - {{ $namespace }}/opensandbox-controller
+{{- end }}
       - {{ $namespace }}/phoenix-web
 {{- if .Values.cortex.bundled.enabled }}
       - {{ $namespace }}/cortex-postgresql

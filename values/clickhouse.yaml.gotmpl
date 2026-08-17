@@ -1,0 +1,51 @@
+{{- $repository := .Values.images.clickhouse.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.clickhouse.name }}
+{{- end }}
+{{- $connectionUrl := .Values.secrets.clickhouse.url }}
+{{- if .Values.clickhouse.bundled.enabled }}
+{{- $connectionUrl = printf "http://%s:%s@clickhouse:8123/%s" .Values.clickhouse.bundled.username .Values.secrets.clickhouse.password .Values.clickhouse.bundled.database }}
+{{- else }}
+{{- $connectionUrl = required "secrets.clickhouse.url is required when bundled ClickHouse is disabled" $connectionUrl }}
+{{- end }}
+
+bundled:
+  enabled: {{ .Values.clickhouse.bundled.enabled }}
+
+connection:
+  url: {{ $connectionUrl | quote }}
+
+image:
+  repository: {{ $repository | quote }}
+  tag: {{ .Values.images.clickhouse.tag | quote }}
+  digest: {{ .Values.images.clickhouse.digest | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+{{- if .Values.imageRegistry }}
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- else }}
+imagePullSecrets: []
+{{- end }}
+
+credentials:
+  username: {{ .Values.clickhouse.bundled.username | quote }}
+{{- if .Values.clickhouse.bundled.enabled }}
+  password: {{ required "secrets.clickhouse.password is required when bundled ClickHouse is enabled" .Values.secrets.clickhouse.password | quote }}
+{{- else }}
+  password: ""
+{{- end }}
+  database: {{ .Values.clickhouse.bundled.database | quote }}
+
+persistence:
+  size: {{ .Values.clickhouse.bundled.persistence.size }}
+  storageClass: {{ .Values.clickhouse.bundled.persistence.storageClass | quote }}
+
+resources:
+{{ toYaml .Values.clickhouse.bundled.resources | indent 2 }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

@@ -11,6 +11,30 @@ Phoenix uses five databases:
 The first four are owned by `phoenix_web`. The internal database should be
 owned by `phoenix_workflow_engine_internal`.
 
+## Bundled PostgreSQL
+
+For a functional installation with all dependencies in the target namespace:
+
+```yaml
+postgresql:
+  bundled:
+    enabled: true
+```
+
+The bundled chart does not enable PostgreSQL TLS. BYOC therefore derives every
+application DSN with `sslmode=disable`, regardless of the external PostgreSQL
+setting. `postgresql.external.sslmode` is used only when
+`postgresql.bundled.enabled=false`.
+
+Bundled PostgreSQL is single-node and is intended for installation validation,
+not production HA.
+
+## External PostgreSQL
+
+When `postgresql.bundled.enabled=false`, configure
+`postgresql.external.host`, `port` and `sslmode`. The selected `sslmode` is
+preserved in the Phoenix Gateway, Phoenix Web and Workflow Engine connections.
+
 ## Existing hooks
 
 To run the same database jobs used by the internal environments:

@@ -28,6 +28,7 @@ ingressNginx:
   tolerations: []
 
 opensandboxController:
+  enabled: true
   crds:
     install: true
     keep: true
@@ -43,6 +44,7 @@ postgresql:
   external:
     host: ""
     port: 5432
+    # Used only for external PostgreSQL. Bundled PostgreSQL always uses disable.
     sslmode: require
   hooks:
     phoenixWeb: true
@@ -76,16 +78,31 @@ cortex:
     enabled: true
     requiredRlsScopeVersion: "1"
 
+clickhouse:
+  bundled:
+    enabled: true
+    username: phoenix
+    database: phoenix
+    persistence:
+      size: 10Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
 application:
   tenantId: phoenix
   appHost: phoenix.example.com
+  spaHost: app.phoenix.example.com
   allowedHosts: phoenix.example.com,localhost
   toolboxId: ""
   cortex:
     host: ""
     scheme: http
-  clickhouse:
-    url: ""
   mailer:
     from: ""
     domain: ""
@@ -209,8 +226,12 @@ secrets:
   cortex:
     password: ""
     url: ""
+  clickhouse:
+    password: ""
+    url: ""
   application:
     secretKeyBase: ""
+    agentHarnessToken: ""
     workflowEngineArtifactApiToken: ""
     workflowEngineToken: ""
     internalServiceTokens: ""

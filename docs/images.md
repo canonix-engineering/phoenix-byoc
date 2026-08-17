@@ -4,15 +4,16 @@
 
 `release.yaml` pins all runtime images required by the platform:
 
-1. `cortex-postgresql`
-2. `phoenix-opensandbox-controller`
-3. `phoenix-agent`
-4. `phoenix-gateway`
-5. `phoenix-lab`
-6. `phoenix-opensandbox`
-7. `phoenix-web`
-8. `phoenix-web-frontend`
-9. `phoenix-workflow-engine`
+1. `clickhouse`
+2. `cortex-postgresql`
+3. `phoenix-opensandbox-controller`
+4. `phoenix-agent`
+5. `phoenix-gateway`
+6. `phoenix-lab`
+7. `phoenix-opensandbox`
+8. `phoenix-web`
+9. `phoenix-web-frontend`
+10. `phoenix-workflow-engine`
 
 Print exact references:
 
@@ -37,19 +38,19 @@ imageRegistry: ""
 ```
 
 The cluster must be able to pull the references printed by `images.sh list`.
-The current development snapshot records the exact references configured in
-`cnx-dev-eks/test`. Authenticate to that registry or mirror the images before
-installation. A stable customer release must use customer-accessible image
-locations.
+The current development snapshot records the exact references from the source
+environment declared in `release.yaml`. Authenticate to that registry or mirror
+the images before installation. A stable customer release must use
+customer-accessible image locations.
 
 ## Mirror to a customer registry
 
 The supplier provides per-customer AWS access keys for a read-only IAM user.
 Store them in an AWS CLI profile using your approved credential-storage process;
-do not put them in `values.yaml`, `values.secrets.yaml`, or Kubernetes.
+do not put them in the selected values or secrets files, or in Kubernetes.
 
 Install the AWS CLI and `crane`, authenticate `crane` to the destination
-registry, then copy all nine images. The mirror command obtains a short-lived
+registry, then copy all ten images. The mirror command obtains a short-lived
 source ECR token using the selected AWS profile without printing it:
 
 ```bash
@@ -92,10 +93,9 @@ the same pull-secret names through their Helm values.
 
 ## Pull directly from the Phoenix ECR
 
-Direct pull is optional and disabled by default. It uses the same per-customer
-read-only IAM user as mirroring. Enable the managed refresh mechanism in
-`values.yaml` (the same overlay is available as
-`examples/direct-ecr.values.yaml`):
+Direct pull uses the same per-customer read-only IAM user as mirroring. It is
+enabled in the complete `examples/values.yaml`. The relevant settings in the
+selected values file are:
 
 ```yaml
 imageRegistry: ""
@@ -112,7 +112,7 @@ registry:
 ```
 
 With an empty `credentialsSecretName`, place the IAM credentials in the
-protected, untracked `values.secrets.yaml`:
+protected, untracked file selected with `--secrets`:
 
 ```yaml
 secrets:
@@ -152,7 +152,7 @@ kubectl -n phoenix get cronjob/ecr-pull-secret-refresh
 kubectl -n phoenix get secret/phoenix-ecr-pull
 ```
 
-Node-level ECR credential providers remain a supported customer-owned
+Node-level registry credential providers remain a supported customer-owned
 alternative. In that case leave `registry.ecrRefresh.enabled=false` and do not
 configure the managed pull Secret.
 
@@ -166,8 +166,9 @@ aws ecr get-login-password --region REGION |
     --password-stdin
 ```
 
-EKS nodes may instead use their node IAM role. Cross-account registries also
-require an ECR repository policy permitting the node role to pull.
+Nodes may instead use a customer-configured registry credential provider.
+Cross-account registries also require a repository policy permitting that
+identity to pull.
 
 ## Verify availability
 

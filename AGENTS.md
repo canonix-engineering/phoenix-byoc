@@ -6,12 +6,14 @@ repository.
 Before any mutation:
 
 1. Read `BYOC_CONTRACT.md` and `docs/installation.md`.
-2. Read `release.yaml` and `values.yaml`.
-3. Confirm that `values.secrets.yaml` exists without printing its contents.
-4. Run `./scripts/preflight.sh`.
-5. Run `./scripts/render.sh`.
+2. Read `release.yaml` and the selected `--values` file.
+3. Confirm that the selected `--secrets` file exists without printing it.
+4. Export `PHOENIX_BYOC_NAMESPACE`, `PHOENIX_BYOC_VALUES_FILE` and
+   `PHOENIX_BYOC_SECRETS_FILE`, then run `./scripts/preflight.sh`.
+5. Run `./scripts/render.sh` with the same environment.
 6. Show the user the current context, namespace, enabled bundled dependencies
-   ECR refresh mode and rendered manifest location.
+   OpenSandbox controller mode, ECR refresh mode and rendered manifest
+   location.
 7. Obtain explicit confirmation before running install, upgrade, rollback or
    uninstall commands.
 
@@ -23,7 +25,8 @@ Never:
 - commit or print decoded secrets;
 - switch kube-context automatically;
 - delete PVCs, namespaces, CRDs or customer-managed databases;
-- claim success before `verify.sh` passes.
+- change Helm ownership annotations on existing OpenSandbox CRDs;
+- claim success before `verify.sh` passes;
 - print or decode IAM credentials or the managed ECR pull Secret.
 
 Use exact versions from `release.yaml`. Never invent image or chart versions.

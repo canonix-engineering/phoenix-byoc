@@ -1,44 +1,41 @@
-# Phoenix BYOC installation configuration.
-# Phoenix/customer administrators prepare values.yaml before handoff. The
-# installer receives the namespace as a command argument.
+# Complete Kubernetes-neutral Phoenix BYOC example.
+# Copy this file, replace every CHANGE_ME value, and pass the copy to
+# scripts/install.sh with --values.
 
-# Leave empty to use the exact repositories from release.yaml. Set after every
-# Phoenix image has been copied to a customer registry with its original name
-# and tag.
 imageRegistry: ""
-imagePullSecrets: []
+imagePullSecrets:
+  - name: phoenix-ecr-pull
 
-# Optional direct pull from the Phoenix private ECR. When enabled, also add
-# registry.ecrRefresh.pullSecretName to imagePullSecrets. Leave disabled when
-# mirroring images into a customer registry.
 registry:
   ecrRefresh:
-    enabled: false
+    enabled: true
     region: us-east-1
     schedule: "0 */6 * * *"
     pullSecretName: phoenix-ecr-pull
-    # Set to a pre-created Secret or ExternalSecret target containing
-    # AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and optional AWS_SESSION_TOKEN.
-    # Leave empty to read the credentials from values.secrets.yaml.
     credentialsSecretName: ""
 
 ingressNginx:
   enabled: false
 
 opensandboxController:
+  # Set false only when this cluster already has a compatible cluster-wide
+  # OpenSandbox controller and CRDs that the customer explicitly wants to reuse.
+  enabled: true
   crds:
     install: true
     keep: true
 
 postgresql:
   bundled:
-    enabled: false
+    enabled: true
     persistence:
       size: 10Gi
       storageClass: ""
   external:
-    host: CHANGE_ME_POSTGRES_HOST
+    host: ""
     port: 5432
+    # Used only when bundled.enabled=false. Bundled PostgreSQL has TLS disabled
+    # and the installer automatically renders sslmode=disable for it.
     sslmode: require
   hooks:
     phoenixWeb: true
@@ -58,19 +55,34 @@ cortex:
       size: 5Gi
       storageClass: ""
 
+clickhouse:
+  bundled:
+    enabled: true
+    username: phoenix
+    database: phoenix
+    persistence:
+      size: 10Gi
+      storageClass: ""
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+
 application:
   tenantId: CHANGE_ME_TENANT
-  appHost: CHANGE_ME_PHOENIX_HOST
-  allowedHosts: CHANGE_ME_PHOENIX_HOST,localhost
+  appHost: localhost
+  spaHost: localhost
+  allowedHosts: localhost,127.0.0.1
   toolboxId: ""
   cortex:
-    host: CHANGE_ME_CORTEX_HOST
+    host: cortex-stub
     scheme: http
-  clickhouse:
-    url: CHANGE_ME_CLICKHOUSE_URL
   mailer:
-    from: CHANGE_ME_MAIL_FROM
-    domain: CHANGE_ME_MAIL_DOMAIN
+    from: Phoenix <noreply@example.invalid>
+    domain: example.invalid
 
 services:
   web:
@@ -96,32 +108,30 @@ ingress:
   className: ""
   frontend:
     enabled: false
-    host: CHANGE_ME_PHOENIX_HOST
+    host: localhost
     annotations: {}
     tls: []
   web:
     enabled: false
-    host: CHANGE_ME_PHOENIX_API_HOST
+    host: localhost
     annotations: {}
     tls: []
   gateway:
     enabled: false
-    host: CHANGE_ME_GATEWAY_HOST
+    host: localhost
     annotations: {}
     tls: []
   workflowApi:
     enabled: false
-    host: CHANGE_ME_WORKFLOW_HOST
+    host: localhost
     annotations: {}
     tls: []
   artifactApi:
     enabled: false
-    host: CHANGE_ME_ARTIFACT_HOST
+    host: localhost
     annotations: {}
     tls: []
 
-# The customer owns all workload placement decisions. Empty values use the
-# cluster's normal scheduler behavior and never modify node labels.
 scheduling:
   nodeSelector: {}
   tolerations: []

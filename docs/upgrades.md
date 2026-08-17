@@ -5,8 +5,8 @@
 3. Check out the Git tag containing the target `release.yaml`.
 4. Run preflight and render.
 5. Review image, chart, Job, CRD and database migration changes.
-6. Run `install.sh`.
-7. Run `verify.sh` and application smoke tests.
+6. Run `install.sh` with the same `--namespace`, `--values` and `--secrets`.
+7. Run `verify.sh` with the same arguments and application smoke tests.
 
 Chart and image versions are immutable. Never edit a published version in
 place.

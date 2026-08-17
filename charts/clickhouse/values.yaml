@@ -1,0 +1,33 @@
+image:
+  repository: clickhouse/clickhouse-server
+  tag: "25.1-alpine"
+  digest: sha256:22cec0a6f21245b62bc243d458b65fc6c940ae22eeaaecdd789a63da91b57cbc
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+bundled:
+  enabled: true
+
+connection:
+  url: ""
+
+credentials:
+  username: phoenix
+  password: ""
+  database: phoenix
+
+persistence:
+  size: 10Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "2"
+    memory: 2Gi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

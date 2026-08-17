@@ -1,6 +1,8 @@
 {{- $databaseHost := .Values.postgresql.external.host }}
+{{- $databaseSslmode := .Values.postgresql.external.sslmode }}
 {{- if .Values.postgresql.bundled.enabled }}
 {{- $databaseHost = "postgresql-postgresql" }}
+{{- $databaseSslmode = "disable" }}
 {{- end }}
 {{- $repository := .Values.images.phoenixWeb.repository }}
 {{- if .Values.imageRegistry }}
@@ -35,12 +37,21 @@ web:
   skipCsrf: false
   allowedHosts: {{ .Values.application.allowedHosts | quote }}
   appHost: {{ .Values.application.appHost | quote }}
+  spaHost: {{ required "application.spaHost is required" .Values.application.spaHost | quote }}
   tenantId: {{ .Values.application.tenantId | quote }}
   cortex:
     host: {{ required "application.cortex.host is required" .Values.application.cortex.host | quote }}
     scheme: {{ .Values.application.cortex.scheme | quote }}
   clickhouse:
-    url: {{ required "application.clickhouse.url is required" .Values.application.clickhouse.url | quote }}
+    # The current chart requires a non-empty ConfigMap value. The real URL is
+    # injected below from Secret/clickhouse and overrides this compatibility URL.
+    url: "http://clickhouse.invalid/phoenix"
+  extraEnv:
+    - name: INVOCATION_LOGS_CLICKHOUSE_URL
+      valueFrom:
+        secretKeyRef:
+          name: clickhouse
+          key: CLICKHOUSE_HTTP_URL
   mcp:
     host: {{ printf "http://phoenix-gateway.%s.svc.%s:3002" .Values.namespace .Values.clusterDomain | quote }}
   phoenixGateway:
@@ -48,7 +59,7 @@ web:
   phoenixWeb:
     internalBaseUrl: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
   workflowEngine:
-    databaseUrl: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary .Values.postgresql.external.sslmode | quote }}
+    databaseUrl: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary $databaseSslmode | quote }}
     artifactApiUrl: {{ printf "http://phoenix-workflow-engine-artifact-api.%s.svc.%s:8081" .Values.namespace .Values.clusterDomain | quote }}
     workflowApiUrl: {{ printf "http://phoenix-workflow-engine-api.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
     startUrl: {{ printf "http://phoenix-workflow-engine-api.%s.svc.%s:8080/workflow-runs" .Values.namespace .Values.clusterDomain | quote }}
@@ -96,6 +107,7 @@ externalDatabase:
 
 secret:
   secretKeyBase: {{ required "secrets.application.secretKeyBase is required" .Values.secrets.application.secretKeyBase | quote }}
+  agentHarnessToken: {{ required "secrets.application.agentHarnessToken is required" .Values.secrets.application.agentHarnessToken | quote }}
   workflowEngineArtifactApiToken: {{ required "secrets.application.workflowEngineArtifactApiToken is required" .Values.secrets.application.workflowEngineArtifactApiToken | quote }}
   phoenixWorkflowEngineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
   phoenixInternalServiceTokens: {{ $internalServiceTokens | quote }}

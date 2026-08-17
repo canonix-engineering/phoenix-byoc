@@ -19,14 +19,17 @@ cortex:
   bundled:
     enabled: false
 
+clickhouse:
+  bundled:
+    enabled: false
+
 application:
   tenantId: phoenix_test
   appHost: phoenix.test.invalid
+  spaHost: app.test.invalid
   allowedHosts: phoenix.test.invalid,localhost
   cortex:
     host: cortex.test.invalid
-  clickhouse:
-    url: http://clickhouse.test.invalid:8123/phoenix_test
   mailer:
     from: Phoenix <noreply@test.invalid>
     domain: test.invalid

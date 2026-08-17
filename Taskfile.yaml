@@ -6,25 +6,15 @@ tasks:
     cmds:
       - task --list
 
-  preflight:
-    desc: Validate configuration and read-only cluster prerequisites
-    cmds:
-      - ./scripts/preflight.sh
-
-  render:
-    desc: Render all Kubernetes resources without applying them
-    cmds:
-      - ./scripts/render.sh
-
   install:
-    desc: Install or upgrade Phoenix; set CLI_ARGS=--namespace NAME
+    desc: Install or upgrade Phoenix; pass all required arguments in CLI_ARGS
     cmds:
       - ./scripts/install.sh {{.CLI_ARGS}}
 
   verify:
-    desc: Show Helm status for every enabled release
+    desc: Verify Phoenix; pass all required arguments in CLI_ARGS
     cmds:
-      - ./scripts/verify.sh
+      - ./scripts/verify.sh {{.CLI_ARGS}}
 
   images:
     desc: Print the exact Phoenix runtime images in this release

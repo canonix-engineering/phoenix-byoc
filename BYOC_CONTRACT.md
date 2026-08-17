@@ -4,6 +4,7 @@
 
 - immutable public OCI Helm charts listed in `release.yaml`;
 - exact container image references for the release and tools to mirror them;
+- bundled single-node ClickHouse, or configuration for an external ClickHouse;
 - an optional in-cluster refresher for direct pulls from the Phoenix private ECR;
 - Helmfile orchestration and example values;
 - configuration for the database hooks already provided by the application charts;
@@ -19,6 +20,9 @@
 - DNS, TLS certificates and the preferred ingress controller;
 - Redis when bundled Redis is disabled;
 - Cortex PostgreSQL when bundled Cortex is disabled;
+- ClickHouse when bundled ClickHouse is disabled;
+- a compatible cluster-wide OpenSandbox controller and CRDs when
+  `opensandboxController.enabled=false`;
 - application/API credentials required by the enabled workflows;
 - protected storage for the per-customer IAM access key when direct ECR refresh
   is enabled.

@@ -4,6 +4,8 @@ set -euo pipefail
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 devops_charts="${PHOENIX_BYOC_LOCAL_CHARTS:-$repo_root/../phoenix-devops/charts}"
 cache_dir="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
+example_tmp=$(mktemp -d)
+trap 'rm -rf "$example_tmp"' EXIT
 
 if [[ ! -d "$devops_charts/phoenix-web" ]]; then
   echo "ERROR: local charts not found; set PHOENIX_BYOC_LOCAL_CHARTS" >&2
@@ -51,6 +53,7 @@ for scenario in bundled external private-registry direct-ecr; do
       exit 1
     fi
     for image in \
+      clickhouse \
       cortex-postgresql \
       phoenix-agent \
       phoenix-gateway \
@@ -89,6 +92,90 @@ for scenario in bundled external private-registry direct-ecr; do
   fi
 done
 
+if grep -q 'postgresql-postgresql.*sslmode=require' \
+    "$repo_root/.rendered/test-bundled/all.yaml"; then
+  echo "ERROR: bundled PostgreSQL render incorrectly requires TLS" >&2
+  exit 1
+fi
+grep -q 'postgresql-postgresql.*sslmode=disable' \
+  "$repo_root/.rendered/test-bundled/all.yaml" || {
+    echo "ERROR: bundled PostgreSQL render is missing sslmode=disable" >&2
+    exit 1
+  }
+grep -q 'postgresql.test.invalid.*sslmode=verify-full' \
+  "$repo_root/.rendered/test-external/all.yaml" || {
+    echo "ERROR: external PostgreSQL render does not preserve customer sslmode" >&2
+    exit 1
+  }
+
+# The exact customer-facing examples must render after their documented
+# placeholders are replaced; fixtures alone are not sufficient coverage.
+sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
+  "$repo_root/examples/values.yaml" >"$example_tmp/values.yaml"
+sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
+  "$repo_root/examples/values.secrets.yaml" >"$example_tmp/secrets.yaml"
+example_render_dir="$repo_root/.rendered/test-customer-example"
+mkdir -p "$example_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$example_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$example_tmp/secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-example \
+    helmfile template --skip-deps --quiet \
+    >"$example_render_dir/all.yaml"
+)
+chmod 600 "$example_render_dir/all.yaml"
+grep -q 'name: clickhouse' "$example_render_dir/all.yaml" || {
+  echo "ERROR: customer example render is missing ClickHouse" >&2
+  exit 1
+}
+grep -q 'name: ecr-pull-secret-refresh' "$example_render_dir/all.yaml" || {
+  echo "ERROR: customer example render is missing direct ECR refresh" >&2
+  exit 1
+}
+if command -v kubeconform >/dev/null 2>&1; then
+  kubeconform \
+    -kubernetes-version 1.32.0 \
+    -strict \
+    -summary \
+    -ignore-missing-schemas \
+    "$example_render_dir/all.yaml"
+fi
+
+# A shared cluster may already have one compatible cluster-wide OpenSandbox
+# controller. The BYOC release must be able to reuse it without rendering a
+# second controller or attempting to adopt its CRDs.
+yq -i '.opensandboxController.enabled = false | .opensandboxController.crds.install = false' \
+  "$example_tmp/values.yaml"
+shared_controller_render_dir="$repo_root/.rendered/test-shared-controller"
+mkdir -p "$shared_controller_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$example_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$example_tmp/secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-example \
+    helmfile template --skip-deps --quiet \
+    >"$shared_controller_render_dir/all.yaml"
+)
+chmod 600 "$shared_controller_render_dir/all.yaml"
+if grep -q 'name: opensandbox-controller-manager' "$shared_controller_render_dir/all.yaml"; then
+  echo "ERROR: shared-controller render contains a second OpenSandbox controller" >&2
+  exit 1
+fi
+if grep -q 'kind: CustomResourceDefinition' "$shared_controller_render_dir/all.yaml"; then
+  echo "ERROR: shared-controller render attempts to install OpenSandbox CRDs" >&2
+  exit 1
+fi
+
+helm lint "$repo_root/charts/clickhouse" \
+  --set credentials.password=test-only-clickhouse \
+  --set connection.url=http://phoenix:test-only-clickhouse@clickhouse:8123/phoenix \
+  >/dev/null
+
 if command -v shellcheck >/dev/null 2>&1; then
   shellcheck "$repo_root"/scripts/*.sh
 fi
@@ -100,14 +187,12 @@ if command -v yamllint >/dev/null 2>&1; then
     "$repo_root/examples" \
     "$repo_root/release.yaml" \
     "$repo_root/tests" \
-    "$repo_root/Taskfile.yaml" \
-    "$repo_root/values.yaml.example" \
-    "$repo_root/values.secrets.yaml.example"
+    "$repo_root/Taskfile.yaml"
 fi
 
 image_count=$("$repo_root/scripts/images.sh" list | wc -l | tr -d ' ')
-if [[ "$image_count" != "9" ]]; then
-  echo "ERROR: release.yaml must contain exactly 9 Phoenix runtime images" >&2
+if [[ "$image_count" != "10" ]]; then
+  echo "ERROR: release.yaml must contain exactly 10 required runtime images" >&2
   exit 1
 fi
 while IFS= read -r image_ref; do
