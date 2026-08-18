@@ -51,9 +51,10 @@ The current release installs these exact Phoenix-owned chart versions:
 | Cortex PostgreSQL | `0.1.0` |
 | OpenSandbox controller | `0.2.0` |
 | Phoenix Gateway | `0.2.0` |
-| Phoenix Web | `0.2.0` |
+| Phoenix Web | `0.2.1` |
 | Phoenix Web Frontend | `0.1.0` |
 | Phoenix Workflow Engine | `0.2.0` |
+| PostgreSQL bootstrap (included in this repository) | `0.1.0` |
 
 The chart version is independent from the runtime image tag. Both are pinned
 in `release.yaml` and must be updated as one tested release.

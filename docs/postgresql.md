@@ -48,15 +48,19 @@ postgresql:
     workflowEngine: true
 ```
 
-If `postgresql.hooks.phoenixWeb=true`, the existing Phoenix Web pre-install
-hook creates/alters the `phoenix_web` role with `CREATEDB` and runs
-`rails db:prepare`.
+If `postgresql.hooks.phoenixWeb=true`, BYOC first creates or updates the
+`phoenix_web` role and primary database, then runs the Phoenix Web schema
+migrations. This bootstrap removes the first-install dependency cycle between
+Phoenix Web and Workflow Engine. After Workflow Engine is available, the
+existing Phoenix Web hook runs `rails db:prepare` and the configured application
+initialization tasks.
 
 If `postgresql.hooks.workflowEngine=true`, the existing Workflow Engine hook
 creates the internal role/database.
 
-Both modes require `secrets.postgresql.adminUrl`. The hooks are unchanged from
-the internal deployment charts.
+Both modes require `secrets.postgresql.adminUrl` when external PostgreSQL is
+selected. With bundled PostgreSQL, BYOC derives the administrative URL from the
+bundled superuser password.
 
 If the hooks are disabled, the customer is responsible for creating the roles
 and databases and running the required migrations.

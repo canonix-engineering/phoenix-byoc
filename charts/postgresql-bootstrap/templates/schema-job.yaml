@@ -1,0 +1,146 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-schema
+  labels:
+    app.kubernetes.io/name: postgresql-bootstrap
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: schema
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-5"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql-bootstrap
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: schema
+    spec:
+      restartPolicy: OnFailure
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: migrate
+          image: {{ printf "%s:%s" (required "image.repository is required" .Values.image.repository) (required "image.tag is required" .Values.image.tag) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /rails/bin/rails
+          args:
+            - db:create
+            - db:migrate
+          env:
+            - name: DATABASE_HOST
+              value: {{ required "externalDatabase.host is required" .Values.externalDatabase.host | quote }}
+            - name: DATABASE_PORT
+              value: {{ .Values.externalDatabase.port | quote }}
+            - name: PHOENIX_WEB_DATABASE_PASSWORD
+              value: {{ required "externalDatabase.password is required" .Values.externalDatabase.password | quote }}
+            - name: SECRET_KEY_BASE
+              value: {{ required "secret.secretKeyBase is required" .Values.secret.secretKeyBase | quote }}
+            - name: RAILS_ENV
+              value: {{ .Values.web.railsEnv | quote }}
+            - name: RAILS_LOG_TO_STDOUT
+              value: "true"
+            - name: APP_HOST
+              value: {{ .Values.web.appHost | quote }}
+            - name: SPA_HOST
+              value: {{ .Values.web.spaHost | quote }}
+            - name: TENANT_ID
+              value: {{ .Values.web.tenantId | quote }}
+            - name: CORTEX_HOST
+              value: {{ .Values.web.cortex.host | quote }}
+            - name: CORTEX_SCHEME
+              value: {{ .Values.web.cortex.scheme | quote }}
+            - name: INVOCATION_LOGS_CLICKHOUSE_URL
+              value: {{ .Values.web.clickhouse.url | quote }}
+            - name: MCP_HOST
+              value: {{ .Values.web.mcp.host | quote }}
+            - name: PHOENIX_GATEWAY_URL
+              value: {{ .Values.web.phoenixGateway.url | quote }}
+            - name: PHOENIX_WEB_INTERNAL_BASE_URL
+              value: {{ .Values.web.phoenixWeb.internalBaseUrl | quote }}
+            - name: WORKFLOW_ENGINE_DATABASE_URL
+              value: {{ .Values.web.workflowEngine.databaseUrl | quote }}
+            - name: WORKFLOW_ENGINE_ARTIFACT_API_URL
+              value: {{ .Values.web.workflowEngine.artifactApiUrl | quote }}
+            - name: WORKFLOW_ENGINE_WORKFLOW_API_URL
+              value: {{ .Values.web.workflowEngine.workflowApiUrl | quote }}
+            - name: WORKFLOW_START_URL
+              value: {{ .Values.web.workflowEngine.startUrl | quote }}
+            - name: WORKFLOW_ENGINE_ARTIFACT_API_TOKEN
+              value: {{ .Values.secret.workflowEngineArtifactApiToken | quote }}
+            - name: PHOENIX_WORKFLOW_ENGINE_TOKEN
+              value: {{ .Values.secret.phoenixWorkflowEngineToken | quote }}
+            - name: PHOENIX_INTERNAL_SERVICE_TOKENS
+              value: {{ .Values.secret.phoenixInternalServiceTokens | quote }}
+            - name: PHOENIX_AGENT_HARNESS_TOKEN
+              value: {{ .Values.secret.agentHarnessToken | quote }}
+            - name: GITHUB_PAT
+              value: {{ .Values.secret.githubPat | quote }}
+            - name: MAIL_FROM
+              value: {{ .Values.web.mailer.from | quote }}
+            - name: MAILGUN_FROM
+              value: {{ .Values.web.mailer.from | quote }}
+            - name: MAILGUN_DOMAIN
+              value: {{ .Values.web.mailer.domain | quote }}
+            - name: MAILGUN_API_KEY
+              value: {{ .Values.secret.mailgunApiKey | quote }}
+            {{- with .Values.web.mailer.deliveryMethod }}
+            - name: MAIL_DELIVERY_METHOD
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.web.mailer.smtp }}
+            {{- with .address }}
+            - name: SMTP_ADDRESS
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .port }}
+            - name: SMTP_PORT
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .userName }}
+            - name: SMTP_USER_NAME
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .authentication }}
+            - name: SMTP_AUTHENTICATION
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .enableStarttlsAuto }}
+            - name: SMTP_ENABLE_STARTTLS_AUTO
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .heloDomain }}
+            - name: SMTP_HELO_DOMAIN
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.secret.smtpPassword }}
+            - name: SMTP_PASSWORD
+              value: {{ . | quote }}
+            {{- end }}
+            - name: GUARDRAILS_TEST_TOKEN
+              value: {{ .Values.secret.guardrailsTestToken | quote }}
+            - name: JS_TRANSFORM_TEST_TOKEN
+              value: {{ .Values.secret.jsTransformTestToken | quote }}
+            - name: TOOL_INVOCATION_TEST_TOKEN
+              value: {{ .Values.secret.toolInvocationTestToken | quote }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

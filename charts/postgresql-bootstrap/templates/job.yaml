@@ -1,0 +1,108 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name: postgresql-bootstrap
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | quote }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "-10"
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgresql-bootstrap
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      restartPolicy: OnFailure
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: wait-for-postgresql
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z "$DATABASE_HOST" "$DATABASE_PORT"; do
+                echo "Waiting for PostgreSQL at $DATABASE_HOST:$DATABASE_PORT..."
+                sleep 2
+              done
+          env:
+            - name: DATABASE_HOST
+              value: {{ required "database.host is required" .Values.database.host | quote }}
+            - name: DATABASE_PORT
+              value: {{ .Values.database.port | quote }}
+      containers:
+        - name: create-primary-database
+          image: {{ printf "%s:%s" .Values.postgresImage.repository .Values.postgresImage.tag | quote }}
+          imagePullPolicy: {{ .Values.postgresImage.pullPolicy }}
+          env:
+            - name: ADMIN_DB_URL
+              value: {{ required "database.adminUrl is required" .Values.database.adminUrl | quote }}
+            - name: APPLICATION_DATABASE
+              value: {{ required "database.name is required" .Values.database.name | quote }}
+            - name: APPLICATION_USER
+              value: {{ required "database.user is required" .Values.database.user | quote }}
+            - name: APPLICATION_PASSWORD
+              value: {{ required "database.password is required" .Values.database.password | quote }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              psql "$ADMIN_DB_URL" \
+                -v ON_ERROR_STOP=1 \
+                -v app_database="$APPLICATION_DATABASE" \
+                -v app_user="$APPLICATION_USER" \
+                -v app_password="$APPLICATION_PASSWORD" <<-'EOSQL'
+                SELECT format(
+                  'CREATE ROLE %I WITH LOGIN CREATEDB PASSWORD %L',
+                  :'app_user',
+                  :'app_password'
+                )
+                WHERE NOT EXISTS (
+                  SELECT FROM pg_roles WHERE rolname = :'app_user'
+                )\gexec
+
+                SELECT format(
+                  'ALTER ROLE %I WITH LOGIN CREATEDB PASSWORD %L',
+                  :'app_user',
+                  :'app_password'
+                )\gexec
+
+                SELECT format(
+                  'CREATE DATABASE %I OWNER %I',
+                  :'app_database',
+                  :'app_user'
+                )
+                WHERE NOT EXISTS (
+                  SELECT FROM pg_database WHERE datname = :'app_database'
+                )\gexec
+
+                SELECT format(
+                  'ALTER DATABASE %I OWNER TO %I',
+                  :'app_database',
+                  :'app_user'
+                )\gexec
+              EOSQL
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

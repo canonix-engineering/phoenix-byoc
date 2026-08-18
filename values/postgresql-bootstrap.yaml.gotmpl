@@ -1,0 +1,29 @@
+{{- $databaseHost := .Values.postgresql.external.host }}
+{{- $adminUrl := .Values.secrets.postgresql.adminUrl }}
+{{- if .Values.postgresql.bundled.enabled }}
+{{- $databaseHost = "postgresql-postgresql" }}
+{{- $adminUrl = printf "postgresql://postgres:%s@postgresql-postgresql:%v/postgres?sslmode=disable&connect_timeout=10" .Values.secrets.postgresql.superuserPassword .Values.postgresql.external.port }}
+{{- end }}
+
+postgresImage:
+  repository: docker.io/library/postgres
+  tag: {{ .Values.postgresql.bundled.imageTag | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+
+database:
+  host: {{ required "postgresql.external.host is required when bundled PostgreSQL is disabled" $databaseHost | quote }}
+  port: {{ .Values.postgresql.external.port }}
+  adminUrl: {{ required "secrets.postgresql.adminUrl is required when PostgreSQL hooks are enabled" $adminUrl | quote }}
+  name: {{ .Values.postgresql.databases.primary | quote }}
+  user: {{ .Values.postgresql.users.application | quote }}
+  password: {{ required "secrets.postgresql.applicationPassword is required" .Values.secrets.postgresql.applicationPassword | quote }}
+
+nodeSelector:
+{{ toYaml .Values.scheduling.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.scheduling.tolerations | indent 2 }}
+affinity:
+{{ toYaml .Values.scheduling.affinity | indent 2 }}

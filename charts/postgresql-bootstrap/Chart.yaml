@@ -1,0 +1,6 @@
+apiVersion: v2
+name: postgresql-bootstrap
+description: Creates the Phoenix Web primary PostgreSQL database before application releases.
+type: application
+version: 0.1.0
+appVersion: "18.4"

@@ -6,9 +6,9 @@ Copy the complete Kubernetes-neutral examples and replace every `CHANGE_ME`
 value:
 
 ```bash
-cp examples/values.yaml customer-values.yaml
-cp examples/values.secrets.yaml customer-secrets.yaml
-chmod 600 customer-secrets.yaml
+cp examples/values.yaml values.yaml
+cp examples/values.secrets.yaml values.secrets.yaml
+chmod 600 values.secrets.yaml
 ```
 
 Registry credentials and kubeconfig access are supplied out of band. The
@@ -29,8 +29,8 @@ Run the only installation command with the target namespace:
 ```bash
 ./scripts/install.sh \
   --namespace phoenix \
-  --values ./customer-values.yaml \
-  --secrets ./customer-secrets.yaml
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
 ```
 
 The script:
@@ -51,8 +51,8 @@ The same explicit inputs are used for standalone verification:
 ```bash
 ./scripts/verify.sh \
   --namespace phoenix \
-  --values ./customer-values.yaml \
-  --secrets ./customer-secrets.yaml
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
 ```
 
 When `registry.ecrRefresh.enabled=true`, Helmfile installs the ECR refresh helper

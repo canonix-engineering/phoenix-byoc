@@ -1,0 +1,23 @@
+postgresImage:
+  repository: docker.io/library/postgres
+  tag: 18.4-trixie
+  pullPolicy: IfNotPresent
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+database:
+  host: ""
+  port: 5432
+  adminUrl: ""
+  name: ""
+  user: ""
+  password: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

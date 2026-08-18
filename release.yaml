@@ -1,5 +1,5 @@
 release:
-  version: "0.2.0-development.2"
+  version: "0.2.0-development.3"
   channel: development
   sourceEnvironment: test
   observedAt: "2026-08-18"
@@ -16,6 +16,7 @@ versions:
   phoenixWebFrontend: "0.1.0"
   phoenixWorkflowEngine: "0.2.0"
   postgresql: "2.0.4"
+  postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
 
 # Exact runtime images observed in the source environment declared above on
@@ -38,7 +39,7 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: "sha-c1af938602c90f51990a4123d1a158e871012a63"
+    tag: "sha-b535cb033c7954003add3ee0c78ca2bb0bbd8ebe"
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
@@ -50,16 +51,16 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: "sha-4aa9b4e5f7e2d0506bea9f3e2e23dffdbeb044a7"
+    tag: "sha-082d8d1f298f3a1ef861cbfdb61d29ff8aa28892"
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-b3dc2740440eb68e204944d5a205ab5067b8b76c"
+    tag: "sha-0ca8eace37f46e3e45ab8e41d4c69edff5304448"
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-b3dc2740440eb68e204944d5a205ab5067b8b76c"
+    tag: "sha-0ca8eace37f46e3e45ab8e41d4c69edff5304448"
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: "sha-4aa9b4e5f7e2d0506bea9f3e2e23dffdbeb044a7"
+    tag: "sha-082d8d1f298f3a1ef861cbfdb61d29ff8aa28892"

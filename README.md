@@ -30,8 +30,8 @@ secrets, selects the target namespace and runs one command:
 ```bash
 ./scripts/install.sh \
   --namespace phoenix \
-  --values ./customer-values.yaml \
-  --secrets ./customer-secrets.yaml
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
 ```
 
 The script performs preflight validation, renders the complete manifest,
@@ -43,9 +43,9 @@ result. It never changes kube-context, node labels or customer infrastructure.
 Phoenix/customer administrators prepare the two files before installation:
 
 ```bash
-cp examples/values.yaml customer-values.yaml
-cp examples/values.secrets.yaml customer-secrets.yaml
-chmod 600 customer-secrets.yaml
+cp examples/values.yaml values.yaml
+cp examples/values.secrets.yaml values.secrets.yaml
+chmod 600 values.secrets.yaml
 ```
 
 The values file contains PostgreSQL, Redis, Cortex PostgreSQL, ClickHouse,

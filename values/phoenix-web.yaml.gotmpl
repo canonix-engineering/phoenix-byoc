@@ -69,7 +69,9 @@ web:
     domain: {{ required "application.mailer.domain is required" .Values.application.mailer.domain | quote }}
 
 conversationStream:
-  redisUrl: {{ $redisUrl | quote }}
+  # Match the source test environment: the independent conversation stream
+  # reader is not enabled. web.redisUrl remains configured for web and worker.
+  redisUrl: ""
 
 worker:
   enabled: true

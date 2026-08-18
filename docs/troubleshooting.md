@@ -6,8 +6,8 @@ Render with the same explicit inputs without applying any resources:
 
 ```bash
 PHOENIX_BYOC_NAMESPACE=phoenix \
-PHOENIX_BYOC_VALUES_FILE=./customer-values.yaml \
-PHOENIX_BYOC_SECRETS_FILE=./customer-secrets.yaml \
+PHOENIX_BYOC_VALUES_FILE=./values.yaml \
+PHOENIX_BYOC_SECRETS_FILE=./values.secrets.yaml \
   ./scripts/render.sh
 ```
 
@@ -54,6 +54,9 @@ listed under `imagePullSecrets`.
 Inspect:
 
 ```bash
+kubectl -n phoenix get jobs -l app.kubernetes.io/name=postgresql-bootstrap
+kubectl -n phoenix logs job/postgresql-bootstrap --all-containers
+kubectl -n phoenix logs job/postgresql-bootstrap-schema --all-containers
 kubectl -n phoenix logs job/phoenix-web-db-init --all-containers
 ```
 

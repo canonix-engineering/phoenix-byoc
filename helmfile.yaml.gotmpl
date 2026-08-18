@@ -61,6 +61,19 @@ releases:
     values:
       - values/redis.yaml.gotmpl
 
+  - name: postgresql-bootstrap
+    namespace: {{ $namespace }}
+    installed: {{ .Values.postgresql.hooks.phoenixWeb }}
+    chart: ./charts/postgresql-bootstrap
+    version: {{ .Values.versions.postgresqlBootstrap | quote }}
+    values:
+      - values/phoenix-web.yaml.gotmpl
+      - values/postgresql-bootstrap.yaml.gotmpl
+{{- if .Values.postgresql.bundled.enabled }}
+    needs:
+      - {{ $namespace }}/postgresql
+{{- end }}
+
   - name: cortex-postgresql
     namespace: {{ $namespace }}
     installed: {{ .Values.cortex.bundled.enabled }}
@@ -122,6 +135,7 @@ releases:
       - {{ $namespace }}/redis
 {{- end }}
       - {{ $namespace }}/clickhouse
+      - {{ $namespace }}/phoenix-workflow-engine
     wait: false
 
   - name: phoenix-web-frontend
@@ -174,7 +188,9 @@ releases:
 {{- if .Values.opensandboxController.enabled }}
       - {{ $namespace }}/opensandbox-controller
 {{- end }}
-      - {{ $namespace }}/phoenix-web
+{{- if .Values.postgresql.hooks.phoenixWeb }}
+      - {{ $namespace }}/postgresql-bootstrap
+{{- end }}
 {{- if .Values.cortex.bundled.enabled }}
       - {{ $namespace }}/cortex-postgresql
 {{- end }}
