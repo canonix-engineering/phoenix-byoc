@@ -73,9 +73,9 @@ clickhouse:
 
 application:
   tenantId: CHANGE_ME_TENANT
-  appHost: localhost
-  spaHost: localhost
-  allowedHosts: localhost,127.0.0.1
+  appHost: CHANGE_ME_APP_HOST
+  spaHost: CHANGE_ME_APP_HOST
+  allowedHosts: CHANGE_ME_APP_HOST,localhost
   toolboxId: ""
   cortex:
     host: cortex-stub
@@ -105,10 +105,10 @@ services:
       storageClass: ""
 
 ingress:
-  className: ""
+  className: CHANGE_ME_INGRESS_CLASS
   frontend:
-    enabled: false
-    host: localhost
+    enabled: true
+    host: CHANGE_ME_APP_HOST
     annotations: {}
     tls: []
   web:
