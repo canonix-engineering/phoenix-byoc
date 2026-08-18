@@ -22,6 +22,8 @@ gateway:
   logLevel: info
   dbDsn: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary $databaseSslmode | quote }}
 
+engineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
+
 server:
   replicaCount: {{ .Values.services.gateway.replicas }}
 

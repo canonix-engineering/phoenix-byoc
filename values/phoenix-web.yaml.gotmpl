@@ -20,7 +20,7 @@
 {{- end }}
 {{- $internalServiceTokens := .Values.secrets.application.internalServiceTokens }}
 {{- if not $internalServiceTokens }}
-{{- $internalServiceTokens = printf `[{"identity":"phoenix-workflow-engine","token":%q,"scopes":["conversation:append","conversation:queue","workflow:context:read","workflow:feedback","workflow:feedback_capture"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
+{{- $internalServiceTokens = printf `[{"identity":"phoenix-gateway","token":%q,"scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
 {{- end }}
 
 image:

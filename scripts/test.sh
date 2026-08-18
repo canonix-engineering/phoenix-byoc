@@ -108,6 +108,45 @@ grep -q 'postgresql.test.invalid.*sslmode=verify-full' \
     exit 1
   }
 
+gateway_engine_token=$(yq -r \
+  'select(.kind == "Secret" and .metadata.name == "phoenix-gateway") | .data.PHOENIX_WORKFLOW_ENGINE_TOKEN' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+workflow_engine_token=$(yq -r \
+  'select(.kind == "Secret" and .metadata.name == "phoenix-workflow-engine") | .data.PHOENIX_WORKFLOW_ENGINE_TOKEN' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+if [[ -z "$gateway_engine_token" || "$gateway_engine_token" != "$workflow_engine_token" ]]; then
+  echo "ERROR: Gateway and Workflow Engine bearer tokens do not match" >&2
+  exit 1
+fi
+
+agent_harness_url=$(yq -r \
+  'select(.kind == "ConfigMap" and .metadata.name == "phoenix-workflow-engine") | .data.PHOENIX_AGENT_HARNESS_URL' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+if [[ "$agent_harness_url" != "ws://phoenix-web.phoenix.svc.cluster.local:80/cable" ]]; then
+  echo "ERROR: Workflow Engine agent harness URL is missing or incorrect" >&2
+  exit 1
+fi
+
+yq -e \
+  'select(.kind == "Job" and .metadata.name == "phoenix-workflow-engine-migrate")' \
+  "$repo_root/.rendered/test-bundled/all.yaml" >/dev/null || {
+    echo "ERROR: Workflow Engine migration Job is missing" >&2
+    exit 1
+  }
+
+if grep -Eq 'WORKFLOW_EVENTS_STREAMING_ENABLED|REDIS_CHANNEL_PREFIX' \
+    "$repo_root/.rendered/test-bundled/all.yaml"; then
+  echo "ERROR: rendered release contains the removed Redis workflow-event transport" >&2
+  exit 1
+fi
+
+if yq -r \
+  'select(.kind == "Secret" and .metadata.name == "phoenix-workflow-engine") | .data | keys | .[]' \
+  "$repo_root/.rendered/test-bundled/all.yaml" | grep -qx 'GITHUB_PAT'; then
+  echo "ERROR: Workflow Engine Secret contains the removed global GitHub PAT" >&2
+  exit 1
+fi
+
 # The exact customer-facing examples must render after their documented
 # placeholders are replaced; fixtures alone are not sufficient coverage.
 sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \

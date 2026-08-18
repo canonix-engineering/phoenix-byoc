@@ -48,11 +48,6 @@ workflow:
     phoenix-agent: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
     phoenix-lab: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
 
-workflowEventsStreaming:
-  enabled: true
-  redisUrl: {{ $redisUrl | quote }}
-  channelPrefix: phoenix_web_production
-
 phoenixWeb:
   url: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
 
@@ -120,6 +115,7 @@ operator:
 
 opensandbox:
   enabled: true
+  agentHarnessUrl: {{ printf "ws://phoenix-web.%s.svc.%s:80/cable" .Values.namespace .Values.clusterDomain | quote }}
   agentHarnessToken: {{ required "secrets.application.agentHarnessToken is required" .Values.secrets.application.agentHarnessToken | quote }}
   clusterRoleName: {{ printf "phoenix-workflow-engine-opensandbox-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
   endpoint: {{ printf "http://phoenix-workflow-engine-opensandbox.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
@@ -144,7 +140,6 @@ opensandbox:
 agentSecrets:
   claudeCodeOauthToken: {{ .Values.secrets.agents.claudeCodeOauthToken | quote }}
   anthropicApiKey: {{ .Values.secrets.agents.anthropicApiKey | quote }}
-  githubPat: {{ .Values.secrets.agents.githubPat | quote }}
   githubToken: {{ .Values.secrets.agents.githubToken | quote }}
   openaiApiKey: {{ .Values.secrets.agents.openaiApiKey | quote }}
   geminiApiKey: {{ .Values.secrets.agents.geminiApiKey | quote }}

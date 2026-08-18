@@ -42,6 +42,22 @@ bundled component is enabled:
 `release.yaml` is the authoritative source. The table documents the current
 release and must be updated together with it.
 
+## Phoenix chart versions
+
+The current release installs these exact Phoenix-owned chart versions:
+
+| Component | Helm chart version |
+| --- | --- |
+| Cortex PostgreSQL | `0.1.0` |
+| OpenSandbox controller | `0.2.0` |
+| Phoenix Gateway | `0.2.0` |
+| Phoenix Web | `0.2.0` |
+| Phoenix Web Frontend | `0.1.0` |
+| Phoenix Workflow Engine | `0.2.0` |
+
+The chart version is independent from the runtime image tag. Both are pinned
+in `release.yaml` and must be updated as one tested release.
+
 ## Scheduling
 
 `scheduling.nodeSelector`, `scheduling.tolerations` and
@@ -93,5 +109,5 @@ secret fields shown in the example secrets file. The complete example already
 contains the Cortex compatibility value; no Cortex HTTP service is installed.
 
 `secrets.application.internalServiceTokens` is an advanced override. Leave it
-empty to derive the Workflow Engine service identity from
+empty to derive the Phoenix Gateway service identity from
 `secrets.application.workflowEngineToken`.
