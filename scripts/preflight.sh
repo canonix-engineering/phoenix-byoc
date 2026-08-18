@@ -116,19 +116,36 @@ for path in \
   application.cortex.host \
   application.cortex.scheme \
   application.mailer.from \
-  application.mailer.domain \
   secrets.postgresql.applicationPassword \
   secrets.postgresql.internalPassword \
   secrets.application.secretKeyBase \
   secrets.application.agentHarnessToken \
   secrets.application.workflowEngineArtifactApiToken \
   secrets.application.workflowEngineToken \
-  secrets.application.mailgunApiKey \
   secrets.application.guardrailsTestToken \
   secrets.application.jsTransformTestToken \
   secrets.application.toolInvocationTestToken; do
   require_value "$path"
 done
+
+mail_delivery_method=$(value application.mailer.deliveryMethod)
+case "$mail_delivery_method" in
+  ""|mailgun)
+    require_value application.mailer.domain
+    require_value secrets.application.mailgunApiKey
+    ;;
+  smtp)
+    require_value application.mailer.smtp.address
+    require_value application.mailer.smtp.port
+    if [[ -n "$(value application.mailer.smtp.userName)" ]]; then
+      require_value secrets.application.smtpPassword
+    fi
+    ;;
+  *)
+    echo "ERROR: application.mailer.deliveryMethod must be empty, mailgun or smtp." >&2
+    exit 1
+    ;;
+esac
 
 bundled_postgresql=$(value postgresql.bundled.enabled)
 bundled_redis=$(value redis.bundled.enabled)

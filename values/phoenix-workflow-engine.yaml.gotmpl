@@ -93,6 +93,9 @@ internalDatabase:
 cortexDatabase:
   url: {{ $cortexUrl | quote }}
 
+sdlcIntake:
+  incrementalReindexEnabled: {{ .Values.services.workflowEngine.sdlcIncrementalReindexEnabled }}
+
 api:
   replicaCount: {{ .Values.services.workflowEngine.apiReplicas }}
 
@@ -100,6 +103,7 @@ engineToken: {{ required "secrets.application.workflowEngineToken is required" .
 
 artifactApi:
   replicaCount: {{ .Values.services.workflowEngine.artifactApiReplicas }}
+  tokenTtl: {{ .Values.services.workflowEngine.artifactApiTokenTtl | quote }}
   sandboxBaseUrl: {{ printf "http://phoenix-workflow-engine-artifact-api.%s.svc.%s:8081" .Values.namespace .Values.clusterDomain | quote }}
   serviceToken: {{ required "secrets.application.workflowEngineArtifactApiToken is required" .Values.secrets.application.workflowEngineArtifactApiToken | quote }}
   persistence:
@@ -112,6 +116,11 @@ orchestrator:
 
 operator:
   replicaCount: {{ .Values.services.workflowEngine.operatorReplicas }}
+  maxConcurrentSandboxTasks: {{ .Values.services.workflowEngine.operator.maxConcurrentSandboxTasks }}
+  maxConcurrentInProcessTasks: {{ .Values.services.workflowEngine.operator.maxConcurrentInProcessTasks }}
+  inProcessWorkflowStepRunTimeout: {{ .Values.services.workflowEngine.operator.inProcessWorkflowStepRunTimeout | quote }}
+  resources:
+{{ toYaml .Values.services.workflowEngine.operator.resources | indent 4 }}
 
 opensandbox:
   enabled: true
@@ -120,6 +129,10 @@ opensandbox:
   clusterRoleName: {{ printf "phoenix-workflow-engine-opensandbox-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
   endpoint: {{ printf "http://phoenix-workflow-engine-opensandbox.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
   executionTimeout: {{ .Values.services.opensandbox.executionTimeout | quote }}
+  outputArchiveMaxBytes: {{ .Values.services.opensandbox.outputArchiveMaxBytes | quote }}
+  outputArchiveMaxFiles: {{ .Values.services.opensandbox.outputArchiveMaxFiles | quote }}
+  outputArchiveMaxSingleFileBytes: {{ .Values.services.opensandbox.outputArchiveMaxSingleFileBytes | quote }}
+  outputArchiveMaxTotalFileBytes: {{ .Values.services.opensandbox.outputArchiveMaxTotalFileBytes | quote }}
   image:
     repository: {{ $opensandboxRepository | quote }}
     tag: {{ .Values.images.phoenixOpensandbox.tag | quote }}

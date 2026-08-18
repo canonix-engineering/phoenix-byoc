@@ -93,6 +93,48 @@ It may be managed by an ExternalSecret.
 `ingressNginx.enabled` controls installation of the ingress controller.
 Individual application ingress resources are controlled under `ingress.*`.
 
+## Phoenix Web runtime
+
+`application.actionCableAllowedOrigins` is passed to Phoenix Web as
+`ACTION_CABLE_ALLOWED_ORIGINS`. Use a comma-separated list of allowed WebSocket
+origins, including the scheme, for example
+`https://phoenix.customer.example`.
+
+Mail delivery values are passed through `application.mailer`:
+
+- `from` and `domain` configure the sender and Mailgun domain;
+- `deliveryMethod` is passed as `MAIL_DELIVERY_METHOD`; an empty value keeps
+  the application image's default delivery method;
+- `smtp.address`, `port`, `userName`, `authentication`,
+  `enableStarttlsAuto` and `heloDomain` are passed as their corresponding
+  `SMTP_*` variables;
+- `secrets.application.mailgunApiKey` and
+  `secrets.application.smtpPassword` contain provider credentials.
+
+Preflight requires the Mailgun domain and API key when `deliveryMethod` is
+empty or `mailgun`. When it is `smtp`, the SMTP address and port are required;
+an SMTP password is required when a username is configured.
+
+## Workflow execution limits
+
+The customer-facing workflow settings are under `services.workflowEngine` and
+`services.opensandbox`:
+
+- `operator.maxConcurrentSandboxTasks` and
+  `operator.maxConcurrentInProcessTasks` cap work admitted by each operator
+  replica;
+- `operator.inProcessWorkflowStepRunTimeout` controls deterministic-step
+  timeout;
+- `operator.resources` configures the operator Pod requests and limits;
+- `artifactApiTokenTtl` configures artifact-token lifetime;
+- `sdlcIncrementalReindexEnabled` controls incremental SDLC reindexing;
+- `outputArchiveMaxBytes`, `outputArchiveMaxFiles`,
+  `outputArchiveMaxSingleFileBytes` and `outputArchiveMaxTotalFileBytes` bound
+  archives read from sandboxes.
+
+These values are passed directly to the Phoenix Workflow Engine chart. They do
+not change node labels, placement policy or cluster capacity.
+
 ## Secrets
 
 The file selected with `--secrets` supplies the existing secret and database

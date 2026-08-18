@@ -76,6 +76,7 @@ application:
   appHost: CHANGE_ME_APP_HOST
   spaHost: CHANGE_ME_APP_HOST
   allowedHosts: CHANGE_ME_APP_HOST,localhost
+  actionCableAllowedOrigins: https://CHANGE_ME_APP_HOST
   toolboxId: ""
   cortex:
     host: cortex-stub
@@ -83,6 +84,16 @@ application:
   mailer:
     from: Phoenix <noreply@example.invalid>
     domain: example.invalid
+    # Empty means the application's default provider (currently Mailgun).
+    # Set to smtp to pass the SMTP settings below to phoenix-web.
+    deliveryMethod: ""
+    smtp:
+      address: ""
+      port: ""
+      userName: ""
+      authentication: ""
+      enableStarttlsAuto: ""
+      heloDomain: ""
 
 services:
   web:
@@ -95,11 +106,28 @@ services:
   workflowEngine:
     apiReplicas: 1
     artifactApiReplicas: 1
+    artifactApiTokenTtl: 1h
     orchestratorReplicas: 1
     operatorReplicas: 1
+    sdlcIncrementalReindexEnabled: true
+    operator:
+      maxConcurrentSandboxTasks: 5
+      maxConcurrentInProcessTasks: 5
+      inProcessWorkflowStepRunTimeout: 30m
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: "1"
+          memory: 512Mi
   opensandbox:
     executionTimeout: 360m
     sandboxCreateTimeoutSeconds: 300
+    outputArchiveMaxBytes: "4294967296"
+    outputArchiveMaxFiles: "1000"
+    outputArchiveMaxSingleFileBytes: "2147483648"
+    outputArchiveMaxTotalFileBytes: "4294967296"
     persistence:
       size: 30Gi
       storageClass: ""

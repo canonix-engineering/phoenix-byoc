@@ -50,6 +50,10 @@ Helm apply operations as approval boundaries.
 6. Run `./scripts/install.sh --namespace <approved-namespace> --values <values-path> --secrets <secrets-path>`.
 7. Report failed resources and relevant logs; never delete PVCs, CRDs,
    namespaces or customer databases as remediation.
+8. Explain that a fresh database has no administrator account. After successful
+   verification, offer the procedure in
+   `docs/installation.md#create-the-initial-administrator` as a separate
+   database mutation and obtain explicit confirmation before running it.
 
 ## Upgrade or roll back
 

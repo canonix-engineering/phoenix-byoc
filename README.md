@@ -38,6 +38,10 @@ The script performs preflight validation, renders the complete manifest,
 installs or upgrades every enabled release, waits for workloads and prints the
 result. It never changes kube-context, node labels or customer infrastructure.
 
+A fresh database does not contain an administrator account. After the workloads
+are ready, create the first owner with the procedure in
+[Installation](docs/installation.md#create-the-initial-administrator).
+
 ## Preparing the package
 
 Phoenix/customer administrators prepare the two files before installation:

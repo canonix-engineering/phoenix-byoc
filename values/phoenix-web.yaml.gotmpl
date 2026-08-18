@@ -19,6 +19,7 @@
 {{- $adminUrl = printf "postgresql://postgres:%s@postgresql-postgresql:%v/postgres?sslmode=disable" .Values.secrets.postgresql.superuserPassword .Values.postgresql.external.port }}
 {{- end }}
 {{- $internalServiceTokens := .Values.secrets.application.internalServiceTokens }}
+{{- $mailDeliveryMethod := .Values.application.mailer.deliveryMethod | default "mailgun" }}
 {{- if not $internalServiceTokens }}
 {{- $internalServiceTokens = printf `[{"identity":"phoenix-gateway","token":%q,"scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
 {{- end }}
@@ -36,6 +37,7 @@ web:
   logLevel: info
   skipCsrf: false
   allowedHosts: {{ .Values.application.allowedHosts | quote }}
+  actionCableAllowedOrigins: {{ .Values.application.actionCableAllowedOrigins | quote }}
   appHost: {{ .Values.application.appHost | quote }}
   spaHost: {{ required "application.spaHost is required" .Values.application.spaHost | quote }}
   tenantId: {{ .Values.application.tenantId | quote }}
@@ -66,7 +68,15 @@ web:
   redisUrl: {{ $redisUrl | quote }}
   mailer:
     from: {{ required "application.mailer.from is required" .Values.application.mailer.from | quote }}
-    domain: {{ required "application.mailer.domain is required" .Values.application.mailer.domain | quote }}
+    domain: {{ .Values.application.mailer.domain | quote }}
+    deliveryMethod: {{ .Values.application.mailer.deliveryMethod | quote }}
+    smtp:
+      address: {{ .Values.application.mailer.smtp.address | quote }}
+      port: {{ .Values.application.mailer.smtp.port | quote }}
+      userName: {{ .Values.application.mailer.smtp.userName | quote }}
+      authentication: {{ .Values.application.mailer.smtp.authentication | quote }}
+      enableStarttlsAuto: {{ .Values.application.mailer.smtp.enableStarttlsAuto | quote }}
+      heloDomain: {{ .Values.application.mailer.smtp.heloDomain | quote }}
 
 conversationStream:
   # Match the source test environment: the independent conversation stream
@@ -114,7 +124,8 @@ secret:
   phoenixWorkflowEngineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
   phoenixInternalServiceTokens: {{ $internalServiceTokens | quote }}
   githubPat: {{ .Values.secrets.agents.githubPat | quote }}
-  mailgunApiKey: {{ required "secrets.application.mailgunApiKey is required" .Values.secrets.application.mailgunApiKey | quote }}
+  mailgunApiKey: {{ if eq $mailDeliveryMethod "smtp" }}{{ .Values.secrets.application.mailgunApiKey | quote }}{{ else }}{{ required "secrets.application.mailgunApiKey is required when application.mailer.deliveryMethod is mailgun or empty" .Values.secrets.application.mailgunApiKey | quote }}{{ end }}
+  smtpPassword: {{ .Values.secrets.application.smtpPassword | quote }}
   guardrailsTestToken: {{ required "secrets.application.guardrailsTestToken is required" .Values.secrets.application.guardrailsTestToken | quote }}
   jsTransformTestToken: {{ required "secrets.application.jsTransformTestToken is required" .Values.secrets.application.jsTransformTestToken | quote }}
   toolInvocationTestToken: {{ required "secrets.application.toolInvocationTestToken is required" .Values.secrets.application.toolInvocationTestToken | quote }}

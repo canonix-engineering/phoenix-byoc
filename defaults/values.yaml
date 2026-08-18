@@ -99,6 +99,7 @@ application:
   appHost: phoenix.example.com
   spaHost: app.phoenix.example.com
   allowedHosts: phoenix.example.com,localhost
+  actionCableAllowedOrigins: ""
   toolboxId: ""
   cortex:
     host: ""
@@ -106,6 +107,14 @@ application:
   mailer:
     from: ""
     domain: ""
+    deliveryMethod: ""
+    smtp:
+      address: ""
+      port: ""
+      userName: ""
+      authentication: ""
+      enableStarttlsAuto: ""
+      heloDomain: ""
   workflowDefinitions:
     - workflow_definitions/v1/sdlc.yaml
     - workflow_definitions/v1/repo-onboarding.yaml
@@ -122,11 +131,28 @@ services:
   workflowEngine:
     apiReplicas: 1
     artifactApiReplicas: 1
+    artifactApiTokenTtl: 1h
     orchestratorReplicas: 1
     operatorReplicas: 1
+    sdlcIncrementalReindexEnabled: true
+    operator:
+      maxConcurrentSandboxTasks: 5
+      maxConcurrentInProcessTasks: 5
+      inProcessWorkflowStepRunTimeout: 30m
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: "1"
+          memory: 512Mi
   opensandbox:
     executionTimeout: 360m
     sandboxCreateTimeoutSeconds: 300
+    outputArchiveMaxBytes: "4294967296"
+    outputArchiveMaxFiles: "1000"
+    outputArchiveMaxSingleFileBytes: "2147483648"
+    outputArchiveMaxTotalFileBytes: "4294967296"
     persistence:
       size: 30Gi
       storageClass: ""
@@ -236,6 +262,7 @@ secrets:
     workflowEngineToken: ""
     internalServiceTokens: ""
     mailgunApiKey: ""
+    smtpPassword: ""
     guardrailsTestToken: ""
     jsTransformTestToken: ""
     toolInvocationTestToken: ""
