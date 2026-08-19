@@ -20,6 +20,9 @@ persistence:
   size: {{ .Values.cortex.bundled.persistence.size | quote }}
   storageClassName: {{ .Values.cortex.bundled.persistence.storageClass | quote }}
 
+resources:
+{{ toYaml .Values.cortex.bundled.resources | indent 2 }}
+
 externalService:
   enabled: false
 

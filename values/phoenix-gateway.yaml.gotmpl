@@ -26,6 +26,8 @@ engineToken: {{ required "secrets.application.workflowEngineToken is required" .
 
 server:
   replicaCount: {{ .Values.services.gateway.replicas }}
+  resources:
+{{ toYaml .Values.services.gateway.resources | indent 4 }}
 
 service:
   type: ClusterIP

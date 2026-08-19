@@ -20,6 +20,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 serviceAccountName: {{ include "ecr-pull-secret-refresh.name" . }}
 automountServiceAccountToken: true
 restartPolicy: Never
+{{- with .Values.nodeSelector }}
+nodeSelector:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with .Values.tolerations }}
+tolerations:
+{{ toYaml . | indent 2 }}
+{{- end }}
+{{- with .Values.affinity }}
+affinity:
+{{ toYaml . | indent 2 }}
+{{- end }}
 securityContext:
   runAsNonRoot: true
   runAsUser: 1000

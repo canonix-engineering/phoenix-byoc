@@ -5,3 +5,5 @@ controller:
 {{ toYaml .Values.ingressNginx.nodeSelector | indent 4 }}
   tolerations:
 {{ toYaml .Values.ingressNginx.tolerations | indent 4 }}
+  affinity:
+{{ toYaml .Values.ingressNginx.affinity | indent 4 }}

@@ -24,6 +24,8 @@
 - a compatible cluster-wide OpenSandbox controller and CRDs when
   `opensandboxController.enabled=false`;
 - application/API credentials required by the enabled workflows;
+- GKE Workload Identity, Google IAM bindings and Vertex model access when the
+  optional `vertex.enabled` mode is selected;
 - protected storage for the per-customer IAM access key when direct ECR refresh
   is enabled.
 

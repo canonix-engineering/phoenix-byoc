@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.3"
+  version: "0.2.0-development.4"
   channel: development
   sourceEnvironment: test
-  observedAt: "2026-08-18"
+  observedAt: "2026-08-19"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -14,13 +14,13 @@ versions:
   phoenixGateway: "0.2.0"
   phoenixWeb: "0.2.1"
   phoenixWebFrontend: "0.1.0"
-  phoenixWorkflowEngine: "0.2.0"
+  phoenixWorkflowEngine: "0.2.1"
   postgresql: "2.0.4"
   postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
 
 # Exact runtime images observed in the source environment declared above on
-# 2026-08-18. Set imageRegistry in the selected values file after copying every
+# 2026-08-19. Set imageRegistry in the selected values file after copying every
 # image to a customer registry while preserving these names and tags.
 images:
   clickhouse:
@@ -39,11 +39,11 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: "sha-b535cb033c7954003add3ee0c78ca2bb0bbd8ebe"
+    tag: "sha-ea506f61364e68121691fced5dfe6207d45964cf"
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
-    tag: "sha-9e6745af2dd62438f5a19879af843d64c0d9b858"
+    tag: "sha-1dd099cff147ae3306885dc25f4232a0a22a05b0"
   phoenixLab:
     name: phoenix-lab
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab
@@ -51,16 +51,16 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: "sha-082d8d1f298f3a1ef861cbfdb61d29ff8aa28892"
+    tag: "sha-a5cf329b22c3c3c32a2752c04a90038a51d28617"
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-0ca8eace37f46e3e45ab8e41d4c69edff5304448"
+    tag: "sha-766c4926289c591fcb56f89e2a1d3549eb22c237"
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-0ca8eace37f46e3e45ab8e41d4c69edff5304448"
+    tag: "sha-766c4926289c591fcb56f89e2a1d3549eb22c237"
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: "sha-082d8d1f298f3a1ef861cbfdb61d29ff8aa28892"
+    tag: "sha-a5cf329b22c3c3c32a2752c04a90038a51d28617"

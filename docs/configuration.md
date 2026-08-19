@@ -53,7 +53,7 @@ The current release installs these exact Phoenix-owned chart versions:
 | Phoenix Gateway | `0.2.0` |
 | Phoenix Web | `0.2.1` |
 | Phoenix Web Frontend | `0.1.0` |
-| Phoenix Workflow Engine | `0.2.0` |
+| Phoenix Workflow Engine | `0.2.1` |
 | PostgreSQL bootstrap (included in this repository) | `0.1.0` |
 
 The chart version is independent from the runtime image tag. Both are pinned
@@ -65,8 +65,15 @@ in `release.yaml` and must be updated as one tested release.
 `scheduling.affinity` are passed to Phoenix workloads and bundled data
 services. Empty values leave placement to the cluster scheduler.
 
-Sandbox sizes are configured under `scheduling.sandboxResourceClasses`.
-Confirm that at least one node can satisfy every enabled class.
+Dynamic sandbox placement and sizes are configured separately under every
+entry in `scheduling.sandboxResourceClasses`. Resource classes accept
+`nodeSelector`, `tolerations`, `affinity` and `resources`. Confirm that at least
+one matching node can satisfy every enabled class. See `docs/scheduling.md`.
+
+The ECR token refresh Job and CronJob use the common `scheduling.*` placement.
+The optional ingress controller uses its dedicated
+`ingressNginx.nodeSelector`, `ingressNginx.tolerations` and
+`ingressNginx.affinity` values.
 
 ## Images
 
@@ -115,6 +122,35 @@ Preflight requires the Mailgun domain and API key when `deliveryMethod` is
 empty or `mailgun`. When it is `smtp`, the SMTP address and port are required;
 an SMTP password is required when a username is configured.
 
+## Claude Code through Google Vertex AI
+
+`vertex.enabled` optionally routes sandboxed Claude Code agents through Google
+Vertex AI. This mode is supported only on GKE with Workload Identity enabled.
+It does not mount a Google service-account key.
+
+The customer configures the non-secret values under `vertex`:
+
+- `projectId`: GCP project used for Vertex requests;
+- `region`: Vertex endpoint location;
+- `serviceAccount.name`: Kubernetes ServiceAccount assigned to sandbox Pods;
+- `serviceAccount.gcpServiceAccount`: Google Service Account impersonated by
+  the Kubernetes ServiceAccount;
+- `serviceAccount.create`: create and annotate the Kubernetes ServiceAccount,
+  or reference one managed separately by the customer;
+- `models.*`: Vertex model identifiers available in the customer's Model
+  Garden.
+
+The Google Service Account needs `roles/aiplatform.user`. The customer must
+also grant `roles/iam.workloadIdentityUser` to
+`serviceAccount:<PROJECT_ID>.svc.id.goog[<NAMESPACE>/<KSA_NAME>]`. When
+`serviceAccount.create=false`, the existing Kubernetes ServiceAccount must
+already carry the `iam.gke.io/gcp-service-account` annotation.
+
+When `vertex.enabled=true`, the workflow-engine chart deliberately omits
+`CLAUDE_CODE_OAUTH_TOKEN` and `ANTHROPIC_API_KEY` from sandbox credentials.
+Those two fields in `values.secrets.yaml` may remain empty. Other provider and
+Git credentials remain independent.
+
 ## Workflow execution limits
 
 The customer-facing workflow settings are under `services.workflowEngine` and
@@ -134,6 +170,13 @@ The customer-facing workflow settings are under `services.workflowEngine` and
 
 These values are passed directly to the Phoenix Workflow Engine chart. They do
 not change node labels, placement policy or cluster capacity.
+
+The example also exposes the application workload resources observed in the
+source `test` environment under `services.web.resources`,
+`services.worker.resources`, `services.frontend.resources`,
+`services.gateway.resources`, `services.workflowEngine.apiResources`,
+`services.workflowEngine.operator.resources`,
+`opensandboxController.resources`, and `cortex.bundled.resources`.
 
 ## Secrets
 

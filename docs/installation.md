@@ -2,8 +2,10 @@
 
 ## Inputs supplied before installation
 
-Copy the complete Kubernetes-neutral examples and replace every `CHANGE_ME`
-value:
+Copy the complete examples and replace every `CHANGE_ME` value. The supplied
+placement matches the Phoenix `test` environment; replace or remove the
+`canonix.ai/node-role` selector and toleration for a customer cluster that uses
+different node labels or taints:
 
 ```bash
 cp examples/values.yaml values.yaml
@@ -79,7 +81,7 @@ and streamed to the Rails process; it is not included in the shell command or
 printed by the command.
 
 ```bash
-export PHOENIX_NAMESPACE=phoenix
+export PHOENIX_NAMESPACE=phoenix-byoc
 export ENTERPRISE_NAME='Customer name'
 export ENTERPRISE_PRIMARY_DOMAIN='customer.example'
 export INITIAL_ADMIN_EMAIL='admin@customer.example'

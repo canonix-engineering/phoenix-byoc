@@ -86,9 +86,13 @@ conversationStream:
 worker:
   enabled: true
   replicaCount: {{ .Values.services.worker.replicas }}
+  resources:
+{{ toYaml .Values.services.worker.resources | indent 4 }}
 
 server:
   replicaCount: {{ .Values.services.web.replicas }}
+  resources:
+{{ toYaml .Values.services.web.resources | indent 4 }}
 
 service:
   type: ClusterIP

@@ -98,6 +98,8 @@ sdlcIntake:
 
 api:
   replicaCount: {{ .Values.services.workflowEngine.apiReplicas }}
+  resources:
+{{ toYaml .Values.services.workflowEngine.apiResources | indent 4 }}
 
 engineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
 
@@ -149,6 +151,9 @@ opensandbox:
     postgresUrl: {{ $cortexUrl | quote }}
     phoenixGatewayUrl: {{ printf "http://phoenix-gateway.%s.svc.%s:3002" .Values.namespace .Values.clusterDomain | quote }}
     phoenixGatewayToolboxId: {{ .Values.application.toolboxId | quote }}
+
+vertex:
+{{ toYaml .Values.vertex | indent 2 }}
 
 agentSecrets:
   claudeCodeOauthToken: {{ .Values.secrets.agents.claudeCodeOauthToken | quote }}

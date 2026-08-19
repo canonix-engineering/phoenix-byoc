@@ -30,8 +30,24 @@ A default StorageClass, or an explicit StorageClass for every enabled PVC, is
 required whenever bundled Redis, PostgreSQL, Cortex PostgreSQL, ClickHouse or
 Workflow Engine persistence is enabled.
 
-The customer chooses node labels, tolerations and affinity. This repository
-provides no scheduling defaults beyond resource requests.
+The customer chooses node labels, tolerations and affinity. Phoenix-owned
+defaults do not force placement. The supplied example demonstrates the
+placement used by the Phoenix `test` environment and must be replaced or
+removed when the customer cluster uses different labels or taints.
+
+## Optional Google Vertex AI prerequisites
+
+Vertex mode is available only on GKE. Before setting `vertex.enabled=true`,
+the customer must provide:
+
+- GKE Workload Identity and the GKE metadata server for the sandbox nodes;
+- a Google Service Account with `roles/aiplatform.user`;
+- a `roles/iam.workloadIdentityUser` binding for the exact Phoenix namespace
+  and Kubernetes ServiceAccount name;
+- all configured `vertex.models.*` enabled in Model Garden;
+- sandbox egress to the GKE metadata server and Vertex endpoints.
+
+No Google service-account JSON key is an installation input.
 
 ## Network
 

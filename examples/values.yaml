@@ -16,6 +16,14 @@ registry:
 
 ingressNginx:
   enabled: false
+  nodeSelector:
+    canonix.ai/node-role: env
+  tolerations:
+    - key: canonix.ai/node-role
+      operator: Equal
+      value: env
+      effect: NoSchedule
+  affinity: {}
 
 opensandboxController:
   # Set false only when this cluster already has a compatible cluster-wide
@@ -24,6 +32,12 @@ opensandboxController:
   crds:
     install: true
     keep: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
 
 postgresql:
   bundled:
@@ -54,6 +68,13 @@ cortex:
     persistence:
       size: 5Gi
       storageClass: ""
+    resources:
+      requests:
+        cpu: "1"
+        memory: 4Gi
+      limits:
+        cpu: "2"
+        memory: 8Gi
 
 clickhouse:
   bundled:
@@ -70,6 +91,22 @@ clickhouse:
       limits:
         cpu: "2"
         memory: 2Gi
+
+# Optional: route sandboxed Claude Code agents through Google Vertex AI on GKE.
+# Leave disabled when using CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY.
+vertex:
+  enabled: false
+  projectId: ""
+  region: global
+  serviceAccount:
+    # Set false when the customer creates and annotates this KSA separately.
+    create: true
+    name: phoenix-sandbox-vertex
+    gcpServiceAccount: ""
+  models:
+    opus: claude-opus-5
+    sonnet: claude-sonnet-5
+    haiku: claude-haiku-4-5@20251001
 
 application:
   tenantId: CHANGE_ME_TENANT
@@ -98,13 +135,45 @@ application:
 services:
   web:
     replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 1536Mi
   worker:
     replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
   gateway:
     replicas: 1
     allowUnauthenticatedIngress: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
   workflowEngine:
     apiReplicas: 1
+    apiResources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
     artifactApiReplicas: 1
     artifactApiTokenTtl: 1h
     orchestratorReplicas: 1
@@ -117,10 +186,10 @@ services:
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 1Gi
         limits:
           cpu: "1"
-          memory: 512Mi
+          memory: 6Gi
   opensandbox:
     executionTimeout: 360m
     sandboxCreateTimeoutSeconds: 300
@@ -161,9 +230,71 @@ ingress:
     tls: []
 
 scheduling:
-  nodeSelector: {}
-  tolerations: []
+  # Replace or remove this test-environment placement for the customer cluster.
+  nodeSelector: &sandboxNodeSelector
+    canonix.ai/node-role: env
+  tolerations: &sandboxTolerations
+    - key: canonix.ai/node-role
+      operator: Equal
+      value: env
+      effect: NoSchedule
   affinity: {}
+  sandboxResourceClasses:
+    default:
+      nodeSelector: *sandboxNodeSelector
+      tolerations: *sandboxTolerations
+      affinity: {}
+      resources:
+        requests:
+          cpu: "2000m"
+          memory: "8Gi"
+        limits:
+          cpu: "2000m"
+          memory: "8Gi"
+    supervisor:
+      nodeSelector: *sandboxNodeSelector
+      tolerations: *sandboxTolerations
+      affinity: {}
+      resources:
+        requests:
+          cpu: "1000m"
+          memory: "1Gi"
+        limits:
+          cpu: "1000m"
+          memory: "1Gi"
+    high-cpu:
+      nodeSelector: *sandboxNodeSelector
+      tolerations: *sandboxTolerations
+      affinity: {}
+      resources:
+        requests:
+          cpu: "2000m"
+          memory: "8Gi"
+        limits:
+          cpu: "2000m"
+          memory: "8Gi"
+    high-cpu-memory:
+      nodeSelector: *sandboxNodeSelector
+      tolerations: *sandboxTolerations
+      affinity: {}
+      resources:
+        requests:
+          cpu: "5000m"
+          memory: "24Gi"
+        limits:
+          cpu: "5000m"
+          memory: "24Gi"
+    high-memory:
+      nodeSelector: *sandboxNodeSelector
+      tolerations: *sandboxTolerations
+      affinity: {}
+      resources:
+        requests:
+          cpu: "2000m"
+          memory: "12Gi"
+        limits:
+          cpu: "2000m"
+          memory: "12Gi"
 
 storage:
   artifactApi:

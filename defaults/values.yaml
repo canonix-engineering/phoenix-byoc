@@ -26,12 +26,19 @@ ingressNginx:
     type: LoadBalancer
   nodeSelector: {}
   tolerations: []
+  affinity: {}
 
 opensandboxController:
   enabled: true
   crds:
     install: true
     keep: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 256Mi
 
 postgresql:
   bundled:
@@ -74,6 +81,13 @@ cortex:
     persistence:
       size: 5Gi
       storageClass: ""
+    resources:
+      requests:
+        cpu: "1"
+        memory: 4Gi
+      limits:
+        cpu: "2"
+        memory: 8Gi
   migrations:
     enabled: true
     requiredRlsScopeVersion: "1"
@@ -93,6 +107,21 @@ clickhouse:
       limits:
         cpu: "2"
         memory: 2Gi
+
+# Optional Claude Code transport through Google Vertex AI. This mode requires
+# GKE Workload Identity; it does not use a service-account key file.
+vertex:
+  enabled: false
+  projectId: ""
+  region: global
+  serviceAccount:
+    create: true
+    name: phoenix-sandbox-vertex
+    gcpServiceAccount: ""
+  models:
+    opus: claude-opus-5
+    sonnet: claude-sonnet-5
+    haiku: claude-haiku-4-5@20251001
 
 application:
   tenantId: phoenix
@@ -123,13 +152,45 @@ application:
 services:
   web:
     replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        memory: 1536Mi
   worker:
     replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+  frontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
   gateway:
     replicas: 1
     allowUnauthenticatedIngress: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 512Mi
   workflowEngine:
     apiReplicas: 1
+    apiResources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
     artifactApiReplicas: 1
     artifactApiTokenTtl: 1h
     orchestratorReplicas: 1
@@ -142,10 +203,10 @@ services:
       resources:
         requests:
           cpu: 100m
-          memory: 128Mi
+          memory: 1Gi
         limits:
           cpu: "1"
-          memory: 512Mi
+          memory: 6Gi
   opensandbox:
     executionTimeout: 360m
     sandboxCreateTimeoutSeconds: 300
@@ -194,10 +255,10 @@ scheduling:
       resources:
         requests:
           cpu: "2000m"
-          memory: "4Gi"
+          memory: "8Gi"
         limits:
           cpu: "2000m"
-          memory: "4Gi"
+          memory: "8Gi"
     supervisor:
       resources:
         requests:
@@ -209,11 +270,11 @@ scheduling:
     high-cpu:
       resources:
         requests:
-          cpu: "10000m"
-          memory: "4Gi"
+          cpu: "2000m"
+          memory: "8Gi"
         limits:
-          cpu: "10000m"
-          memory: "4Gi"
+          cpu: "2000m"
+          memory: "8Gi"
     high-cpu-memory:
       resources:
         requests:

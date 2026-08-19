@@ -15,7 +15,9 @@ frontend:
   apiUrl: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
 
 server:
-  replicaCount: 1
+  replicaCount: {{ .Values.services.frontend.replicas }}
+  resources:
+{{ toYaml .Values.services.frontend.resources | indent 4 }}
 
 service:
   type: ClusterIP

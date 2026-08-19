@@ -27,6 +27,8 @@ controller:
 {{ toYaml .Values.scheduling.tolerations | indent 4 }}
   affinity:
 {{ toYaml .Values.scheduling.affinity | indent 4 }}
+  resources:
+{{ toYaml .Values.opensandboxController.resources | indent 4 }}
 
 imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 2 }}
