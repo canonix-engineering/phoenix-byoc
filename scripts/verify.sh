@@ -82,6 +82,82 @@ yq eval-all '. as $item ireduce ({}; . * $item)' \
 ecr_refresh_enabled=$(yq -r '.registry.ecrRefresh.enabled' "$merged_file")
 ecr_pull_secret=$(yq -r '.registry.ecrRefresh.pullSecretName' "$merged_file")
 bundled_clickhouse=$(yq -r '.clickhouse.bundled.enabled' "$merged_file")
+bundled_postgresql=$(yq -r '.postgresql.bundled.enabled' "$merged_file")
+bundled_redis=$(yq -r '.redis.bundled.enabled' "$merged_file")
+bundled_cortex=$(yq -r '.cortex.bundled.enabled' "$merged_file")
+bundled_ingress=$(yq -r '.ingressNginx.enabled' "$merged_file")
+ingress_namespace=$(yq -r '.ingressNginx.namespace // .namespace' "$merged_file")
+opensandbox_controller=$(yq -r '.opensandboxController.enabled' "$merged_file")
+postgresql_bootstrap=$(yq -r '.postgresql.hooks.phoenixWeb' "$merged_file")
+rendered_file="$repo_root/.rendered/all.yaml"
+
+"$repo_root/scripts/render.sh"
+
+local_chart_version() {
+  awk '$1 == "version:" {gsub(/"/, "", $2); print $2; exit}' \
+    "$repo_root/charts/$1/Chart.yaml"
+}
+
+check_helm_release() {
+  local release_name=$1
+  local release_namespace=$2
+  local expected_chart=$3
+  local expected_version=$4
+  local enabled=$5
+  local metadata
+  local actual_status
+  local actual_chart
+  local actual_version
+
+  if [[ "$enabled" != "true" ]]; then
+    return
+  fi
+
+  if ! metadata=$(helm get metadata "$release_name" \
+      --namespace "$release_namespace" --output json 2>/dev/null); then
+    echo "ERROR: enabled Helm release is missing: $release_namespace/$release_name" >&2
+    exit 1
+  fi
+
+  actual_status=$(yq -r '.status // ""' <<<"$metadata")
+  actual_chart=$(yq -r '.chart // ""' <<<"$metadata")
+  actual_version=$(yq -r '.version // ""' <<<"$metadata")
+
+  if [[ "$actual_status" != "deployed" ]]; then
+    echo "ERROR: Helm release $release_namespace/$release_name has status '$actual_status', expected 'deployed'." >&2
+    exit 1
+  fi
+  if [[ "$actual_chart" != "$expected_chart" || "$actual_version" != "$expected_version" ]]; then
+    echo "ERROR: Helm release $release_namespace/$release_name uses $actual_chart@$actual_version;" >&2
+    echo "       expected $expected_chart@$expected_version from release.yaml." >&2
+    exit 1
+  fi
+}
+
+check_helm_release ecr-pull-secret-refresh "$namespace" ecr-pull-secret-refresh \
+  "$(local_chart_version ecr-pull-secret-refresh)" "$ecr_refresh_enabled"
+check_helm_release ingress-nginx "$ingress_namespace" ingress-nginx \
+  "$(yq -r '.versions.ingressNginx' "$merged_file")" "$bundled_ingress"
+check_helm_release postgresql "$namespace" postgresql \
+  "$(yq -r '.versions.postgresql' "$merged_file")" "$bundled_postgresql"
+check_helm_release redis "$namespace" redis \
+  "$(yq -r '.versions.redis' "$merged_file")" "$bundled_redis"
+check_helm_release postgresql-bootstrap "$namespace" postgresql-bootstrap \
+  "$(yq -r '.versions.postgresqlBootstrap' "$merged_file")" "$postgresql_bootstrap"
+check_helm_release cortex-postgresql "$namespace" cortex-postgresql \
+  "$(yq -r '.versions.cortexPostgresql' "$merged_file")" "$bundled_cortex"
+check_helm_release clickhouse "$namespace" clickhouse \
+  "$(yq -r '.versions.clickhouseChart' "$merged_file")" true
+check_helm_release opensandbox-controller "$namespace" opensandbox-controller \
+  "$(yq -r '.versions.opensandboxController' "$merged_file")" "$opensandbox_controller"
+check_helm_release phoenix-web "$namespace" phoenix-web \
+  "$(yq -r '.versions.phoenixWeb' "$merged_file")" true
+check_helm_release phoenix-web-frontend "$namespace" phoenix-web-frontend \
+  "$(yq -r '.versions.phoenixWebFrontend' "$merged_file")" true
+check_helm_release phoenix-gateway "$namespace" phoenix-gateway \
+  "$(yq -r '.versions.phoenixGateway' "$merged_file")" true
+check_helm_release phoenix-workflow-engine "$namespace" phoenix-workflow-engine \
+  "$(yq -r '.versions.phoenixWorkflowEngine' "$merged_file")" true
 
 (
   cd "$repo_root"
@@ -97,6 +173,58 @@ while IFS= read -r statefulset; do
 done < <(kubectl -n "$namespace" get statefulsets -o name)
 
 kubectl -n "$namespace" get pods,services,persistentvolumeclaims
+
+verify_dir=$(mktemp -d)
+trap 'rm -f "$merged_file"; rm -rf "$verify_dir"' EXIT
+
+while IFS=$'\t' read -r workload_kind workload_namespace workload_name; do
+  [[ -z "$workload_kind" ]] && continue
+  if [[ -z "$workload_namespace" || "$workload_namespace" == "null" ]]; then
+    workload_namespace=$namespace
+  fi
+
+  live_file="$verify_dir/${workload_kind}-${workload_namespace}-${workload_name}.json"
+  if ! kubectl -n "$workload_namespace" get "$workload_kind/$workload_name" \
+      --output json >"$live_file"; then
+    echo "ERROR: rendered workload is missing: $workload_namespace/$workload_kind/$workload_name" >&2
+    exit 1
+  fi
+
+  for container_path in containers initContainers; do
+    while IFS=$'\t' read -r container_name expected_image; do
+      [[ -z "$container_name" ]] && continue
+      export CONTAINER_NAME="$container_name"
+      actual_image=$(yq -r \
+        ".spec.template.spec.${container_path}[]? | select(.name == strenv(CONTAINER_NAME)) | .image" \
+        "$live_file")
+      if [[ "$actual_image" != "$expected_image" ]]; then
+        echo "ERROR: image mismatch for $workload_namespace/$workload_kind/$workload_name" >&2
+        echo "       $container_path/$container_name uses '$actual_image'; expected '$expected_image'." >&2
+        exit 1
+      fi
+    done < <(
+      export WORKLOAD_KIND="$workload_kind"
+      export WORKLOAD_NAMESPACE="$workload_namespace"
+      export WORKLOAD_NAME="$workload_name"
+      export CONTAINER_PATH="$container_path"
+      yq eval --no-doc -r '
+        select(
+          .kind == strenv(WORKLOAD_KIND) and
+          (.metadata.namespace // strenv(PHOENIX_BYOC_NAMESPACE)) == strenv(WORKLOAD_NAMESPACE) and
+          .metadata.name == strenv(WORKLOAD_NAME)
+        ) |
+        .spec.template.spec[strenv(CONTAINER_PATH)][]? |
+        [.name, .image] | @tsv
+      ' "$rendered_file"
+    )
+  done
+done < <(
+  yq eval --no-doc -r '
+    select(.kind == "Deployment" or .kind == "StatefulSet") |
+    [.kind, (.metadata.namespace // strenv(PHOENIX_BYOC_NAMESPACE)), .metadata.name] |
+    @tsv
+  ' "$rendered_file"
+)
 
 if [[ "$bundled_clickhouse" == "true" ]]; then
   kubectl -n "$namespace" get service/clickhouse statefulset/clickhouse

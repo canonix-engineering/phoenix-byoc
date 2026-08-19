@@ -117,7 +117,7 @@ externalDatabase:
   password: {{ required "secrets.postgresql.applicationPassword is required" .Values.secrets.postgresql.applicationPassword | quote }}
   init:
     enabled: {{ .Values.postgresql.hooks.phoenixWeb }}
-    reloadWorkflowDefinitions: true
+    rematerializeApps: true
     runSeed: false
     adminUrl: {{ $adminUrl | quote }}
 
