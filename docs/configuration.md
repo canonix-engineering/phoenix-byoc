@@ -107,6 +107,11 @@ Individual application ingress resources are controlled under `ingress.*`.
 origins, including the scheme, for example
 `https://phoenix.customer.example`.
 
+`application.skipCsrf` controls the existing `web.skipCsrf` chart setting. The
+example uses `true` to match the source `test` environment. Set it to `false`
+after CSRF behavior has been validated for the customer's final ingress and
+application topology.
+
 Mail delivery values are passed through `application.mailer`:
 
 - `from` and `domain` configure the sender and Mailgun domain;
@@ -164,6 +169,11 @@ The customer-facing workflow settings are under `services.workflowEngine` and
 - `operator.resources` configures the operator Pod requests and limits;
 - `artifactApiTokenTtl` configures artifact-token lifetime;
 - `sdlcIncrementalReindexEnabled` controls incremental SDLC reindexing;
+- `supervisor.enabled` enables the Phoenix Web callback, Redis handoff and
+  supervisor sandbox resource class together; it is disabled by default to
+  match the source `test` environment;
+- `agentSandboxIdleTTL` controls how long a successfully completed agent
+  sandbox remains available for runtime activation;
 - `outputArchiveMaxBytes`, `outputArchiveMaxFiles`,
   `outputArchiveMaxSingleFileBytes` and `outputArchiveMaxTotalFileBytes` bound
   archives read from sandboxes.
@@ -186,8 +196,41 @@ an existing credentials Secret, it also supplies the read-only IAM access key
 used by the refresh helper. The populated file and `.rendered/all.yaml` must
 remain protected because both contain that long-lived credential.
 
-Bundled PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse URLs are derived
-automatically. External services require explicit URLs or credentials.
+For the complete bundled installation, pass `--generate-secrets` to
+`install.sh`. If the selected file is absent, the installer creates it from
+`examples/values.secrets.yaml`. If it exists, the current template is merged
+into it with existing values taking priority. The installer then replaces
+`GENERATE_HEX_32` and `GENERATE_HEX_64` markers for:
+
+- the PostgreSQL superuser, application and internal workflow database roles;
+- bundled Cortex PostgreSQL and ClickHouse;
+- `secretKeyBase`, the agent harness, artifact API and Workflow Engine tokens;
+- internal guardrails, JavaScript transform and tool invocation tokens;
+- the Gateway entry in `internalServiceTokens`.
+
+It replaces the explicit `DERIVE_*` markers with the PostgreSQL admin, Redis,
+Cortex PostgreSQL and ClickHouse URLs and the internal service-token mapping.
+Existing random values are preserved, while derived values are refreshed for
+the selected namespace. Bundled Redis matches the source `test` environment and
+has authentication disabled, so no Redis password is generated.
+
+The marker mechanism is recursive. A new release may add any number of
+`GENERATE_HEX_32` or `GENERATE_HEX_64` fields to the example without adding a
+path-specific generator rule. A derived value still requires explicit release
+logic because its format depends on service names, users, databases and the
+selected namespace.
+
+An empty string means that an optional external credential is not configured.
+For example, `sessionToken` is empty for IAM user credentials and
+`smtpPassword` is empty while Mailgun rather than authenticated SMTP is used.
+It never means that the installer should derive a value.
+
+ECR IAM keys, mail-provider credentials and agent/provider credentials are
+never generated. External services require explicit URLs or credentials.
+Replace optional external `CHANGE_ME_*` placeholders with empty strings when the
+corresponding integration is disabled or supplied through an existing Secret;
+preflight rejects every unresolved placeholder, includes its exact YAML path,
+and never generates external credentials.
 
 Phoenix Web also requires the compatibility `application.cortex.host`,
 `application.spaHost`, `application.mailer.*` and the matching application

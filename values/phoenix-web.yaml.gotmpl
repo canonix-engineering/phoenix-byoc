@@ -35,7 +35,7 @@ imagePullSecrets:
 web:
   railsEnv: production
   logLevel: info
-  skipCsrf: false
+  skipCsrf: {{ .Values.application.skipCsrf }}
   allowedHosts: {{ .Values.application.allowedHosts | quote }}
   actionCableAllowedOrigins: {{ .Values.application.actionCableAllowedOrigins | quote }}
   appHost: {{ .Values.application.appHost | quote }}

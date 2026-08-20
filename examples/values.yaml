@@ -114,6 +114,9 @@ application:
   spaHost: CHANGE_ME_APP_HOST
   allowedHosts: CHANGE_ME_APP_HOST,localhost
   actionCableAllowedOrigins: https://CHANGE_ME_APP_HOST
+  # Matches the source test environment. Set false when CSRF protection is
+  # validated for the customer's final ingress and application topology.
+  skipCsrf: true
   toolboxId: ""
   cortex:
     host: cortex-stub
@@ -159,7 +162,7 @@ services:
         memory: 512Mi
   gateway:
     replicas: 1
-    allowUnauthenticatedIngress: false
+    allowUnauthenticatedIngress: true
     resources:
       requests:
         cpu: 50m
@@ -179,6 +182,9 @@ services:
     orchestratorReplicas: 1
     operatorReplicas: 1
     sdlcIncrementalReindexEnabled: true
+    supervisor:
+      # Disabled to match the source test environment.
+      enabled: false
     operator:
       maxConcurrentSandboxTasks: 5
       maxConcurrentInProcessTasks: 5
@@ -192,6 +198,7 @@ services:
           memory: 6Gi
   opensandbox:
     executionTimeout: 360m
+    agentSandboxIdleTTL: 6h
     sandboxCreateTimeoutSeconds: 300
     outputArchiveMaxBytes: "4294967296"
     outputArchiveMaxFiles: "1000"

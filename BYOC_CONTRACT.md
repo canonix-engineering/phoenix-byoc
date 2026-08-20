@@ -7,6 +7,7 @@
 - bundled single-node ClickHouse, or configuration for an external ClickHouse;
 - an optional in-cluster refresher for direct pulls from the Phoenix private ECR;
 - Helmfile orchestration and example values;
+- opt-in generation of bundled database passwords and internal service tokens;
 - BYOC database bootstrap orchestration and the application database hooks;
 - render, preflight, install and verification scripts;
 - upgrade and rollback documentation.

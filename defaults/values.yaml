@@ -58,9 +58,6 @@ postgresql:
     workflowEngine: true
   databases:
     primary: phoenix_web_production
-    cache: phoenix_web_production_cache
-    queue: phoenix_web_production_queue
-    cable: phoenix_web_production_cable
     internal: phoenix_workflow_engine_internal
   users:
     application: phoenix_web
@@ -129,6 +126,7 @@ application:
   spaHost: app.phoenix.example.com
   allowedHosts: phoenix.example.com,localhost
   actionCableAllowedOrigins: ""
+  skipCsrf: true
   toolboxId: ""
   cortex:
     host: ""
@@ -144,11 +142,6 @@ application:
       authentication: ""
       enableStarttlsAuto: ""
       heloDomain: ""
-  workflowDefinitions:
-    - workflow_definitions/v1/sdlc.yaml
-    - workflow_definitions/v1/repo-onboarding.yaml
-    - workflow_definitions/v1/eval.yaml
-
 services:
   web:
     replicas: 1
@@ -176,7 +169,7 @@ services:
         memory: 512Mi
   gateway:
     replicas: 1
-    allowUnauthenticatedIngress: false
+    allowUnauthenticatedIngress: true
     resources:
       requests:
         cpu: 50m
@@ -196,6 +189,8 @@ services:
     orchestratorReplicas: 1
     operatorReplicas: 1
     sdlcIncrementalReindexEnabled: true
+    supervisor:
+      enabled: false
     operator:
       maxConcurrentSandboxTasks: 5
       maxConcurrentInProcessTasks: 5
@@ -209,6 +204,7 @@ services:
           memory: 6Gi
   opensandbox:
     executionTimeout: 360m
+    agentSandboxIdleTTL: 6h
     sandboxCreateTimeoutSeconds: 300
     outputArchiveMaxBytes: "4294967296"
     outputArchiveMaxFiles: "1000"

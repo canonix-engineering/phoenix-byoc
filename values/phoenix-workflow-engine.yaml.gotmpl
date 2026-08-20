@@ -42,22 +42,32 @@ imagePullSecrets:
 
 workflow:
   definitionCatalogRoot: /workflow_definitions
-  definitions:
-{{ toYaml .Values.application.workflowDefinitions | indent 4 }}
   runtimeImages:
     phoenix-agent: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
     phoenix-lab: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
 
 phoenixWeb:
+{{- if .Values.services.workflowEngine.supervisor.enabled }}
   url: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
+{{- else }}
+  url: ""
+{{- end }}
 
 supervisorChat:
   streamHandoff:
+{{- if .Values.services.workflowEngine.supervisor.enabled }}
     redisUrl: {{ $redisUrl | quote }}
+{{- else }}
+    redisUrl: ""
+{{- end }}
 
 sandboxScheduling:
   defaultResourceClass: default
+{{- if .Values.services.workflowEngine.supervisor.enabled }}
   supervisorResourceClass: supervisor
+{{- else }}
+  supervisorResourceClass: ""
+{{- end }}
   resourceClasses:
 {{ toYaml .Values.scheduling.sandboxResourceClasses | indent 4 }}
 
@@ -131,6 +141,7 @@ opensandbox:
   clusterRoleName: {{ printf "phoenix-workflow-engine-opensandbox-%s" .Values.namespace | trunc 63 | trimSuffix "-" | quote }}
   endpoint: {{ printf "http://phoenix-workflow-engine-opensandbox.%s.svc.%s:8080" .Values.namespace .Values.clusterDomain | quote }}
   executionTimeout: {{ .Values.services.opensandbox.executionTimeout | quote }}
+  agentSandboxIdleTTL: {{ .Values.services.opensandbox.agentSandboxIdleTTL | quote }}
   outputArchiveMaxBytes: {{ .Values.services.opensandbox.outputArchiveMaxBytes | quote }}
   outputArchiveMaxFiles: {{ .Values.services.opensandbox.outputArchiveMaxFiles | quote }}
   outputArchiveMaxSingleFileBytes: {{ .Values.services.opensandbox.outputArchiveMaxSingleFileBytes | quote }}

@@ -12,6 +12,137 @@ if [[ ! -d "$devops_charts/phoenix-web" ]]; then
   exit 1
 fi
 
+# Secret generation is exercised before any cluster access. The deliberately
+# unresolved external credentials make preflight stop after the generator has
+# created and reconciled the temporary file.
+generator_tmp="$example_tmp/generator"
+mkdir -p "$generator_tmp"
+sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
+  "$repo_root/examples/values.yaml" >"$generator_tmp/values.yaml"
+if "$repo_root/scripts/install.sh" \
+    --namespace phoenix-generator-test \
+    --values "$generator_tmp/values.yaml" \
+    --secrets "$generator_tmp/values.secrets.yaml" \
+    --generate-secrets >"$generator_tmp/first.log" 2>&1; then
+  echo "ERROR: generator check unexpectedly passed unresolved external credentials" >&2
+  exit 1
+fi
+[[ -f "$generator_tmp/values.secrets.yaml" ]] || {
+  echo "ERROR: generator did not create the missing secrets file" >&2
+  exit 1
+}
+generator_mode=$(stat -c %a "$generator_tmp/values.secrets.yaml" 2>/dev/null || \
+  stat -f %Lp "$generator_tmp/values.secrets.yaml")
+if [[ "$generator_mode" != "600" ]]; then
+  echo "ERROR: generated secrets file mode is $generator_mode, expected 600" >&2
+  exit 1
+fi
+yq -e \
+  '[.. | select(tag == "!!str" and test("^(GENERATE_|DERIVE_)"))] | length == 0' \
+  "$generator_tmp/values.secrets.yaml" >/dev/null || {
+    echo "ERROR: generated secrets file contains unresolved generation markers" >&2
+    exit 1
+  }
+yq -e '.secrets.application.secretKeyBase | test("^[0-9a-f]{128}$")' \
+  "$generator_tmp/values.secrets.yaml" >/dev/null || {
+    echo "ERROR: secretKeyBase was not generated as 64-byte hex" >&2
+    exit 1
+  }
+grep -q 'secrets.registry.ecr.accessKeyId' "$generator_tmp/first.log" || {
+  echo "ERROR: preflight did not report the unresolved ECR credential path" >&2
+  exit 1
+}
+grep -q 'secrets.application.mailgunApiKey' "$generator_tmp/first.log" || {
+  echo "ERROR: preflight did not report the unresolved mail credential path" >&2
+  exit 1
+}
+
+workflow_token=$(yq -r '.secrets.application.workflowEngineToken' \
+  "$generator_tmp/values.secrets.yaml")
+workflow_token_hash=$(printf '%s' "$workflow_token" | shasum -a 256 | cut -d ' ' -f 1)
+if grep -Fq "$workflow_token" "$generator_tmp/first.log"; then
+  echo "ERROR: generator printed a generated secret value" >&2
+  exit 1
+fi
+for index in {1..10}; do
+  yq -i ".secrets.future.token${index} = \"GENERATE_HEX_32\"" \
+    "$generator_tmp/values.secrets.yaml"
+done
+yq -i '
+  del(.secrets.application.secretKeyBase) |
+  del(.secrets.application.mailgunApiKey) |
+  .secrets.application.agentHarnessToken = "CHANGE_ME_LEGACY_INTERNAL_TOKEN"
+' "$generator_tmp/values.secrets.yaml"
+if "$repo_root/scripts/install.sh" \
+    --namespace phoenix-generator-test \
+    --values "$generator_tmp/values.yaml" \
+    --secrets "$generator_tmp/values.secrets.yaml" \
+    --generate-secrets >"$generator_tmp/second.log" 2>&1; then
+  echo "ERROR: reconciliation check unexpectedly passed external credentials" >&2
+  exit 1
+fi
+yq -e \
+  '[.secrets.future[] | select(test("^[0-9a-f]{64}$"))] | length == 10' \
+  "$generator_tmp/values.secrets.yaml" >/dev/null || {
+    echo "ERROR: generator did not fill all ten newly added secret fields" >&2
+    exit 1
+  }
+yq -e '.secrets.application.agentHarnessToken | test("^[0-9a-f]{64}$")' \
+  "$generator_tmp/values.secrets.yaml" >/dev/null || {
+    echo "ERROR: legacy internal placeholder was not migrated" >&2
+    exit 1
+  }
+if [[ "$(yq -r '.secrets.application.mailgunApiKey' \
+    "$generator_tmp/values.secrets.yaml")" != "CHANGE_ME_MAILGUN_API_KEY" ]]; then
+  echo "ERROR: reconciliation did not restore a missing template field" >&2
+  exit 1
+fi
+workflow_token_after=$(yq -r '.secrets.application.workflowEngineToken' \
+  "$generator_tmp/values.secrets.yaml")
+workflow_token_hash_after=$(printf '%s' "$workflow_token_after" | \
+  shasum -a 256 | cut -d ' ' -f 1)
+if [[ "$workflow_token_hash" != "$workflow_token_hash_after" ]]; then
+  echo "ERROR: reconciliation rotated an existing generated value" >&2
+  exit 1
+fi
+if grep -Fq "$workflow_token_after" "$generator_tmp/second.log"; then
+  echo "ERROR: reconciliation printed an existing secret value" >&2
+  exit 1
+fi
+
+if "$repo_root/scripts/install.sh" \
+    --namespace phoenix-generator-next \
+    --values "$generator_tmp/values.yaml" \
+    --secrets "$generator_tmp/values.secrets.yaml" \
+    --generate-secrets >"$generator_tmp/third.log" 2>&1; then
+  echo "ERROR: namespace refresh check unexpectedly passed external credentials" >&2
+  exit 1
+fi
+if [[ "$(yq -r '.secrets.application.workflowEngineToken' \
+    "$generator_tmp/values.secrets.yaml")" != "$workflow_token_after" ]]; then
+  echo "ERROR: namespace refresh rotated an existing generated value" >&2
+  exit 1
+fi
+if [[ "$(yq -r '.secrets.redis.url' "$generator_tmp/values.secrets.yaml")" != \
+    "redis://redis-client.phoenix-generator-next.svc.cluster.local:6379/1" ]]; then
+  echo "ERROR: namespace refresh did not update the derived Redis URL" >&2
+  exit 1
+fi
+yq -i '.secrets.future.unsupported = "GENERATE_UUID"' \
+  "$generator_tmp/values.secrets.yaml"
+if "$repo_root/scripts/install.sh" \
+    --namespace phoenix-generator-next \
+    --values "$generator_tmp/values.yaml" \
+    --secrets "$generator_tmp/values.secrets.yaml" \
+    --generate-secrets >"$generator_tmp/unsupported.log" 2>&1; then
+  echo "ERROR: unsupported generation marker was accepted" >&2
+  exit 1
+fi
+grep -q 'secrets.future.unsupported' "$generator_tmp/unsupported.log" || {
+  echo "ERROR: unsupported generation marker path was not reported" >&2
+  exit 1
+}
+
 for scenario in bundled external private-registry direct-ecr; do
   render_dir="$repo_root/.rendered/test-$scenario"
   values_file="tests/fixtures/values.yaml"
@@ -151,7 +282,7 @@ fi
 # placeholders are replaced; fixtures alone are not sufficient coverage.
 sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.yaml" >"$example_tmp/values.yaml"
-sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
+sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g; s/GENERATE_HEX_(32|64)/test-only/g; s/DERIVE_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.secrets.yaml" >"$example_tmp/secrets.yaml"
 example_render_dir="$repo_root/.rendered/test-customer-example"
 mkdir -p "$example_render_dir"

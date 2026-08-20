@@ -17,8 +17,10 @@ Helm apply operations as approval boundaries.
 3. Inspect `release.yaml` and report its channel and source environment.
 4. Ask the user to identify the intended kube-context and namespace when they
    are not already explicit. Never switch context automatically.
-5. Require populated values and secrets files copied from `examples/`. When
-   either is absent, stop because the installation package is incomplete.
+5. Require a values file copied from `examples/`. The selected secrets file may
+   be absent only when the user selected `--generate-secrets`; the installer
+   then creates it from the current example. Internal `GENERATE_HEX_*` and
+   `DERIVE_*` markers may remain only for that workflow.
 6. Never display, retain or commit populated secret values.
 
 ## Configure
@@ -36,18 +38,29 @@ Helm apply operations as approval boundaries.
    existing compatible cluster-wide controller and CRDs; never change their
    Helm ownership annotations.
 7. Do not change `release.yaml`.
+8. For a complete bundled installation, `--generate-secrets` creates or
+   reconciles the selected secrets file, fills `GENERATE_HEX_*` internal
+   passwords and tokens, and resolves known `DERIVE_*` values. Confirm that all
+   four bundled dependencies are enabled and that the selected path is not
+   tracked by Git. It never generates IAM, mail-provider or agent-provider
+   credentials.
 
 ## Validate and apply
 
-1. Export the approved namespace and selected file paths as
-   `PHOENIX_BYOC_NAMESPACE`, `PHOENIX_BYOC_VALUES_FILE` and
-   `PHOENIX_BYOC_SECRETS_FILE`, then run `./scripts/preflight.sh`.
-2. Run `./scripts/render.sh` with the same environment.
+1. Without secret generation, export the approved namespace and selected file
+   paths as `PHOENIX_BYOC_NAMESPACE`, `PHOENIX_BYOC_VALUES_FILE` and
+   `PHOENIX_BYOC_SECRETS_FILE`, then run `./scripts/preflight.sh` and
+   `./scripts/render.sh` with the same environment.
+2. With secret generation, do not run standalone preflight against unresolved
+   internal placeholders. After explicit approval, let `install.sh
+   --generate-secrets` generate, validate and render in that order.
 3. Inspect `.rendered/all.yaml` without printing rendered Secret values.
 4. Report the release, current context, namespace, enabled bundled components
    and warnings.
 5. Obtain explicit user confirmation.
-6. Run `./scripts/install.sh --namespace <approved-namespace> --values <values-path> --secrets <secrets-path>`.
+6. Run `./scripts/install.sh --namespace <approved-namespace> --values
+   <values-path> --secrets <secrets-path>` and add `--generate-secrets` only for
+   the approved bundled-generation workflow.
 7. Report failed resources and relevant logs; never delete PVCs, CRDs,
    namespaces or customer databases as remediation.
 8. Explain that a fresh database has no administrator account. After successful

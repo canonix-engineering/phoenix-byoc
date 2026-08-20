@@ -41,14 +41,18 @@ if ! yq -e 'type == "!!map" and length > 0' "$secrets_file" >/dev/null 2>&1; the
   echo "ERROR: secrets file must be a non-empty YAML mapping: $secrets_file" >&2
   exit 1
 fi
-if yq -e '[.. | select(tag == "!!str" and test("CHANGE_ME"))] | length > 0' \
+if yq -e '[.. | select(tag == "!!str" and test("^(CHANGE_ME|GENERATE_|DERIVE_)"))] | length > 0' \
     "$values_file" >/dev/null 2>&1; then
-  echo "ERROR: values file still contains CHANGE_ME placeholders: $values_file" >&2
+  echo "ERROR: values file still contains unresolved placeholders: $values_file" >&2
   exit 1
 fi
-if yq -e '[.. | select(tag == "!!str" and test("CHANGE_ME"))] | length > 0' \
+if yq -e '[.. | select(tag == "!!str" and test("^(CHANGE_ME|GENERATE_|DERIVE_)"))] | length > 0' \
     "$secrets_file" >/dev/null 2>&1; then
-  echo "ERROR: secret values file still contains CHANGE_ME placeholders." >&2
+  echo "ERROR: secret values file still contains unresolved placeholders:" >&2
+  yq eval --no-doc -r '
+    .. | select(tag == "!!str" and test("^(CHANGE_ME|GENERATE_|DERIVE_)")) |
+    "  " + (path | join("."))
+  ' "$secrets_file" >&2
   exit 1
 fi
 

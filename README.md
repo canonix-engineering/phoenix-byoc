@@ -25,18 +25,25 @@ The installation package contains:
 - a kubeconfig whose current context points to the intended cluster.
 
 The customer copies the examples, fills the customer-specific settings and
-secrets, selects the target namespace and runs one command:
+external credentials, selects the target namespace and runs one command. For
+the bundled installation, `--generate-secrets` creates the internal database
+passwords and service tokens in the selected secrets file before validation:
 
 ```bash
 ./scripts/install.sh \
   --namespace phoenix \
   --values ./values.yaml \
-  --secrets ./values.secrets.yaml
+  --secrets ./values.secrets.yaml \
+  --generate-secrets
 ```
 
-The script performs preflight validation, renders the complete manifest,
-installs or upgrades every enabled release, waits for workloads and prints the
-result. It never changes kube-context, node labels or customer infrastructure.
+If the selected secrets file does not exist, the generator creates it from the
+current example with mode `0600`. On every run it adds fields introduced by a
+new release without overwriting existing customer or generated values. Secret
+values are never printed. The script then performs preflight validation,
+renders the complete manifest, installs or upgrades every enabled release,
+waits for workloads and prints the result. It never changes kube-context, node
+labels or customer infrastructure.
 
 A fresh database does not contain an administrator account. After the workloads
 are ready, create the first owner with the procedure in
@@ -53,8 +60,14 @@ chmod 600 values.secrets.yaml
 ```
 
 The values file contains PostgreSQL, Redis, Cortex PostgreSQL, ClickHouse,
-ingress, storage and scheduling settings. The secrets file contains credentials
-and must never be committed.
+ingress, storage and scheduling settings. In the secrets file, fill only
+credentials issued by external systems, such as ECR, Mailgun or SMTP, Claude
+and GitHub. Leave the internal `GENERATE_HEX_32` and `GENERATE_HEX_64` markers
+and the `DERIVE_*` connection markers for the installer. Copying the secrets
+example is optional: when the selected file is absent, `--generate-secrets`
+creates it and stops at preflight until the external `CHANGE_ME_*` credentials
+are filled. The populated file must never be committed; encrypt it with the
+customer's normal secret-management workflow when it must be stored in Git.
 
 The exact release versions are recorded in `release.yaml`. Do not replace them
 during installation. See [Configuration](docs/configuration.md#bundled-data-service-versions)
