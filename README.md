@@ -46,8 +46,18 @@ waits for workloads and prints the result. It never changes kube-context, node
 labels or customer infrastructure.
 
 A fresh database does not contain an administrator account. After the workloads
-are ready, create the first owner with the procedure in
+are ready, create the first owner with `scripts/create-initial-admin.sh` as
+documented in
 [Installation](docs/installation.md#create-the-initial-administrator).
+
+```bash
+./scripts/create-initial-admin.sh \
+  --namespace phoenix \
+  --enterprise-name "Customer name" \
+  --enterprise-domain customer.example \
+  --email admin@customer.example \
+  --name "Platform Administrator"
+```
 
 ## Preparing the package
 

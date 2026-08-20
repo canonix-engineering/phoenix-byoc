@@ -12,6 +12,68 @@ if [[ ! -d "$devops_charts/phoenix-web" ]]; then
   exit 1
 fi
 
+"$repo_root/scripts/create-initial-admin.sh" --help >/dev/null 2>&1
+if "$repo_root/scripts/create-initial-admin.sh" \
+    --namespace phoenix-admin-test >"$example_tmp/admin-missing.log" 2>&1; then
+  echo "ERROR: initial administrator script accepted missing arguments" >&2
+  exit 1
+fi
+grep -q -- '--enterprise-name' "$example_tmp/admin-missing.log" || {
+  echo "ERROR: initial administrator script did not report missing arguments" >&2
+  exit 1
+}
+
+# Mock kubectl so the complete interactive path can be checked without reading
+# or changing a real application database.
+kubectl() {
+  local argument
+  for argument in "$@"; do
+    if [[ "$argument" == "test-only-admin-password" ]]; then
+      echo "ERROR: password was passed in a kubectl argument" >&2
+      return 91
+    fi
+  done
+  if [[ "$*" == "config current-context" ]]; then
+    echo "test-context"
+    return
+  fi
+  if [[ " $* " == *" exec -i "* ]]; then
+    local provided_password
+    provided_password=$(cat)
+    if [[ "$provided_password" != "test-only-admin-password" ]]; then
+      echo "ERROR: password was not streamed through stdin" >&2
+      return 92
+    fi
+    echo "Initial administrator created"
+  fi
+}
+export -f kubectl
+if ! printf 'test-only-admin-password\ntest-only-admin-password\n' | \
+    "$repo_root/scripts/create-initial-admin.sh" \
+      --namespace phoenix-admin-test \
+      --enterprise-name "Test Enterprise" \
+      --enterprise-domain test.example \
+      --email admin@test.example \
+      --name "Test Administrator" \
+      >"$example_tmp/admin-create.log" 2>&1; then
+  echo "ERROR: initial administrator mock execution failed" >&2
+  unset -f kubectl
+  exit 1
+fi
+unset -f kubectl
+grep -q 'Kubernetes context: test-context' "$example_tmp/admin-create.log" || {
+  echo "ERROR: initial administrator script did not display the context" >&2
+  exit 1
+}
+grep -q 'Initial administrator created' "$example_tmp/admin-create.log" || {
+  echo "ERROR: initial administrator script did not complete the mock bootstrap" >&2
+  exit 1
+}
+if grep -q 'test-only-admin-password' "$example_tmp/admin-create.log"; then
+  echo "ERROR: initial administrator script printed the password" >&2
+  exit 1
+fi
+
 # Secret generation is exercised before any cluster access. The deliberately
 # unresolved external credentials make preflight stop after the generator has
 # created and reconciled the temporary file.

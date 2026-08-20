@@ -22,6 +22,10 @@ Before any mutation:
    location.
 7. Obtain explicit confirmation before running install, upgrade, rollback or
    uninstall commands.
+8. Treat `scripts/create-initial-admin.sh` as a separate application-database
+   mutation. Require explicit approval and customer-supplied Enterprise and
+   administrator inputs; never invent, print or pass the password in command
+   arguments.
 
 Never:
 
