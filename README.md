@@ -24,10 +24,41 @@ The installation package contains:
 - access to the exact chart and image repositories from `release.yaml`;
 - a kubeconfig whose current context points to the intended cluster.
 
-The customer copies the examples, fills the customer-specific settings and
-external credentials, selects the target namespace and runs one command. For
-the bundled installation, `--generate-secrets` creates the internal database
-passwords and service tokens in the selected secrets file before validation:
+The installation operator copies the examples, fills the cluster-specific
+settings and external credentials, selects the target namespace and runs one
+command. For the bundled installation, `--generate-secrets` creates the
+internal database passwords, connection URLs and service tokens in the
+selected secrets file before validation.
+
+If the selected secrets file does not exist, the generator creates it from the
+current example with mode `0600`. On every run it adds fields introduced by a
+new release without overwriting existing operator-provided or generated
+values. Secret values are never printed. The script then performs preflight
+validation, renders the complete manifest, installs or upgrades every enabled
+release, waits for workloads and prints the result. It never changes
+kube-context, node labels or cluster infrastructure.
+
+## Quick start
+
+Install the [required tools](docs/prerequisites.md), make sure the current
+kube-context points to the target cluster and prepare the configuration files:
+
+```bash
+mise install
+kubectl config current-context
+cp examples/values.yaml values.yaml
+cp examples/values.secrets.yaml values.secrets.yaml
+chmod 600 values.secrets.yaml
+```
+
+In `values.yaml`, replace every `CHANGE_ME` value and adapt DNS, ingress,
+StorageClass, node placement and resources to the target cluster. In
+`values.secrets.yaml`, provide only credentials issued by external systems,
+including ECR credentials when direct ECR access is selected and the mail and
+agent-provider credentials used by the installation. Leave all
+`GENERATE_HEX_*` and `DERIVE_*` markers unchanged.
+
+Install the complete bundled platform into the selected namespace:
 
 ```bash
 ./scripts/install.sh \
@@ -37,13 +68,9 @@ passwords and service tokens in the selected secrets file before validation:
   --generate-secrets
 ```
 
-If the selected secrets file does not exist, the generator creates it from the
-current example with mode `0600`. On every run it adds fields introduced by a
-new release without overwriting existing customer or generated values. Secret
-values are never printed. The script then performs preflight validation,
-renders the complete manifest, installs or upgrades every enabled release,
-waits for workloads and prints the result. It never changes kube-context, node
-labels or customer infrastructure.
+Replace `phoenix` with the required namespace. The exact fields that must be
+configured and generated are listed in
+[Installation](docs/installation.md#prepare-the-inputs).
 
 A fresh database does not contain an administrator account. After the workloads
 are ready, create the first owner with `scripts/create-initial-admin.sh` as
@@ -53,31 +80,11 @@ documented in
 ```bash
 ./scripts/create-initial-admin.sh \
   --namespace phoenix \
-  --enterprise-name "Customer name" \
-  --enterprise-domain customer.example \
-  --email admin@customer.example \
+  --enterprise-name "Example organization" \
+  --enterprise-domain example.com \
+  --email admin@example.com \
   --name "Platform Administrator"
 ```
-
-## Preparing the package
-
-Phoenix/customer administrators prepare the two files before installation:
-
-```bash
-cp examples/values.yaml values.yaml
-cp examples/values.secrets.yaml values.secrets.yaml
-chmod 600 values.secrets.yaml
-```
-
-The values file contains PostgreSQL, Redis, Cortex PostgreSQL, ClickHouse,
-ingress, storage and scheduling settings. In the secrets file, fill only
-credentials issued by external systems, such as ECR, Mailgun or SMTP, Claude
-and GitHub. Leave the internal `GENERATE_HEX_32` and `GENERATE_HEX_64` markers
-and the `DERIVE_*` connection markers for the installer. Copying the secrets
-example is optional: when the selected file is absent, `--generate-secrets`
-creates it and stops at preflight until the external `CHANGE_ME_*` credentials
-are filled. The populated file must never be committed; encrypt it with the
-customer's normal secret-management workflow when it must be stored in Git.
 
 The exact release versions are recorded in `release.yaml`. Do not replace them
 during installation. See [Configuration](docs/configuration.md#bundled-data-service-versions)
@@ -96,7 +103,7 @@ To use another registry, copy the images without changing names or tags:
 ```bash
 ./scripts/images.sh mirror \
   --source-ecr-profile phoenix-byoc-source \
-  --to registry.customer.example/phoenix
+  --to registry.example.com/phoenix
 ```
 
 Then set `imageRegistry` and, when required, `imagePullSecrets` in the selected
