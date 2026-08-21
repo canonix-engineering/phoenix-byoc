@@ -109,10 +109,19 @@ vertex:
     haiku: claude-haiku-4-5@20251001
 
 application:
+  # Stable identifier for this deployment. It is passed to workflows and
+  # tenant-scoped application data. Example: acme_prod.
   tenantId: CHANGE_ME_TENANT
+  # Public Rails/API hostname, without a URL scheme.
   appHost: CHANGE_ME_APP_HOST
+  # Public browser UI hostname, without a URL scheme. For the default
+  # single-domain ingress, use the same hostname as appHost.
   spaHost: CHANGE_ME_APP_HOST
+  # Comma-separated hostnames accepted by Rails Host Authorization. Do not add
+  # http:// or https:// here.
   allowedHosts: CHANGE_ME_APP_HOST,localhost
+  # Comma-separated browser origins allowed for Action Cable. Include the URL
+  # scheme. For example: https://platform.acme.example.
   actionCableAllowedOrigins: https://CHANGE_ME_APP_HOST
   # Matches the source test environment. Set false when CSRF protection is
   # validated for the customer's final ingress and application topology.

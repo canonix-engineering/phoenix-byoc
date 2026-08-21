@@ -32,6 +32,26 @@ Replace every `CHANGE_ME` value and review these groups:
 - `imageRegistry`, `imagePullSecrets` and `registry.ecrRefresh` for direct ECR
   access or a mirrored registry.
 
+For a single public domain such as `platform.acme.example`, use:
+
+```yaml
+application:
+  tenantId: acme_prod
+  appHost: platform.acme.example
+  spaHost: platform.acme.example
+  allowedHosts: platform.acme.example,localhost
+  actionCableAllowedOrigins: https://platform.acme.example
+```
+
+`tenantId` is a stable identifier for the deployment and is passed to
+tenant-scoped workflows and application data. `appHost` is the public Rails/API
+hostname, while `spaHost` is the browser UI hostname. The default BYOC ingress
+uses one public hostname, so both values are equal. If separate backend and
+frontend ingress resources are configured, set `appHost` to the backend host,
+`spaHost` to the frontend host and allow the frontend origin in
+`actionCableAllowedOrigins`. `allowedHosts` contains hostnames without schemes;
+`actionCableAllowedOrigins` contains complete origins including `https://`.
+
 The example placement matches the source `test` environment. Replace or remove
 the `canonix.ai/node-role` selectors and tolerations when the target cluster
 uses different labels or taints. The installer does not create labels, modify
