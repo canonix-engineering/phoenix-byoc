@@ -141,6 +141,70 @@ if grep -Eq 'SMTP_USER_NAME|SMTP_PASSWORD' "$mail_test_render_dir/all.yaml"; the
   exit 1
 fi
 
+# An unauthenticated SMTP relay must also pass preflight and render without
+# credentials, while retaining the relay address and port.
+yq -i '
+  .application.mailer.deliveryMethod = "smtp" |
+  .application.mailer.smtp.address = "smtp.internal.example" |
+  .application.mailer.smtp.port = "25" |
+  .application.mailer.smtp.userName = "" |
+  .application.mailer.smtp.authentication = ""
+' "$mail_test_tmp/values.yaml"
+kubectl() {
+  case "$*" in
+    "config current-context")
+      echo "test-context"
+      ;;
+    "version --output=json")
+      echo '{}'
+      ;;
+    "get customresourcedefinition "*)
+      return 1
+      ;;
+    *)
+      echo "ERROR: unexpected kubectl call in SMTP test: $*" >&2
+      return 94
+      ;;
+  esac
+}
+export -f kubectl
+PHOENIX_BYOC_NAMESPACE=phoenix-mail-test \
+PHOENIX_BYOC_VALUES_FILE="$mail_test_tmp/values.yaml" \
+PHOENIX_BYOC_SECRETS_FILE="$mail_test_tmp/values.secrets.yaml" \
+  "$repo_root/scripts/preflight.sh" >"$mail_test_tmp/smtp-preflight.log"
+unset -f kubectl
+grep -q 'Preflight passed.' "$mail_test_tmp/smtp-preflight.log" || {
+  echo "ERROR: unauthenticated SMTP did not pass preflight" >&2
+  exit 1
+}
+
+smtp_render_dir="$repo_root/.rendered/test-smtp-no-auth"
+mkdir -p "$smtp_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$mail_test_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$mail_test_tmp/values.secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-mail-test \
+    helmfile template --skip-deps --quiet \
+    >"$smtp_render_dir/all.yaml"
+)
+chmod 600 "$smtp_render_dir/all.yaml"
+grep -Eq 'SMTP_ADDRESS: "?smtp.internal.example"?' \
+  "$smtp_render_dir/all.yaml" || {
+  echo "ERROR: unauthenticated SMTP address was not rendered" >&2
+  exit 1
+}
+grep -Eq 'SMTP_PORT: "?25"?' "$smtp_render_dir/all.yaml" || {
+  echo "ERROR: unauthenticated SMTP port was not rendered" >&2
+  exit 1
+}
+if grep -Eq 'SMTP_USER_NAME|SMTP_PASSWORD' "$smtp_render_dir/all.yaml"; then
+  echo "ERROR: unauthenticated SMTP render contains credentials" >&2
+  exit 1
+fi
+
 # Secret generation is exercised before any cluster access. The deliberately
 # unresolved external credentials make preflight stop after the generator has
 # created and reconciled the temporary file.

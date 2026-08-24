@@ -131,9 +131,12 @@ an SMTP password is required when a username is configured.
 `deliveryMethod: test` requires no Mailgun or SMTP credentials and allows the
 platform to run without an external mail provider. ActionMailer retains mail
 only in process memory in this mode: invitations, password resets and other
-notifications are not delivered. In release `0.2.0-development.5`, use this as
-the no-delivery mode; its `phoenix-web` image does not support unauthenticated
-SMTP even though BYOC values and preflight permit empty SMTP credentials.
+notifications are not delivered.
+
+For an unauthenticated SMTP relay, set `deliveryMethod: smtp`, configure
+`smtp.address` and `smtp.port`, and leave `smtp.userName`,
+`smtp.authentication` and `secrets.application.smtpPassword` empty. The
+application then connects to the relay without starting SMTP authentication.
 
 ## Claude Code through Google Vertex AI
 

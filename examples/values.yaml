@@ -142,9 +142,7 @@ application:
       address: ""
       port: ""
       # Optional. Leave empty together with smtpPassword for an unauthenticated
-      # relay. The current phoenix-web release still requires credentials for
-      # SMTP at boot; use deliveryMethod: test until an application image with
-      # unauthenticated SMTP support is released.
+      # relay. Set both fields when the relay requires SMTP authentication.
       userName: ""
       authentication: ""
       enableStarttlsAuto: ""

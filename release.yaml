@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.5"
+  version: "0.2.0-development.6"
   channel: development
   sourceEnvironment: test
-  observedAt: "2026-08-19"
+  observedAt: "2026-08-24"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -20,7 +20,7 @@ versions:
   redis: "1.6.18"
 
 # Exact runtime images observed in the source environment declared above on
-# 2026-08-19. Set imageRegistry in the selected values file after copying every
+# 2026-08-24. Set imageRegistry in the selected values file after copying every
 # image to a customer registry while preserving these names and tags.
 images:
   clickhouse:
@@ -55,11 +55,11 @@ images:
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-766c4926289c591fcb56f89e2a1d3549eb22c237"
+    tag: "sha-e653d6b04a568f28482253af5a950a29b7f68814"
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-766c4926289c591fcb56f89e2a1d3549eb22c237"
+    tag: "sha-e653d6b04a568f28482253af5a950a29b7f68814"
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
