@@ -90,6 +90,14 @@ The exact release versions are recorded in `release.yaml`. Do not replace them
 during installation. See [Configuration](docs/configuration.md#bundled-data-service-versions)
 for the bundled PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse versions.
 
+## Upgrade
+
+BYOC updates are delivered through the `main` branch. Keep the existing
+`values.yaml` and `values.secrets.yaml`, update the checkout with
+`git pull --ff-only origin main`, and run the same installation command with
+the same namespace and `--generate-secrets`. The complete procedure is in
+[Upgrades](docs/upgrades.md).
+
 ## Images
 
 Print the exact Phoenix image inventory:

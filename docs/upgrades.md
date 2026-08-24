@@ -1,14 +1,40 @@
 # Upgrades
 
-1. Read the target release notes.
-2. Back up all customer-managed PostgreSQL databases and persistent volumes.
-3. Check out the Git tag containing the target `release.yaml`.
-4. Run preflight and render.
-5. Review image, chart, Job, CRD and database migration changes.
-6. Run `install.sh --generate-secrets` with the same `--namespace`, `--values`
-   and generated `--secrets` file. Do not create a new secrets file for an
-   upgrade.
-7. Run `verify.sh` with the same arguments and application smoke tests.
+BYOC releases are delivered through the `main` branch. Before updating, keep
+the existing `values.yaml` and generated `values.secrets.yaml`; do not copy the
+examples over them or create a new secrets file.
+
+Record the currently installed repository revision, then update the local
+checkout:
+
+```bash
+git rev-parse HEAD
+git switch main
+git pull --ff-only origin main
+```
+
+Review the new `release.yaml` and repository changes, then back up all
+customer-managed PostgreSQL databases and persistent volumes. Apply the update
+with the same namespace and configuration files used for the installation:
+
+```bash
+./scripts/install.sh \
+  --namespace phoenix \
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml \
+  --generate-secrets
+```
+
+Replace `phoenix` with the existing installation namespace. The installer
+performs preflight and rendering before it upgrades the enabled releases.
+After the update, verify the installation with the same inputs:
+
+```bash
+./scripts/verify.sh \
+  --namespace phoenix \
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
+```
 
 Chart and image versions are immutable. Never edit a published version in
 place.
