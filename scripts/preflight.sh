@@ -145,8 +145,12 @@ case "$mail_delivery_method" in
       require_value secrets.application.smtpPassword
     fi
     ;;
+  test)
+    # ActionMailer keeps messages in memory and does not contact a mail
+    # provider. No Mailgun or SMTP credentials are required.
+    ;;
   *)
-    echo "ERROR: application.mailer.deliveryMethod must be empty, mailgun or smtp." >&2
+    echo "ERROR: application.mailer.deliveryMethod must be empty, mailgun, smtp or test." >&2
     exit 1
     ;;
 esac

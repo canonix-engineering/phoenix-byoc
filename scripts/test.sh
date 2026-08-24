@@ -74,6 +74,73 @@ if grep -q 'test-only-admin-password' "$example_tmp/admin-create.log"; then
   exit 1
 fi
 
+# The supported no-delivery mode must pass preflight and render without
+# Mailgun or SMTP credentials. Mock only the read-only Kubernetes calls made by
+# preflight so this check never reaches a real cluster.
+mail_test_tmp="$example_tmp/mail-test"
+mkdir -p "$mail_test_tmp"
+cp "$repo_root/tests/fixtures/values-private-registry.yaml" \
+  "$mail_test_tmp/values.yaml"
+cp "$repo_root/tests/fixtures/values.secrets.yaml" \
+  "$mail_test_tmp/values.secrets.yaml"
+yq -i '
+  .application.mailer.deliveryMethod = "test" |
+  .application.mailer.domain = ""
+' "$mail_test_tmp/values.yaml"
+yq -i '
+  .secrets.application.mailgunApiKey = "" |
+  .secrets.application.smtpPassword = ""
+' "$mail_test_tmp/values.secrets.yaml"
+kubectl() {
+  case "$*" in
+    "config current-context")
+      echo "test-context"
+      ;;
+    "version --output=json")
+      echo '{}'
+      ;;
+    "get customresourcedefinition "*)
+      return 1
+      ;;
+    *)
+      echo "ERROR: unexpected kubectl call in mail-mode test: $*" >&2
+      return 93
+      ;;
+  esac
+}
+export -f kubectl
+PHOENIX_BYOC_NAMESPACE=phoenix-mail-test \
+PHOENIX_BYOC_VALUES_FILE="$mail_test_tmp/values.yaml" \
+PHOENIX_BYOC_SECRETS_FILE="$mail_test_tmp/values.secrets.yaml" \
+  "$repo_root/scripts/preflight.sh" >"$mail_test_tmp/preflight.log"
+unset -f kubectl
+grep -q 'Preflight passed.' "$mail_test_tmp/preflight.log" || {
+  echo "ERROR: deliveryMethod test did not pass preflight" >&2
+  exit 1
+}
+
+mail_test_render_dir="$repo_root/.rendered/test-mail-disabled"
+mkdir -p "$cache_dir" "$mail_test_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$mail_test_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$mail_test_tmp/values.secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-mail-test \
+    helmfile template --skip-deps --quiet \
+    >"$mail_test_render_dir/all.yaml"
+)
+chmod 600 "$mail_test_render_dir/all.yaml"
+grep -Eq 'MAIL_DELIVERY_METHOD: "?test"?' "$mail_test_render_dir/all.yaml" || {
+  echo "ERROR: deliveryMethod test was not rendered" >&2
+  exit 1
+}
+if grep -Eq 'SMTP_USER_NAME|SMTP_PASSWORD' "$mail_test_render_dir/all.yaml"; then
+  echo "ERROR: no-delivery render contains SMTP credentials" >&2
+  exit 1
+fi
+
 # Secret generation is exercised before any cluster access. The deliberately
 # unresolved external credentials make preflight stop after the generator has
 # created and reconciled the temporary file.

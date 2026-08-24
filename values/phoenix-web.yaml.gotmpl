@@ -128,7 +128,7 @@ secret:
   phoenixWorkflowEngineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
   phoenixInternalServiceTokens: {{ $internalServiceTokens | quote }}
   githubPat: {{ .Values.secrets.agents.githubPat | quote }}
-  mailgunApiKey: {{ if eq $mailDeliveryMethod "smtp" }}{{ .Values.secrets.application.mailgunApiKey | quote }}{{ else }}{{ required "secrets.application.mailgunApiKey is required when application.mailer.deliveryMethod is mailgun or empty" .Values.secrets.application.mailgunApiKey | quote }}{{ end }}
+  mailgunApiKey: {{ if eq $mailDeliveryMethod "mailgun" }}{{ required "secrets.application.mailgunApiKey is required when application.mailer.deliveryMethod is mailgun or empty" .Values.secrets.application.mailgunApiKey | quote }}{{ else }}{{ .Values.secrets.application.mailgunApiKey | quote }}{{ end }}
   smtpPassword: {{ .Values.secrets.application.smtpPassword | quote }}
   guardrailsTestToken: {{ required "secrets.application.guardrailsTestToken is required" .Values.secrets.application.guardrailsTestToken | quote }}
   jsTransformTestToken: {{ required "secrets.application.jsTransformTestToken is required" .Values.secrets.application.jsTransformTestToken | quote }}

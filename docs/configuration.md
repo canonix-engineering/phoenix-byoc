@@ -116,7 +116,8 @@ Mail delivery values are passed through `application.mailer`:
 
 - `from` and `domain` configure the sender and Mailgun domain;
 - `deliveryMethod` is passed as `MAIL_DELIVERY_METHOD`; an empty value keeps
-  the application image's default delivery method;
+  the application image's default delivery method. Supported explicit values
+  are `mailgun`, `smtp` and `test`;
 - `smtp.address`, `port`, `userName`, `authentication`,
   `enableStarttlsAuto` and `heloDomain` are passed as their corresponding
   `SMTP_*` variables;
@@ -126,6 +127,13 @@ Mail delivery values are passed through `application.mailer`:
 Preflight requires the Mailgun domain and API key when `deliveryMethod` is
 empty or `mailgun`. When it is `smtp`, the SMTP address and port are required;
 an SMTP password is required when a username is configured.
+
+`deliveryMethod: test` requires no Mailgun or SMTP credentials and allows the
+platform to run without an external mail provider. ActionMailer retains mail
+only in process memory in this mode: invitations, password resets and other
+notifications are not delivered. In release `0.2.0-development.5`, use this as
+the no-delivery mode; its `phoenix-web` image does not support unauthenticated
+SMTP even though BYOC values and preflight permit empty SMTP credentials.
 
 ## Claude Code through Google Vertex AI
 

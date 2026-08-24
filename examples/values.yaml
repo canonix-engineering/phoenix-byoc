@@ -134,11 +134,17 @@ application:
     from: Phoenix <noreply@example.invalid>
     domain: example.invalid
     # Empty means the application's default provider (currently Mailgun).
-    # Set to smtp to pass the SMTP settings below to phoenix-web.
+    # Set to smtp to pass the SMTP settings below to phoenix-web. Set to test
+    # to disable external delivery; invitations and password resets are then
+    # retained only in process memory and are not delivered.
     deliveryMethod: ""
     smtp:
       address: ""
       port: ""
+      # Optional. Leave empty together with smtpPassword for an unauthenticated
+      # relay. The current phoenix-web release still requires credentials for
+      # SMTP at boot; use deliveryMethod: test until an application image with
+      # unauthenticated SMTP support is released.
       userName: ""
       authentication: ""
       enableStarttlsAuto: ""

@@ -65,14 +65,22 @@ Fill only credentials issued outside the installation:
   direct-ECR configuration, unless
   `registry.ecrRefresh.credentialsSecretName` selects an existing Kubernetes
   Secret; replace both placeholders with empty strings when they are unused;
-- `secrets.application.mailgunApiKey`, or the SMTP password when SMTP is
-  selected; replace the unused Mailgun placeholder with an empty string;
+- `secrets.application.mailgunApiKey`, or the SMTP password when authenticated
+  SMTP is selected; set both fields to an empty string for
+  `deliveryMethod: test`;
 - only the Claude, Anthropic, GitHub, OpenAI or Gemini credentials required by
   enabled workflows.
 
 `sessionToken` remains empty for long-lived IAM user credentials. Optional
 external integrations that are not enabled must use an empty string instead of
 a `CHANGE_ME_*` placeholder.
+
+Use `application.mailer.deliveryMethod: test` when the installation must run
+without a mail provider. This mode does not deliver invitations, password
+resets or notifications. Release `0.2.0-development.5` cannot use an
+unauthenticated SMTP relay because its `phoenix-web` image requires SMTP
+credentials at boot; `test` is the supported BYOC no-delivery workaround for
+that release.
 
 ### Leave internal secrets for the installer
 
