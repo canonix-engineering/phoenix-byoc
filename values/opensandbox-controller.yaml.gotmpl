@@ -1,4 +1,8 @@
 {{- $repository := .Values.images.opensandboxController.repository }}
+{{- $tag := .Values.images.opensandboxController.tag }}
+{{- with .Values.images.opensandboxController.digest }}
+{{- $tag = printf "%s@%s" $tag . }}
+{{- end }}
 {{- if .Values.imageRegistry }}
 {{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.opensandboxController.name }}
 {{- end }}
@@ -11,7 +15,7 @@ rbac:
 controller:
   image:
     repository: {{ $repository | quote }}
-    tag: {{ .Values.images.opensandboxController.tag | quote }}
+    tag: {{ $tag | quote }}
     pullPolicy: {{ .Values.imagePullPolicy }}
   replicaCount: 1
   logLevel: info
