@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.7"
+  version: "0.2.0-development.8"
   channel: development
   sourceEnvironment: test
-  observedAt: "2026-08-25"
+  observedAt: "2026-09-01"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -14,7 +14,7 @@ versions:
   phoenixGateway: "0.2.0"
   phoenixWeb: "0.2.2"
   phoenixWebFrontend: "0.1.0"
-  phoenixWorkflowEngine: "0.2.1"
+  phoenixWorkflowEngine: "0.2.2"
   postgresql: "2.0.4"
   postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
