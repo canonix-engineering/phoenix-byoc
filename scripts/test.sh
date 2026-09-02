@@ -451,6 +451,14 @@ if [[ "$agent_harness_url" != "ws://phoenix-web.phoenix.svc.cluster.local:80/cab
   exit 1
 fi
 
+action_cable_allowed_origins=$(yq -r \
+  'select(.kind == "ConfigMap" and .metadata.name == "phoenix-web") | .data.ACTION_CABLE_ALLOWED_ORIGINS' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+if [[ "$action_cable_allowed_origins" != *"http://phoenix-web.phoenix.svc.cluster.local"* ]]; then
+  echo "ERROR: Phoenix Web does not allow the internal agent harness WebSocket origin" >&2
+  exit 1
+fi
+
 yq -e \
   'select(.kind == "Job" and .metadata.name == "phoenix-workflow-engine-migrate")' \
   "$repo_root/.rendered/test-bundled/all.yaml" >/dev/null || {

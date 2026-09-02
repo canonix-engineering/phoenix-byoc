@@ -105,7 +105,10 @@ Individual application ingress resources are controlled under `ingress.*`.
 `application.actionCableAllowedOrigins` is passed to Phoenix Web as
 `ACTION_CABLE_ALLOWED_ORIGINS`. Use a comma-separated list of allowed WebSocket
 origins, including the scheme, for example
-`https://phoenix.customer.example`.
+`https://phoenix.customer.example`. The installer automatically appends the
+cluster-local Phoenix Web origin derived from the installation namespace and
+`clusterDomain`; it is required by the internal agent harness and must not be
+configured by the customer.
 
 `application.skipCsrf` controls the existing `web.skipCsrf` chart setting. The
 example uses `true` to match the source `test` environment. Set it to `false`

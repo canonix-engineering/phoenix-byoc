@@ -1,5 +1,5 @@
 release:
-  version: "0.2.0-development.9"
+  version: "0.2.0-development.10"
   channel: development
   sourceEnvironment: test
   observedAt: "2026-09-02"
@@ -20,7 +20,7 @@ versions:
   redis: "1.6.18"
 
 # Exact runtime images observed in the source environment declared above on
-# 2026-08-25. Set imageRegistry in the selected values file after copying every
+# 2026-09-02. Set imageRegistry in the selected values file after copying every
 # image to a customer registry while preserving these names and tags.
 images:
   clickhouse:

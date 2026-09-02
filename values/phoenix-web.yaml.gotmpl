@@ -20,6 +20,11 @@
 {{- end }}
 {{- $internalServiceTokens := .Values.secrets.application.internalServiceTokens }}
 {{- $mailDeliveryMethod := .Values.application.mailer.deliveryMethod | default "mailgun" }}
+{{- $internalActionCableOrigin := printf "http://phoenix-web.%s.svc.%s" .Values.namespace .Values.clusterDomain }}
+{{- $actionCableAllowedOrigins := $internalActionCableOrigin }}
+{{- if .Values.application.actionCableAllowedOrigins }}
+{{- $actionCableAllowedOrigins = printf "%s,%s" .Values.application.actionCableAllowedOrigins $internalActionCableOrigin }}
+{{- end }}
 {{- if not $internalServiceTokens }}
 {{- $internalServiceTokens = printf `[{"identity":"phoenix-gateway","token":%q,"scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
 {{- end }}
@@ -37,7 +42,7 @@ web:
   logLevel: info
   skipCsrf: {{ .Values.application.skipCsrf }}
   allowedHosts: {{ .Values.application.allowedHosts | quote }}
-  actionCableAllowedOrigins: {{ .Values.application.actionCableAllowedOrigins | quote }}
+  actionCableAllowedOrigins: {{ $actionCableAllowedOrigins | quote }}
   appHost: {{ .Values.application.appHost | quote }}
   spaHost: {{ required "application.spaHost is required" .Values.application.spaHost | quote }}
   tenantId: {{ .Values.application.tenantId | quote }}
