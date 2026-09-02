@@ -1,5 +1,5 @@
 release:
-  version: "0.2.0-development.10"
+  version: "0.2.0-development.11"
   channel: development
   sourceEnvironment: test
   observedAt: "2026-09-02"
@@ -34,13 +34,13 @@ images:
     tag: "61b95bb"
   opensandboxController:
     name: phoenix-opensandbox-controller
-    repository: ghcr.io/canonix-engineering/phoenix-byoc/opensandbox-controller
-    tag: "controller-upstream-c16dfe25"
-    digest: "sha256:c019ebf1f89b1fd5bbadaa126577b71d1e63dd69e1a1f6288939c9c5bdabaaa5"
+    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller
+    tag: "sha-4f017af7a2987e4aef38b0a5b868a5aae68277c5"
+    digest: "sha256:e96c56e12c7c5fe1134c46692e468ca9ee4f554294f7a117f9efd0ab1805d971"
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: "sha-ba0bb18dd8586124513dba341a9098e8860bef31"
+    tag: "sha-92a5192613fe6232bf9b50f7e93b34bf36008e1e"
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
@@ -52,16 +52,16 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: "sha-7661d06299b9dbbb53f02db2580d85d6efffbbeb"
+    tag: "sha-ef823cd132b2082de83ed38714dfc39357ae6894"
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-3e58571fc1f89466e0cbe9c34ced49683f31399b"
+    tag: "sha-18d11c4ae93e19623a3a7c6dc3308e3f02fe7727"
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-3e58571fc1f89466e0cbe9c34ced49683f31399b"
+    tag: "sha-18d11c4ae93e19623a3a7c6dc3308e3f02fe7727"
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: "sha-7661d06299b9dbbb53f02db2580d85d6efffbbeb"
+    tag: "sha-ef823cd132b2082de83ed38714dfc39357ae6894"
