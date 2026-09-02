@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.8"
+  version: "0.2.0-development.9"
   channel: development
   sourceEnvironment: test
-  observedAt: "2026-09-01"
+  observedAt: "2026-09-02"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -40,7 +40,7 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: "sha-9f78c035723cecef9e4ee8db46b269bec9b3d630"
+    tag: "sha-ba0bb18dd8586124513dba341a9098e8860bef31"
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
