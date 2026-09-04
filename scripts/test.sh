@@ -479,6 +479,17 @@ if yq -r \
   exit 1
 fi
 
+github_pr_creation_enabled=$(yq -r \
+  'select(.kind == "ConfigMap" and .metadata.name == "phoenix-workflow-engine") | .data.GITHUB_PULL_REQUEST_CREATION_ENABLED' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+github_public_prs_enabled=$(yq -r \
+  'select(.kind == "ConfigMap" and .metadata.name == "phoenix-workflow-engine") | .data.GITHUB_ALLOW_PUBLIC_PULL_REQUESTS' \
+  "$repo_root/.rendered/test-bundled/all.yaml")
+if [[ "$github_pr_creation_enabled" != "false" || "$github_public_prs_enabled" != "false" ]]; then
+  echo "ERROR: Workflow Engine GitHub PR policy defaults must render false/false" >&2
+  exit 1
+fi
+
 # The exact customer-facing examples must render after their documented
 # placeholders are replaced; fixtures alone are not sufficient coverage.
 sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
@@ -506,6 +517,57 @@ grep -q 'name: ecr-pull-secret-refresh' "$example_render_dir/all.yaml" || {
   echo "ERROR: customer example render is missing direct ECR refresh" >&2
   exit 1
 }
+
+yq -i '
+  .services.workflowEngine.githubPullRequests.creationEnabled = true |
+  .services.workflowEngine.githubPullRequests.allowPublicRepositories = true
+' "$example_tmp/values.yaml"
+github_pr_render_dir="$repo_root/.rendered/test-github-public-prs"
+mkdir -p "$github_pr_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$example_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$example_tmp/secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-example \
+    helmfile template --skip-deps --quiet \
+    >"$github_pr_render_dir/all.yaml"
+)
+chmod 600 "$github_pr_render_dir/all.yaml"
+for expected in \
+  'GITHUB_PULL_REQUEST_CREATION_ENABLED=true' \
+  'GITHUB_ALLOW_PUBLIC_PULL_REQUESTS=true'; do
+  key=${expected%%=*}
+  expected_value=${expected#*=}
+  actual_value=$(yq -r \
+    "select(.kind == \"ConfigMap\" and .metadata.name == \"phoenix-workflow-engine\") | .data.$key" \
+    "$github_pr_render_dir/all.yaml")
+  if [[ "$actual_value" != "$expected_value" ]]; then
+    echo "ERROR: $key did not render as $expected_value" >&2
+    exit 1
+  fi
+done
+
+yq -i '.services.workflowEngine.githubPullRequests.creationEnabled = false' \
+  "$example_tmp/values.yaml"
+if PHOENIX_BYOC_NAMESPACE=phoenix-example \
+   PHOENIX_BYOC_VALUES_FILE="$example_tmp/values.yaml" \
+   PHOENIX_BYOC_SECRETS_FILE="$example_tmp/secrets.yaml" \
+   "$repo_root/scripts/preflight.sh" >"$example_tmp/github-pr-invalid.log" 2>&1; then
+  echo "ERROR: preflight accepted public PRs while PR creation was disabled" >&2
+  exit 1
+fi
+grep -q 'requires services.workflowEngine.githubPullRequests.creationEnabled=true' \
+  "$example_tmp/github-pr-invalid.log" || {
+    echo "ERROR: preflight did not explain the invalid GitHub PR policy" >&2
+    exit 1
+  }
+
+# Restore the documented default before using this example for the shared
+# OpenSandbox-controller render below.
+yq -i '.services.workflowEngine.githubPullRequests.allowPublicRepositories = false' \
+  "$example_tmp/values.yaml"
 if command -v kubeconform >/dev/null 2>&1; then
   kubeconform \
     -kubernetes-version 1.32.0 \

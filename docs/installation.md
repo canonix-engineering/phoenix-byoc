@@ -24,6 +24,8 @@ Replace every `CHANGE_ME` value and review these groups:
 - `application.tenantId`, `appHost`, `spaHost`, `allowedHosts` and
   `actionCableAllowedOrigins`;
 - `application.mailer` sender, domain and optional SMTP settings;
+- `services.workflowEngine.githubPullRequests` when ticket workflows may
+  create GitHub pull requests;
 - `ingress.className`, frontend host, annotations and TLS configuration;
 - `postgresql`, `redis`, `cortex` and `clickhouse` component selection,
   StorageClasses, PVC sizes and resources;

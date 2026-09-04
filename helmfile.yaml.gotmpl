@@ -200,5 +200,5 @@ releases:
 {{- if .Values.redis.bundled.enabled }}
       - {{ $namespace }}/redis
 {{- end }}
-    wait: false
+    wait: true
     timeout: 1860

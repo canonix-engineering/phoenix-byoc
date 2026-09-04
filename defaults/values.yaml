@@ -189,6 +189,9 @@ services:
     orchestratorReplicas: 1
     operatorReplicas: 1
     sdlcIncrementalReindexEnabled: true
+    githubPullRequests:
+      creationEnabled: false
+      allowPublicRepositories: false
     supervisor:
       enabled: false
     operator:

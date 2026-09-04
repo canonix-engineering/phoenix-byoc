@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.11"
+  version: "0.2.0-development.12"
   channel: development
   sourceEnvironment: test
-  observedAt: "2026-09-02"
+  observedAt: "2026-09-04"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -14,7 +14,7 @@ versions:
   phoenixGateway: "0.2.0"
   phoenixWeb: "0.2.2"
   phoenixWebFrontend: "0.1.0"
-  phoenixWorkflowEngine: "0.2.2"
+  phoenixWorkflowEngine: "0.2.3"
   postgresql: "2.0.4"
   postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
@@ -52,16 +52,16 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: "sha-ef823cd132b2082de83ed38714dfc39357ae6894"
+    tag: "sha-e64675b4dd7ca04e6f08da13273108ece45725c2"
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-18d11c4ae93e19623a3a7c6dc3308e3f02fe7727"
+    tag: "sha-f024044816e55fefb576ca8f53eed6f231c99919"
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-18d11c4ae93e19623a3a7c6dc3308e3f02fe7727"
+    tag: "sha-f024044816e55fefb576ca8f53eed6f231c99919"
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: "sha-ef823cd132b2082de83ed38714dfc39357ae6894"
+    tag: "sha-e64675b4dd7ca04e6f08da13273108ece45725c2"

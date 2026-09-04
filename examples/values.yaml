@@ -195,6 +195,11 @@ services:
     orchestratorReplicas: 1
     operatorReplicas: 1
     sdlcIncrementalReindexEnabled: true
+    # Pull request creation is disabled by default. Enable creation explicitly;
+    # public repositories require the second opt-in as well.
+    githubPullRequests:
+      creationEnabled: false
+      allowPublicRepositories: false
     supervisor:
       # Disabled to match the source test environment.
       enabled: false

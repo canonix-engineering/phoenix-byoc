@@ -106,6 +106,10 @@ cortexDatabase:
 sdlcIntake:
   incrementalReindexEnabled: {{ .Values.services.workflowEngine.sdlcIncrementalReindexEnabled }}
 
+githubPullRequests:
+  creationEnabled: {{ .Values.services.workflowEngine.githubPullRequests.creationEnabled }}
+  allowPublicRepositories: {{ .Values.services.workflowEngine.githubPullRequests.allowPublicRepositories }}
+
 api:
   replicaCount: {{ .Values.services.workflowEngine.apiReplicas }}
   resources:

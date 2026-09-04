@@ -58,6 +58,11 @@ including ECR credentials when direct ECR access is selected and the mail and
 agent-provider credentials used by the installation. Leave all
 `GENERATE_HEX_*` and `DERIVE_*` markers unchanged.
 
+GitHub pull request creation is disabled by default. Enable it explicitly under
+`services.workflowEngine.githubPullRequests`; public repositories require the
+additional `allowPublicRepositories` opt-in. See
+[Configuration](docs/configuration.md#github-pull-request-creation).
+
 Install the complete bundled platform into the selected namespace:
 
 ```bash

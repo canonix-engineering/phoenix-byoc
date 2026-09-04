@@ -104,6 +104,23 @@ value() {
   printf '%s\n' "$result"
 }
 
+for boolean_path in \
+  services.workflowEngine.githubPullRequests.creationEnabled \
+  services.workflowEngine.githubPullRequests.allowPublicRepositories; do
+  if ! yq -e ".$boolean_path | tag == \"!!bool\"" "$merged_file" >/dev/null 2>&1; then
+    echo "ERROR: $boolean_path must be a boolean (true or false)." >&2
+    exit 1
+  fi
+done
+
+github_pr_creation_enabled=$(value services.workflowEngine.githubPullRequests.creationEnabled)
+github_public_prs_enabled=$(value services.workflowEngine.githubPullRequests.allowPublicRepositories)
+if [[ "$github_public_prs_enabled" == "true" && "$github_pr_creation_enabled" != "true" ]]; then
+  echo "ERROR: services.workflowEngine.githubPullRequests.allowPublicRepositories=true" >&2
+  echo "       requires services.workflowEngine.githubPullRequests.creationEnabled=true." >&2
+  exit 1
+fi
+
 missing=()
 require_value() {
   local path=$1
@@ -329,4 +346,6 @@ echo "Bundled ClickHouse: $bundled_clickhouse"
 echo "Bundled ingress:    $bundled_ingress"
 echo "OpenSandbox ctrl:   $opensandbox_controller_enabled"
 echo "ECR token refresh:  $ecr_refresh_enabled"
+echo "GitHub PR creation: $github_pr_creation_enabled"
+echo "Public GitHub PRs:  $github_public_prs_enabled"
 echo "Preflight passed."

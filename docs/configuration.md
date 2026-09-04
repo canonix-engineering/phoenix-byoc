@@ -53,7 +53,7 @@ The current release installs these exact Phoenix-owned chart versions:
 | Phoenix Gateway | `0.2.0` |
 | Phoenix Web | `0.2.2` |
 | Phoenix Web Frontend | `0.1.0` |
-| Phoenix Workflow Engine | `0.2.1` |
+| Phoenix Workflow Engine | `0.2.3` |
 | PostgreSQL bootstrap (included in this repository) | `0.1.0` |
 
 The chart version is independent from the runtime image tag. Both are pinned
@@ -194,6 +194,36 @@ The customer-facing workflow settings are under `services.workflowEngine` and
 
 These values are passed directly to the Phoenix Workflow Engine chart. They do
 not change node labels, placement policy or cluster capacity.
+
+## GitHub pull request creation
+
+Pull request publication is disabled by default and is controlled under
+`services.workflowEngine.githubPullRequests`:
+
+```yaml
+services:
+  workflowEngine:
+    githubPullRequests:
+      creationEnabled: false
+      allowPublicRepositories: false
+```
+
+Set `creationEnabled: true` to allow the ticket workflow to create pull
+requests for private repositories and GitHub Enterprise internal repositories.
+Set both values to `true` when pull requests must also be created for public
+repositories. `allowPublicRepositories: true` is invalid while
+`creationEnabled` is false, and preflight rejects that combination.
+
+This is an installation-wide policy; no separate per-application
+`external_writes_enabled` setting is required. The GitHub connection selected
+for the application must use a credential that can read the repository, push a
+branch and create a pull request. For a fine-grained GitHub token, grant access
+to the selected repositories with `Contents: Read and write`,
+`Pull requests: Read and write` and `Metadata: Read`.
+
+The provider credential is configured through the application's GitHub
+connection. The two BYOC values above contain no credential and belong in
+`values.yaml`, not `values.secrets.yaml`.
 
 The example also exposes the application workload resources observed in the
 source `test` environment under `services.web.resources`,
