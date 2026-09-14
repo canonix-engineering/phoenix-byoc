@@ -33,6 +33,8 @@ Replace every `CHANGE_ME` value and review these groups:
   `sandboxResourceClasses` entry;
 - `imageRegistry`, `imagePullSecrets` and `registry.ecrRefresh` for direct ECR
   access or a mirrored registry.
+- `opensandboxController.snapshot` when sandbox pause/resume snapshots must be
+  stored in a customer-owned registry.
 
 For a single public domain such as `platform.acme.example`, use:
 
@@ -72,6 +74,9 @@ Fill only credentials issued outside the installation:
   and set both fields to an empty string for `deliveryMethod: test`;
 - only the Claude, Anthropic, GitHub, OpenAI or Gemini credentials required by
   enabled workflows.
+- `secrets.registry.snapshot.username` and `password` when OpenSandbox
+  snapshots are enabled without an existing credentials Secret. For Google
+  Artifact Registry, use `_json_key` and the complete service-account JSON key.
 
 `sessionToken` remains empty for long-lived IAM user credentials. Optional
 external integrations that are not enabled must use an empty string instead of
@@ -103,6 +108,7 @@ It derives namespace-specific values for:
 
 Bundled Redis has authentication disabled, so only its URL is derived. ECR,
 mail-provider and agent-provider credentials are never generated.
+Snapshot registry credentials are also external and are never generated.
 
 Copying `values.secrets.yaml` is optional. If the selected file does not exist,
 `--generate-secrets` creates it from `examples/values.secrets.yaml`, generates
@@ -187,6 +193,13 @@ When `registry.ecrRefresh.enabled=true`, Helmfile installs the ECR refresh helpe
 first. Its initial Job must successfully populate the configured pull Secret
 before any Phoenix release that uses a private image is installed. The scheduled
 CronJob then renews the token automatically.
+
+When `opensandboxController.snapshot.enabled=true`, the same helper also
+maintains a separate `opensandbox-registry-auth` Docker config Secret. It
+combines refreshed ECR authorization for source-image layers with the customer
+registry credential used to push and pull snapshots. The existing
+`phoenix-ecr-pull` Secret remains ECR-only. See
+[OpenSandbox snapshot pause and resume](configuration.md#opensandbox-snapshot-pause-and-resume).
 
 ## Access the UI
 

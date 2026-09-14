@@ -33,6 +33,13 @@ opensandboxController:
   crds:
     install: true
     keep: true
+  snapshot:
+    enabled: false
+    registry: ""
+    registryInsecure: false
+    commitJobTimeout: 10m
+    secretName: opensandbox-registry-auth
+    credentialsSecretName: ""
   resources:
     requests:
       cpu: 10m
@@ -302,6 +309,9 @@ secrets:
       accessKeyId: ""
       secretAccessKey: ""
       sessionToken: ""
+    snapshot:
+      username: _json_key
+      password: ""
   postgresql:
     superuserPassword: ""
     applicationPassword: ""

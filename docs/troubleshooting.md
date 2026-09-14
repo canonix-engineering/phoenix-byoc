@@ -49,6 +49,22 @@ access key is active and still has `ecr:GetAuthorizationToken`. If the pull
 Secret is missing, confirm that `registry.ecrRefresh.pullSecretName` is also
 listed under `imagePullSecrets`.
 
+## OpenSandbox pause does not create a snapshot
+
+Confirm that snapshot mode is enabled and both managed registry Secrets exist:
+
+```bash
+kubectl -n phoenix get secret/phoenix-ecr-pull
+kubectl -n phoenix get secret/opensandbox-registry-auth
+kubectl -n phoenix get jobs -l app.kubernetes.io/name=ecr-pull-secret-refresh
+```
+
+Inspect the relevant `SandboxSnapshot` and commit Job without decoding either
+Secret. An ECR authorization error means the source token was not refreshed;
+a GAR authorization error means the configured service account cannot write
+to the selected repository. Confirm that the registry prefix names an existing
+GAR Docker repository and does not include `https://`.
+
 ## Phoenix Web migration fails
 
 Inspect:

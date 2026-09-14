@@ -11,6 +11,9 @@ rules:
       - secrets
     resourceNames:
       - {{ required "pullSecretName is required" .Values.pullSecretName }}
+{{- if .Values.snapshotRegistry.enabled }}
+      - {{ required "snapshotRegistry.secretName is required when snapshotRegistry.enabled=true" .Values.snapshotRegistry.secretName }}
+{{- end }}
     verbs:
       - get
       - patch

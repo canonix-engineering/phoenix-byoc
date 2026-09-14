@@ -37,8 +37,13 @@ Helm apply operations as approval boundaries.
 6. Preserve `opensandboxController.enabled`. When it is `false`, require an
    existing compatible cluster-wide controller and CRDs; never change their
    Helm ownership annotations.
-7. Do not change `release.yaml`.
-8. For a complete bundled installation, `--generate-secrets` creates or
+7. Keep `opensandboxController.snapshot.enabled=false` unless the customer
+   explicitly selected snapshot pause/resume. When enabled, require direct ECR
+   refresh, a customer-owned OCI repository prefix, and either the external
+   target credential in the selected secrets file or an existing Opaque Secret
+   with `username` and `password`. Never print either registry credential.
+8. Do not change `release.yaml`.
+9. For a complete bundled installation, `--generate-secrets` creates or
    reconciles the selected secrets file, fills `GENERATE_HEX_*` internal
    passwords and tokens, and resolves known `DERIVE_*` values. Confirm that all
    four bundled dependencies are enabled and that the selected path is not

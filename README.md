@@ -63,6 +63,13 @@ GitHub pull request creation is disabled by default. Enable it explicitly under
 additional `allowPublicRepositories` opt-in. See
 [Configuration](docs/configuration.md#github-pull-request-creation).
 
+OpenSandbox snapshot pause/resume is also disabled by default. Direct-ECR
+installations can store snapshots in a customer-owned Google Artifact Registry
+repository without rebuilding any Phoenix image. Configure the optional
+`opensandboxController.snapshot` block and its target-registry credential as
+described in
+[Configuration](docs/configuration.md#opensandbox-snapshot-pause-and-resume).
+
 Install the complete bundled platform into the selected namespace:
 
 ```bash

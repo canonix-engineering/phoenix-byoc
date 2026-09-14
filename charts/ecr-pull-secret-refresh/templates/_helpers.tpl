@@ -2,6 +2,14 @@
 {{- .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
+{{- define "ecr-pull-secret-refresh.snapshotCredentialsSecretName" -}}
+{{- if .Values.snapshotRegistry.credentials.existingSecret -}}
+{{- .Values.snapshotRegistry.credentials.existingSecret -}}
+{{- else -}}
+{{- printf "%s-snapshot-registry-credentials" (include "ecr-pull-secret-refresh.name" .) -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "ecr-pull-secret-refresh.credentialsSecretName" -}}
 {{- if .Values.credentials.existingSecret -}}
 {{- .Values.credentials.existingSecret -}}
@@ -73,6 +81,21 @@ initContainers:
           '  .dockerconfigjson: |' \
           "    {\"auths\":{\"$ECR_REGISTRY\":{\"auth\":\"$token\"}}}" \
           > /work/secret.yaml
+        if [ "$SNAPSHOT_REGISTRY_ENABLED" = "true" ]; then
+          snapshot_auth="$(printf '%s:%s' "$SNAPSHOT_REGISTRY_USERNAME" "$SNAPSHOT_REGISTRY_PASSWORD" | base64 | tr -d '\n')"
+          printf '%s\n' \
+            '---' \
+            'apiVersion: v1' \
+            'kind: Secret' \
+            'metadata:' \
+            "  name: $SNAPSHOT_REGISTRY_SECRET_NAME" \
+            "  namespace: $TARGET_NAMESPACE" \
+            'type: kubernetes.io/dockerconfigjson' \
+            'stringData:' \
+            '  .dockerconfigjson: |' \
+            "    {\"auths\":{\"$ECR_REGISTRY\":{\"auth\":\"$token\"},\"$SNAPSHOT_REGISTRY_HOST\":{\"auth\":\"$snapshot_auth\"}}}" \
+            >> /work/secret.yaml
+        fi
     env:
       - name: HOME
         value: /work/home
@@ -84,6 +107,24 @@ initContainers:
         value: {{ required "pullSecretName is required" .Values.pullSecretName | quote }}
       - name: TARGET_NAMESPACE
         value: {{ .Release.Namespace | quote }}
+      - name: SNAPSHOT_REGISTRY_ENABLED
+        value: {{ .Values.snapshotRegistry.enabled | quote }}
+{{- if .Values.snapshotRegistry.enabled }}
+      - name: SNAPSHOT_REGISTRY_HOST
+        value: {{ required "snapshotRegistry.registryHost is required when snapshotRegistry.enabled=true" .Values.snapshotRegistry.registryHost | quote }}
+      - name: SNAPSHOT_REGISTRY_SECRET_NAME
+        value: {{ required "snapshotRegistry.secretName is required when snapshotRegistry.enabled=true" .Values.snapshotRegistry.secretName | quote }}
+      - name: SNAPSHOT_REGISTRY_USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: {{ include "ecr-pull-secret-refresh.snapshotCredentialsSecretName" . }}
+            key: username
+      - name: SNAPSHOT_REGISTRY_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: {{ include "ecr-pull-secret-refresh.snapshotCredentialsSecretName" . }}
+            key: password
+{{- end }}
     envFrom:
       - secretRef:
           name: {{ include "ecr-pull-secret-refresh.credentialsSecretName" . }}

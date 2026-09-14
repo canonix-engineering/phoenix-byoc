@@ -1,5 +1,5 @@
 release:
-  version: "0.2.0-development.12"
+  version: "0.2.0-development.13"
   channel: development
   sourceEnvironment: test
   observedAt: "2026-09-04"
@@ -37,6 +37,11 @@ images:
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller
     tag: "sha-4f017af7a2987e4aef38b0a5b868a5aae68277c5"
     digest: "sha256:e96c56e12c7c5fe1134c46692e468ca9ee4f554294f7a117f9efd0ab1805d971"
+  opensandboxImageCommitter:
+    name: phoenix-opensandbox-image-committer
+    repository: ghcr.io/canonix-engineering/phoenix-byoc/opensandbox-controller
+    tag: "image-committer-upstream-6c433a77"
+    digest: "sha256:e71d430aa8647ec5437b1515f77748b06f4c3362756edac0dc75ca053fe21b92"
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent

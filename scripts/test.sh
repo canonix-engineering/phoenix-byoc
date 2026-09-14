@@ -261,6 +261,7 @@ for index in {1..10}; do
   yq -i ".secrets.future.token${index} = \"GENERATE_HEX_32\"" \
     "$generator_tmp/values.secrets.yaml"
 done
+
 yq -i '
   del(.secrets.application.secretKeyBase) |
   del(.secrets.application.mailgunApiKey) |
@@ -415,6 +416,121 @@ for scenario in bundled external private-registry direct-ecr; do
     }
   fi
 done
+
+# Snapshot pause/resume is opt-in. Its render must keep the existing ECR-only
+# pull Secret and create a separate Docker config containing source ECR and
+# target-registry credentials for the unmodified OpenSandbox image committer.
+snapshot_tmp="$example_tmp/snapshot-registry"
+mkdir -p "$snapshot_tmp"
+cp "$repo_root/tests/fixtures/values-direct-ecr.yaml" "$snapshot_tmp/values.yaml"
+cp "$repo_root/tests/fixtures/values.secrets-direct-ecr.yaml" "$snapshot_tmp/secrets.yaml"
+yq -i '
+  .opensandboxController.snapshot.enabled = true |
+  .opensandboxController.snapshot.registry = "us-east4-docker.pkg.dev/customer-project/opensandbox-snapshots/images"
+' "$snapshot_tmp/values.yaml"
+yq -i '
+  .secrets.registry.snapshot.username = "_json_key" |
+  .secrets.registry.snapshot.password = "test-only-service-account-json"
+' "$snapshot_tmp/secrets.yaml"
+kubectl() {
+  case "$*" in
+    "config current-context")
+      echo "test-context"
+      ;;
+    "version --output=json")
+      echo '{}'
+      ;;
+    "get customresourcedefinition "*)
+      return 1
+      ;;
+    *)
+      echo "ERROR: unexpected kubectl call in snapshot test: $*" >&2
+      return 95
+      ;;
+  esac
+}
+export -f kubectl
+PHOENIX_BYOC_NAMESPACE=phoenix \
+PHOENIX_BYOC_VALUES_FILE="$snapshot_tmp/values.yaml" \
+PHOENIX_BYOC_SECRETS_FILE="$snapshot_tmp/secrets.yaml" \
+  "$repo_root/scripts/preflight.sh" >"$snapshot_tmp/preflight.log"
+unset -f kubectl
+grep -q 'OpenSandbox snaps:  true' "$snapshot_tmp/preflight.log" || {
+  echo "ERROR: enabled snapshot mode did not pass preflight" >&2
+  exit 1
+}
+snapshot_render_dir="$repo_root/.rendered/test-snapshot-registry"
+mkdir -p "$snapshot_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$snapshot_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$snapshot_tmp/secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix \
+    helmfile template --skip-deps --quiet \
+    >"$snapshot_render_dir/all.yaml"
+)
+chmod 600 "$snapshot_render_dir/all.yaml"
+
+for secret_name in phoenix-ecr-pull opensandbox-registry-auth; do
+  yq -e \
+    "select(.kind == \"Secret\" and .metadata.name == \"$secret_name\")" \
+    "$snapshot_render_dir/all.yaml" >/dev/null || {
+      echo "ERROR: snapshot render is missing Secret $secret_name" >&2
+      exit 1
+    }
+done
+
+controller_args=$(yq -r '
+  select(.kind == "Deployment" and .metadata.name == "opensandbox-controller-manager") |
+  .spec.template.spec.containers[0].args[]
+' "$snapshot_render_dir/all.yaml")
+for expected_arg in \
+  '--snapshot-registry=us-east4-docker.pkg.dev/customer-project/opensandbox-snapshots/images' \
+  '--snapshot-push-secret=opensandbox-registry-auth' \
+  '--resume-pull-secret=opensandbox-registry-auth' \
+  '--image-committer-image=ghcr.io/canonix-engineering/phoenix-byoc/opensandbox-controller:image-committer-upstream-6c433a77@sha256:e71d430aa8647ec5437b1515f77748b06f4c3362756edac0dc75ca053fe21b92'; do
+  grep -Fxq -- "$expected_arg" <<<"$controller_args" || {
+    echo "ERROR: snapshot controller argument is missing: $expected_arg" >&2
+    exit 1
+  }
+done
+
+snapshot_refresh_script=$(yq -r '
+  select(.kind == "CronJob" and .metadata.name == "ecr-pull-secret-refresh") |
+  .spec.jobTemplate.spec.template.spec.initContainers[] |
+  select(.name == "generate-pull-secret") | .args[0]
+' "$snapshot_render_dir/all.yaml")
+for expected_text in \
+  'SNAPSHOT_REGISTRY_USERNAME' \
+  'SNAPSHOT_REGISTRY_PASSWORD' \
+  '$ECR_REGISTRY' \
+  '$SNAPSHOT_REGISTRY_HOST'; do
+  grep -Fq -- "$expected_text" <<<"$snapshot_refresh_script" || {
+    echo "ERROR: snapshot refresh script is missing $expected_text" >&2
+    exit 1
+  }
+done
+
+snapshot_registry_host=$(yq -r '
+  select(.kind == "CronJob" and .metadata.name == "ecr-pull-secret-refresh") |
+  .spec.jobTemplate.spec.template.spec.initContainers[] |
+  select(.name == "generate-pull-secret") | .env[] |
+  select(.name == "SNAPSHOT_REGISTRY_HOST") | .value
+' "$snapshot_render_dir/all.yaml")
+if [[ "$snapshot_registry_host" != "us-east4-docker.pkg.dev" ]]; then
+  echo "ERROR: snapshot Docker auth key must be the registry hostname" >&2
+  exit 1
+fi
+
+# The ordinary direct-ECR render remains snapshot-free and must not contain
+# either the combined Secret or snapshot controller flags.
+if grep -Eq 'opensandbox-registry-auth|--snapshot-registry=' \
+    "$repo_root/.rendered/test-direct-ecr/all.yaml"; then
+  echo "ERROR: disabled snapshot mode changed the direct-ECR installation" >&2
+  exit 1
+fi
 
 if grep -q 'postgresql-postgresql.*sslmode=require' \
     "$repo_root/.rendered/test-bundled/all.yaml"; then
@@ -609,6 +725,17 @@ helm lint "$repo_root/charts/clickhouse" \
   --set connection.url=http://phoenix:test-only-clickhouse@clickhouse:8123/phoenix \
   >/dev/null
 
+helm lint "$repo_root/charts/ecr-pull-secret-refresh" \
+  --set registry=526563839763.dkr.ecr.us-east-1.amazonaws.com \
+  --set credentials.accessKeyId=test-only-access-key \
+  --set credentials.secretAccessKey=test-only-secret-key \
+  --set snapshotRegistry.enabled=true \
+  --set snapshotRegistry.registryHost=us-east4-docker.pkg.dev \
+  --set snapshotRegistry.secretName=opensandbox-registry-auth \
+  --set snapshotRegistry.credentials.username=_json_key \
+  --set snapshotRegistry.credentials.password=test-only-gar-key \
+  >/dev/null
+
 if command -v shellcheck >/dev/null 2>&1; then
   shellcheck "$repo_root"/scripts/*.sh
 fi
@@ -624,12 +751,16 @@ if command -v yamllint >/dev/null 2>&1; then
 fi
 
 image_count=$("$repo_root/scripts/images.sh" list | wc -l | tr -d ' ')
-if [[ "$image_count" != "10" ]]; then
-  echo "ERROR: release.yaml must contain exactly 10 required runtime images" >&2
+if [[ "$image_count" != "11" ]]; then
+  echo "ERROR: release.yaml must contain 10 core images and the snapshot image committer" >&2
   exit 1
 fi
 while IFS= read -r image_ref; do
-  grep -Fq "$image_ref" "$repo_root/.rendered/test-bundled/all.yaml" || {
+  image_render="$repo_root/.rendered/test-bundled/all.yaml"
+  if [[ "$image_ref" == *"image-committer-upstream-6c433a77"* ]]; then
+    image_render="$snapshot_render_dir/all.yaml"
+  fi
+  grep -Fq "$image_ref" "$image_render" || {
     echo "ERROR: release image does not match the rendered deployment: $image_ref" >&2
     exit 1
   }

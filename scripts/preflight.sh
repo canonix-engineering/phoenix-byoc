@@ -106,7 +106,9 @@ value() {
 
 for boolean_path in \
   services.workflowEngine.githubPullRequests.creationEnabled \
-  services.workflowEngine.githubPullRequests.allowPublicRepositories; do
+  services.workflowEngine.githubPullRequests.allowPublicRepositories \
+  opensandboxController.snapshot.enabled \
+  opensandboxController.snapshot.registryInsecure; do
   if ! yq -e ".$boolean_path | tag == \"!!bool\"" "$merged_file" >/dev/null 2>&1; then
     echo "ERROR: $boolean_path must be a boolean (true or false)." >&2
     exit 1
@@ -179,6 +181,28 @@ bundled_clickhouse=$(value clickhouse.bundled.enabled)
 bundled_ingress=$(value ingressNginx.enabled)
 opensandbox_controller_enabled=$(value opensandboxController.enabled)
 opensandbox_crds_install=$(value opensandboxController.crds.install)
+opensandbox_snapshot_enabled=$(value opensandboxController.snapshot.enabled)
+ecr_refresh_enabled=$(value registry.ecrRefresh.enabled)
+
+if [[ "$opensandbox_snapshot_enabled" == "true" ]]; then
+  if [[ "$opensandbox_controller_enabled" != "true" ]]; then
+    echo "ERROR: opensandboxController.snapshot.enabled=true requires" >&2
+    echo "       opensandboxController.enabled=true." >&2
+    exit 1
+  fi
+  if [[ "$ecr_refresh_enabled" != "true" ]]; then
+    echo "ERROR: opensandboxController.snapshot.enabled=true currently requires" >&2
+    echo "       registry.ecrRefresh.enabled=true for source ECR credentials." >&2
+    exit 1
+  fi
+  require_value opensandboxController.snapshot.registry
+  require_value opensandboxController.snapshot.commitJobTimeout
+  require_value opensandboxController.snapshot.secretName
+  if [[ -z "$(value opensandboxController.snapshot.credentialsSecretName)" ]]; then
+    require_value secrets.registry.snapshot.username
+    require_value secrets.registry.snapshot.password
+  fi
+fi
 
 if [[ "$bundled_postgresql" == "true" ]]; then
   require_value secrets.postgresql.superuserPassword
@@ -260,9 +284,44 @@ fi
 
 pull_secrets=$(yq -r '.imagePullSecrets[]?.name // ""' "$merged_file")
 image_registry=$(value imageRegistry)
-ecr_refresh_enabled=$(value registry.ecrRefresh.enabled)
 ecr_refresh_pull_secret=$(value registry.ecrRefresh.pullSecretName)
 ecr_credentials_secret=$(value registry.ecrRefresh.credentialsSecretName)
+
+if [[ "$opensandbox_snapshot_enabled" == "true" ]]; then
+  snapshot_registry=$(value opensandboxController.snapshot.registry)
+  snapshot_secret=$(value opensandboxController.snapshot.secretName)
+  snapshot_credentials_secret=$(value opensandboxController.snapshot.credentialsSecretName)
+  if [[ "$snapshot_registry" == *"://"* || "$snapshot_registry" != */* ]]; then
+    echo "ERROR: opensandboxController.snapshot.registry must be an OCI repository" >&2
+    echo "       prefix without a URL scheme, for example:" >&2
+    echo "       us-east4-docker.pkg.dev/project/repository/snapshots" >&2
+    exit 1
+  fi
+  if [[ "$snapshot_secret" == "$ecr_refresh_pull_secret" ]]; then
+    echo "ERROR: opensandboxController.snapshot.secretName must differ from" >&2
+    echo "       registry.ecrRefresh.pullSecretName so the existing ECR-only" >&2
+    echo "       pull Secret remains unchanged." >&2
+    exit 1
+  fi
+  if [[ -n "$snapshot_credentials_secret" ]]; then
+    if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+      echo "ERROR: namespace '$namespace' must exist when using an existing snapshot registry credentials Secret." >&2
+      exit 1
+    fi
+    kubectl -n "$namespace" get secret "$snapshot_credentials_secret" >/dev/null || {
+      echo "ERROR: snapshot registry credentials Secret '$snapshot_credentials_secret' does not exist in namespace '$namespace'." >&2
+      exit 1
+    }
+    for credential_key in username password; do
+      credential_value=$(kubectl -n "$namespace" get secret "$snapshot_credentials_secret" \
+        -o "jsonpath={.data.$credential_key}")
+      if [[ -z "$credential_value" ]]; then
+        echo "ERROR: snapshot registry credentials Secret '$snapshot_credentials_secret' is missing key '$credential_key'." >&2
+        exit 1
+      fi
+    done
+  fi
+fi
 
 managed_pull_secret=""
 if [[ "$ecr_refresh_enabled" == "true" ]]; then
@@ -345,6 +404,7 @@ echo "Bundled Cortex DB:  $bundled_cortex"
 echo "Bundled ClickHouse: $bundled_clickhouse"
 echo "Bundled ingress:    $bundled_ingress"
 echo "OpenSandbox ctrl:   $opensandbox_controller_enabled"
+echo "OpenSandbox snaps:  $opensandbox_snapshot_enabled"
 echo "ECR token refresh:  $ecr_refresh_enabled"
 echo "GitHub PR creation: $github_pr_creation_enabled"
 echo "Public GitHub PRs:  $github_public_prs_enabled"

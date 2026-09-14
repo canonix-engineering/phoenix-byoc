@@ -32,6 +32,20 @@ opensandboxController:
   crds:
     install: true
     keep: true
+  # Snapshot pause/resume is opt-in. When enabled for direct Phoenix ECR
+  # images, registry must be an existing OCI repository prefix such as a
+  # Google Artifact Registry path. The installer maintains secretName with
+  # both the short-lived source ECR token and target-registry credentials.
+  snapshot:
+    enabled: false
+    registry: ""
+    registryInsecure: false
+    commitJobTimeout: 10m
+    secretName: opensandbox-registry-auth
+    # Leave empty to read username/password from values.secrets.yaml. Set this
+    # to an existing Opaque Secret containing keys "username" and "password"
+    # when credentials are managed outside this release.
+    credentialsSecretName: ""
   resources:
     requests:
       cpu: 10m

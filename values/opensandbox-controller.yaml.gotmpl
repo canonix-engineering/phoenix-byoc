@@ -6,6 +6,14 @@
 {{- if .Values.imageRegistry }}
 {{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.opensandboxController.name }}
 {{- end }}
+{{- $imageCommitterRepository := .Values.images.opensandboxImageCommitter.repository }}
+{{- if .Values.imageRegistry }}
+{{- $imageCommitterRepository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.opensandboxImageCommitter.name }}
+{{- end }}
+{{- $imageCommitterImage := printf "%s:%s" $imageCommitterRepository .Values.images.opensandboxImageCommitter.tag }}
+{{- with .Values.images.opensandboxImageCommitter.digest }}
+{{- $imageCommitterImage = printf "%s@%s" $imageCommitterImage . }}
+{{- end }}
 
 namespaceOverride: {{ .Values.namespace | quote }}
 
@@ -23,8 +31,17 @@ controller:
     qps: 0
     burst: 0
   snapshot:
+{{- if .Values.opensandboxController.snapshot.enabled }}
+    imageCommitterImage: {{ $imageCommitterImage | quote }}
+    commitJobTimeout: {{ .Values.opensandboxController.snapshot.commitJobTimeout | quote }}
+    registry: {{ .Values.opensandboxController.snapshot.registry | quote }}
+    registryInsecure: {{ .Values.opensandboxController.snapshot.registryInsecure }}
+    snapshotPushSecret: {{ .Values.opensandboxController.snapshot.secretName | quote }}
+    resumePullSecret: {{ .Values.opensandboxController.snapshot.secretName | quote }}
+{{- else }}
     imageCommitterImage: ""
     commitJobTimeout: ""
+{{- end }}
   nodeSelector:
 {{ toYaml .Values.scheduling.nodeSelector | indent 4 }}
   tolerations:

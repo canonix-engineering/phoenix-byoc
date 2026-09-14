@@ -6,6 +6,8 @@
 - exact container image references for the release and tools to mirror them;
 - bundled single-node ClickHouse, or configuration for an external ClickHouse;
 - an optional in-cluster refresher for direct pulls from the Phoenix private ECR;
+- optional OpenSandbox pause/resume snapshots in a customer-provided OCI
+  registry, including combined source/target registry credentials;
 - Helmfile orchestration and example values;
 - opt-in generation of bundled database passwords and internal service tokens;
 - BYOC database bootstrap orchestration and the application database hooks;
@@ -28,7 +30,9 @@
 - GKE Workload Identity, Google IAM bindings and Vertex model access when the
   optional `vertex.enabled` mode is selected;
 - protected storage for the per-customer IAM access key when direct ECR refresh
-  is enabled.
+  is enabled;
+- an existing snapshot repository and write credentials when OpenSandbox
+  pause/resume snapshots are enabled.
 
 ## Explicitly out of scope
 

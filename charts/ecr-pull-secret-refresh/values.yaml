@@ -3,6 +3,18 @@ region: us-east-1
 schedule: "0 */6 * * *"
 pullSecretName: phoenix-ecr-pull
 
+# Optional second Docker config Secret used by OpenSandbox snapshot commit and
+# resume operations. It combines the refreshed source ECR token with the
+# target registry credential without changing pullSecretName.
+snapshotRegistry:
+  enabled: false
+  registryHost: ""
+  secretName: opensandbox-registry-auth
+  credentials:
+    existingSecret: ""
+    username: ""
+    password: ""
+
 credentials:
   existingSecret: ""
   accessKeyId: ""

@@ -2,7 +2,8 @@
 
 ## Supported images
 
-`release.yaml` pins all runtime images required by the platform:
+`release.yaml` pins the ten core runtime images and the optional snapshot
+image-committer:
 
 1. `clickhouse`
 2. `cortex-postgresql`
@@ -14,6 +15,8 @@
 8. `phoenix-web`
 9. `phoenix-web-frontend`
 10. `phoenix-workflow-engine`
+11. `phoenix-opensandbox-image-committer`, used only when OpenSandbox snapshot
+    pause/resume is enabled
 
 Print exact references:
 
@@ -50,7 +53,7 @@ Store them in an AWS CLI profile using your approved credential-storage process;
 do not put them in the selected values or secrets files, or in Kubernetes.
 
 Install the AWS CLI and `crane`, authenticate `crane` to the destination
-registry, then copy all ten images. The mirror command obtains a short-lived
+registry, then copy all release images. The mirror command obtains a short-lived
 source ECR token using the selected AWS profile without printing it:
 
 ```bash
@@ -155,6 +158,18 @@ kubectl -n phoenix get secret/phoenix-ecr-pull
 Node-level registry credential providers remain a supported customer-owned
 alternative. In that case leave `registry.ecrRefresh.enabled=false` and do not
 configure the managed pull Secret.
+
+## OpenSandbox snapshot registry credentials
+
+The optional snapshot mode does not alter `phoenix-ecr-pull`. The ECR refresh
+helper creates a second Docker config Secret containing authentication for both
+the source Phoenix ECR and the customer snapshot registry. This is required
+because a snapshot reuses the original image layers and adds the sandbox
+writable layer; a commit may need to retrieve missing source layers before it
+pushes the complete OCI image to the target registry.
+
+For GAR configuration and credential formats, see
+[OpenSandbox snapshot pause and resume](configuration.md#opensandbox-snapshot-pause-and-resume).
 
 For a customer-owned destination Amazon ECR, authenticate `crane` separately
 with credentials for that destination:

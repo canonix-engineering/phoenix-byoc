@@ -47,7 +47,24 @@ the customer must provide:
 - all configured `vertex.models.*` enabled in Model Garden;
 - sandbox egress to the GKE metadata server and Vertex endpoints.
 
-No Google service-account JSON key is an installation input.
+Vertex mode itself does not use a Google service-account JSON key. The optional
+OpenSandbox snapshot registry has a separate authentication model described
+below.
+
+## Optional Google Artifact Registry snapshot prerequisites
+
+Before setting `opensandboxController.snapshot.enabled=true`, the customer must
+provide:
+
+- an existing GAR Docker repository;
+- a dedicated Google service account with `roles/artifactregistry.writer`
+  scoped to that repository;
+- either its JSON key in the protected BYOC secrets file or an existing Opaque
+  Kubernetes Secret containing `username` and `password`;
+- cluster egress to the GAR hostname.
+
+This credential is used only for OpenSandbox snapshot images and is independent
+from Vertex Workload Identity.
 
 ## Network
 
