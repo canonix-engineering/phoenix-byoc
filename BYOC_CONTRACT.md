@@ -9,7 +9,10 @@
 - optional OpenSandbox pause/resume snapshots in a customer-provided OCI
   registry, including combined source/target registry credentials;
 - Helmfile orchestration and example values;
-- opt-in generation of bundled database passwords and internal service tokens;
+- opt-in generation of bundled database passwords, internal service tokens and
+  the Gateway credential-encryption master key;
+- opt-in lifecycle management for workflow VMs in a customer-provided GCP
+  project, network and image or snapshot;
 - BYOC database bootstrap orchestration and the application database hooks;
 - render, preflight, install and verification scripts;
 - upgrade and rollback documentation.
@@ -29,6 +32,8 @@
 - application/API credentials required by the enabled workflows;
 - GKE Workload Identity, Google IAM bindings and Vertex model access when the
   optional `vertex.enabled` mode is selected;
+- the GCP project, network, image or snapshot and Google IAM bindings when the
+  optional customer VM pool is enabled;
 - protected storage for the per-customer IAM access key when direct ECR refresh
   is enabled;
 - an existing snapshot repository and write credentials when OpenSandbox
@@ -39,7 +44,7 @@
 - production high availability;
 - an observability stack;
 - backup or restore automation for customer databases;
-- automatic node labelling or infrastructure provisioning;
+- automatic node labelling or base cluster and network provisioning;
 - installation of Twenty HQ, Mattermost or Headlamp;
 - `postgresql-external`, which is an internal engineering LoadBalancer helper;
 - access by Phoenix engineers to the customer cluster.

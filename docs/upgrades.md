@@ -41,6 +41,6 @@ place.
 
 `--generate-secrets` synchronizes fields added to the example by the new
 release. It preserves existing passwords, tokens and customer-specific fields,
-generates new `GENERATE_HEX_*` values and refreshes derived internal URLs. New
+generates new supported `GENERATE_*` values and refreshes derived internal URLs. New
 external `CHANGE_ME_*` fields stop preflight and are reported by path until the
 customer supplies them.

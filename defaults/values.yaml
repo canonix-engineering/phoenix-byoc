@@ -199,9 +199,20 @@ services:
     githubPullRequests:
       creationEnabled: false
       allowPublicRepositories: false
+    csg:
+      enabled: false
+      project: ""
+      zone: us-east4-a
+      role: devbox
+      poolName: CSG-Win-Pool
+      workspaceRoot: "C:/phoenix"
+      maxMachines: 4
+      commandTimeout: 20m
+      scriptEnv: {}
     supervisor:
       enabled: false
     operator:
+      serviceAccountAnnotations: {}
       maxConcurrentSandboxTasks: 5
       maxConcurrentInProcessTasks: 5
       inProcessWorkflowStepRunTimeout: 30m
@@ -336,6 +347,8 @@ secrets:
     guardrailsTestToken: ""
     jsTransformTestToken: ""
     toolInvocationTestToken: ""
+  gateway:
+    remoteSshEncryptionKey: ""
   agents:
     claudeCodeOauthToken: ""
     anthropicApiKey: ""

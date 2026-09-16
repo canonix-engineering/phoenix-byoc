@@ -214,10 +214,27 @@ services:
     githubPullRequests:
       creationEnabled: false
       allowPublicRepositories: false
+    # Optional customer-hosted GCP VM pool. Enabling it creates the pool in the
+    # platform; VMs are provisioned only when a workflow uses that pool.
+    csg:
+      enabled: false
+      project: ""
+      zone: us-east4-a
+      role: devbox
+      poolName: CSG-Win-Pool
+      workspaceRoot: "C:/phoenix"
+      maxMachines: 4
+      commandTimeout: 20m
+      # Optional environment passed to the supplied GCP provisioning scripts.
+      # Configure customer network, image or snapshot settings here.
+      scriptEnv: {}
     supervisor:
       # Disabled to match the source test environment.
       enabled: false
     operator:
+      # For GKE Workload Identity, annotate this service account with the GCP
+      # service account allowed to create and delete the configured VMs.
+      serviceAccountAnnotations: {}
       maxConcurrentSandboxTasks: 5
       maxConcurrentInProcessTasks: 5
       inProcessWorkflowStepRunTimeout: 30m

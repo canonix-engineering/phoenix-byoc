@@ -26,6 +26,9 @@ Replace every `CHANGE_ME` value and review these groups:
 - `application.mailer` sender, domain and optional SMTP settings;
 - `services.workflowEngine.githubPullRequests` when ticket workflows may
   create GitHub pull requests;
+- `services.workflowEngine.csg` and
+  `services.workflowEngine.operator.serviceAccountAnnotations` when the
+  customer GCP VM pool is enabled;
 - `ingress.className`, frontend host, annotations and TLS configuration;
 - `postgresql`, `redis`, `cortex` and `clickhouse` component selection,
   StorageClasses, PVC sizes and resources;
@@ -91,13 +94,14 @@ resets or notifications. For an unauthenticated SMTP relay, use
 
 ### Leave internal secrets for the installer
 
-Do not replace `GENERATE_HEX_32`, `GENERATE_HEX_64` or `DERIVE_*` markers. The
-installer generates:
+Do not replace `GENERATE_HEX_32`, `GENERATE_HEX_64`, `GENERATE_BASE64_32` or
+`DERIVE_*` markers. The installer generates:
 
 - PostgreSQL superuser, application and internal workflow-role passwords;
 - Cortex PostgreSQL and ClickHouse passwords;
 - `secretKeyBase`, agent harness, Workflow Engine and Artifact API tokens;
 - guardrails, JavaScript transform and tool invocation tokens;
+- the Gateway master key used to encrypt stored SSH credentials;
 - the Gateway entry in `internalServiceTokens`.
 
 It derives namespace-specific values for:
@@ -149,7 +153,7 @@ PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse must all be enabled. It:
    it does not exist;
 2. adds fields introduced by the current example while preserving existing
    values and deployment-specific extra fields;
-3. replaces every supported `GENERATE_HEX_*` marker with a random value;
+3. replaces every supported `GENERATE_*` marker with a random value;
 4. preserves every already populated password and token;
 5. replaces the explicit `DERIVE_*` markers with the PostgreSQL admin, Redis,
    Cortex PostgreSQL and ClickHouse URLs and the internal service-token mapping
@@ -170,8 +174,10 @@ The script then:
    markers and missing required merged values;
 3. renders `.rendered/all.yaml`;
 4. displays the release, context, namespace and bundled components;
-5. installs or upgrades enabled Helm releases;
-6. waits for Deployments and StatefulSets and prints Pods, Services and PVCs.
+5. creates or validates the durable Gateway master-key Secret;
+6. installs or upgrades enabled Helm releases in dependency order: Web,
+   Gateway, then Workflow Engine;
+7. waits for Deployments and StatefulSets and prints Pods, Services and PVCs.
 
 The rendered file contains Kubernetes Secrets and remains local with mode
 `0600`.

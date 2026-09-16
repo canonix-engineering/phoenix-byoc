@@ -245,6 +245,14 @@ grep -q 'secrets.registry.ecr.accessKeyId' "$generator_tmp/first.log" || {
   echo "ERROR: preflight did not report the unresolved ECR credential path" >&2
   exit 1
 }
+gateway_encryption_key=$(yq -r '.secrets.gateway.remoteSshEncryptionKey' \
+  "$generator_tmp/values.secrets.yaml")
+gateway_encryption_key_size=$(printf '%s' "$gateway_encryption_key" | \
+  openssl base64 -d -A | wc -c | tr -d ' ')
+if [[ "$gateway_encryption_key_size" != "32" ]]; then
+  echo "ERROR: Gateway master key was not generated as 32-byte base64" >&2
+  exit 1
+fi
 grep -q 'secrets.application.mailgunApiKey' "$generator_tmp/first.log" || {
   echo "ERROR: preflight did not report the unresolved mail credential path" >&2
   exit 1
@@ -297,6 +305,11 @@ workflow_token_hash_after=$(printf '%s' "$workflow_token_after" | \
   shasum -a 256 | cut -d ' ' -f 1)
 if [[ "$workflow_token_hash" != "$workflow_token_hash_after" ]]; then
   echo "ERROR: reconciliation rotated an existing generated value" >&2
+  exit 1
+fi
+if [[ "$(yq -r '.secrets.gateway.remoteSshEncryptionKey' \
+    "$generator_tmp/values.secrets.yaml")" != "$gateway_encryption_key" ]]; then
+  echo "ERROR: reconciliation rotated the Gateway master key" >&2
   exit 1
 fi
 if grep -Fq "$workflow_token_after" "$generator_tmp/second.log"; then
@@ -606,11 +619,22 @@ if [[ "$github_pr_creation_enabled" != "false" || "$github_public_prs_enabled" !
   exit 1
 fi
 
+gateway_encryption_secret=$(yq -r '
+  select(.kind == "Deployment" and .metadata.name == "phoenix-gateway") |
+  .spec.template.spec.containers[0].env[] |
+  select(.name == "PHOENIX_REMOTE_SSH_ENCRYPTION_KEY") |
+  .valueFrom.secretKeyRef.name
+' "$repo_root/.rendered/test-bundled/all.yaml")
+if [[ "$gateway_encryption_secret" != "phoenix-remote-ssh-encryption" ]]; then
+  echo "ERROR: Gateway does not reference the managed SSH encryption Secret" >&2
+  exit 1
+fi
+
 # The exact customer-facing examples must render after their documented
 # placeholders are replaced; fixtures alone are not sufficient coverage.
 sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.yaml" >"$example_tmp/values.yaml"
-sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g; s/GENERATE_HEX_(32|64)/test-only/g; s/DERIVE_[A-Z0-9_]*/test-only/g' \
+sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g; s/GENERATE_(HEX_(32|64)|BASE64_32)/test-only/g; s/DERIVE_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.secrets.yaml" >"$example_tmp/secrets.yaml"
 example_render_dir="$repo_root/.rendered/test-customer-example"
 mkdir -p "$example_render_dir"
@@ -664,6 +688,50 @@ for expected in \
     exit 1
   fi
 done
+
+# CSG is opt-in, but the regular BYOC values must be sufficient to render its
+# operator configuration and GKE Workload Identity annotation.
+yq -i '
+  .services.workflowEngine.csg.enabled = true |
+  .services.workflowEngine.csg.project = "customer-project" |
+  .services.workflowEngine.csg.scriptEnv.HOST_PROJECT = "customer-host-project" |
+  .services.workflowEngine.operator.serviceAccountAnnotations."iam.gke.io/gcp-service-account" = "provisioner@customer-project.iam.gserviceaccount.com"
+' "$example_tmp/values.yaml"
+csg_render_dir="$repo_root/.rendered/test-csg"
+mkdir -p "$csg_render_dir"
+(
+  cd "$repo_root"
+  HELMFILE_CACHE_HOME="$cache_dir" \
+    PHOENIX_BYOC_LOCAL_CHARTS="$devops_charts" \
+    PHOENIX_BYOC_VALUES_FILE="$example_tmp/values.yaml" \
+    PHOENIX_BYOC_SECRETS_FILE="$example_tmp/secrets.yaml" \
+    PHOENIX_BYOC_NAMESPACE=phoenix-example \
+    helmfile template --skip-deps --quiet \
+    >"$csg_render_dir/all.yaml"
+)
+chmod 600 "$csg_render_dir/all.yaml"
+for expected in \
+  'CSG_INTEGRATION_ENABLED=true' \
+  'CSG_GCP_PROJECT_ID=customer-project' \
+  'HOST_PROJECT=customer-host-project'; do
+  key=${expected%%=*}
+  expected_value=${expected#*=}
+  actual_value=$(yq -r \
+    "select(.kind == \"Deployment\" and .metadata.name == \"phoenix-workflow-engine-operator\") | .spec.template.spec.containers[0].env[] | select(.name == \"$key\") | .value" \
+    "$csg_render_dir/all.yaml")
+  if [[ "$actual_value" != "$expected_value" ]]; then
+    echo "ERROR: CSG value $key did not render as $expected_value" >&2
+    exit 1
+  fi
+done
+csg_service_account_annotation=$(yq -r '
+  select(.kind == "ServiceAccount" and .metadata.name == "phoenix-workflow-engine-operator") |
+  .metadata.annotations."iam.gke.io/gcp-service-account"
+' "$csg_render_dir/all.yaml")
+if [[ "$csg_service_account_annotation" != "provisioner@customer-project.iam.gserviceaccount.com" ]]; then
+  echo "ERROR: CSG operator service account annotation did not render" >&2
+  exit 1
+fi
 
 yq -i '.services.workflowEngine.githubPullRequests.creationEnabled = false' \
   "$example_tmp/values.yaml"

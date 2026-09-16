@@ -135,8 +135,7 @@ releases:
       - {{ $namespace }}/redis
 {{- end }}
       - {{ $namespace }}/clickhouse
-      - {{ $namespace }}/phoenix-workflow-engine
-    wait: false
+    wait: true
 
   - name: phoenix-web-frontend
     namespace: {{ $namespace }}
@@ -169,7 +168,7 @@ releases:
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}
       - {{ $namespace }}/phoenix-web
-    wait: false
+    wait: true
 
   - name: phoenix-workflow-engine
     namespace: {{ $namespace }}
@@ -200,5 +199,7 @@ releases:
 {{- if .Values.redis.bundled.enabled }}
       - {{ $namespace }}/redis
 {{- end }}
+      - {{ $namespace }}/phoenix-web
+      - {{ $namespace }}/phoenix-gateway
     wait: true
     timeout: 1860

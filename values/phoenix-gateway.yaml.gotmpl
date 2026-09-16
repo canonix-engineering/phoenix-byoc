@@ -24,6 +24,10 @@ gateway:
 
 engineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
 
+remoteSSH:
+  allowedCIDRs: "0.0.0.0/0,::/0"
+  encryptionKeySecret: phoenix-remote-ssh-encryption
+
 server:
   replicaCount: {{ .Values.services.gateway.replicas }}
   resources:

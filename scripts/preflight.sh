@@ -107,6 +107,7 @@ value() {
 for boolean_path in \
   services.workflowEngine.githubPullRequests.creationEnabled \
   services.workflowEngine.githubPullRequests.allowPublicRepositories \
+  services.workflowEngine.csg.enabled \
   opensandboxController.snapshot.enabled \
   opensandboxController.snapshot.registryInsecure; do
   if ! yq -e ".$boolean_path | tag == \"!!bool\"" "$merged_file" >/dev/null 2>&1; then
@@ -147,9 +148,23 @@ for path in \
   secrets.application.workflowEngineToken \
   secrets.application.guardrailsTestToken \
   secrets.application.jsTransformTestToken \
-  secrets.application.toolInvocationTestToken; do
+  secrets.application.toolInvocationTestToken \
+  secrets.gateway.remoteSshEncryptionKey; do
   require_value "$path"
 done
+
+if [[ "$(value services.workflowEngine.csg.enabled)" == "true" ]]; then
+  for path in \
+    services.workflowEngine.csg.project \
+    services.workflowEngine.csg.zone \
+    services.workflowEngine.csg.role \
+    services.workflowEngine.csg.poolName \
+    services.workflowEngine.csg.workspaceRoot \
+    services.workflowEngine.csg.maxMachines \
+    services.workflowEngine.csg.commandTimeout; do
+    require_value "$path"
+  done
+fi
 
 mail_delivery_method=$(value application.mailer.deliveryMethod)
 case "$mail_delivery_method" in

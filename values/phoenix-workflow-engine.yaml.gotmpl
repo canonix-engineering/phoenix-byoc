@@ -110,6 +110,19 @@ githubPullRequests:
   creationEnabled: {{ .Values.services.workflowEngine.githubPullRequests.creationEnabled }}
   allowPublicRepositories: {{ .Values.services.workflowEngine.githubPullRequests.allowPublicRepositories }}
 
+csg:
+  enabled: {{ .Values.services.workflowEngine.csg.enabled }}
+  project: {{ .Values.services.workflowEngine.csg.project | quote }}
+  zone: {{ .Values.services.workflowEngine.csg.zone | quote }}
+  role: {{ .Values.services.workflowEngine.csg.role | quote }}
+  poolName: {{ .Values.services.workflowEngine.csg.poolName | quote }}
+  workspaceRoot: {{ .Values.services.workflowEngine.csg.workspaceRoot | quote }}
+  webUrl: {{ printf "http://phoenix-web.%s.svc.%s:80" .Values.namespace .Values.clusterDomain | quote }}
+  maxMachines: {{ .Values.services.workflowEngine.csg.maxMachines }}
+  commandTimeout: {{ .Values.services.workflowEngine.csg.commandTimeout | quote }}
+  scriptEnv:
+{{ toYaml .Values.services.workflowEngine.csg.scriptEnv | indent 4 }}
+
 api:
   replicaCount: {{ .Values.services.workflowEngine.apiReplicas }}
   resources:
@@ -131,6 +144,8 @@ orchestrator:
   replicaCount: {{ .Values.services.workflowEngine.orchestratorReplicas }}
 
 operator:
+  serviceAccountAnnotations:
+{{ toYaml .Values.services.workflowEngine.operator.serviceAccountAnnotations | indent 4 }}
   replicaCount: {{ .Values.services.workflowEngine.operatorReplicas }}
   maxConcurrentSandboxTasks: {{ .Values.services.workflowEngine.operator.maxConcurrentSandboxTasks }}
   maxConcurrentInProcessTasks: {{ .Values.services.workflowEngine.operator.maxConcurrentInProcessTasks }}

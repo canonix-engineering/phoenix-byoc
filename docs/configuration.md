@@ -50,10 +50,10 @@ The current release installs these exact Phoenix-owned chart versions:
 | --- | --- |
 | Cortex PostgreSQL | `0.1.0` |
 | OpenSandbox controller | `0.2.0` |
-| Phoenix Gateway | `0.2.0` |
+| Phoenix Gateway | `0.3.0` |
 | Phoenix Web | `0.2.2` |
 | Phoenix Web Frontend | `0.1.0` |
-| Phoenix Workflow Engine | `0.2.3` |
+| Phoenix Workflow Engine | `0.2.4` |
 | PostgreSQL bootstrap (included in this repository) | `0.1.0` |
 
 The chart version is independent from the runtime image tag. Both are pinned
@@ -256,6 +256,66 @@ The customer-facing workflow settings are under `services.workflowEngine` and
 These values are passed directly to the Phoenix Workflow Engine chart. They do
 not change node labels, placement policy or cluster capacity.
 
+## Customer GCP VM pool
+
+The Workflow Engine can optionally manage an external GCP VM pool for project
+workflows. It is disabled by default and uses the same Workflow Engine image as
+the rest of the installation. Enabling it creates or reuses the configured pool
+in the application; no VM is created until a workflow assigned to that pool
+requests one.
+
+Configure it under `services.workflowEngine`:
+
+```yaml
+services:
+  workflowEngine:
+    csg:
+      enabled: true
+      project: customer-project
+      zone: us-east4-a
+      role: devbox
+      poolName: CSG-Win-Pool
+      workspaceRoot: C:/phoenix
+      maxMachines: 4
+      commandTimeout: 20m
+      scriptEnv:
+        REGION: us-east4
+        HOST_PROJECT: customer-host-project
+        VPC: customer-vpc
+        SUBNET: customer-subnet
+        DEVBOX_SNAPSHOT: customer-devbox-snapshot
+    operator:
+      serviceAccountAnnotations:
+        iam.gke.io/gcp-service-account: phoenix-provisioner@customer-project.iam.gserviceaccount.com
+```
+
+`project` and `zone` select the project and zone where VMs are managed.
+`role` is `devbox` or `testbox`; it selects the matching image or snapshot
+settings. `maxMachines` limits the managed pool, while `commandTimeout` bounds
+each cloud operation. `workspaceRoot` is the Windows workspace root exposed to
+the workflow.
+
+`scriptEnv` is passed to the supplied provisioning scripts. Use it for the
+customer network and VM settings, including `REGION`, `HOST_PROJECT`, `VPC`,
+`SUBNET`, `NET_TAG`, `SSH_TAG`, `DEVBOX_SNAPSHOT`, `TESTBOX_SNAPSHOT`,
+`DEVBOX_IMAGE`, `TESTBOX_IMAGE`, `PUBLIC_IMAGE_FAMILY`,
+`PUBLIC_IMAGE_PROJECT`, `MACHINE_TYPE`, `DISK_TYPE`, `DISK_SIZE`, `SHIELDED`
+and `SSH_TIMEOUT`. Values omitted from this map use the script defaults.
+
+On GKE, the operator Kubernetes ServiceAccount can use Workload Identity through
+`operator.serviceAccountAnnotations`. The mapped Google Service Account must be
+allowed to inspect, create and delete the selected Compute Engine instances and
+disks and to use the selected subnet and image or snapshot. The cluster,
+network, images, snapshots and Google IAM bindings remain customer-managed.
+
+Gateway stores the SSH credentials for these machines. The installer generates
+its master encryption key in `values.secrets.yaml` and creates the
+`phoenix-remote-ssh-encryption` Kubernetes Secret. This is an encryption-at-rest
+key, not the per-machine SSH key pair created by the platform. Repeated upgrades
+preserve it and reject a conflicting existing Secret. Keep the generated value
+with the database backup; losing it makes previously stored SSH credentials
+unreadable.
+
 ## GitHub pull request creation
 
 Pull request publication is disabled by default and is controlled under
@@ -305,12 +365,13 @@ For the complete bundled installation, pass `--generate-secrets` to
 `install.sh`. If the selected file is absent, the installer creates it from
 `examples/values.secrets.yaml`. If it exists, the current template is merged
 into it with existing values taking priority. The installer then replaces
-`GENERATE_HEX_32` and `GENERATE_HEX_64` markers for:
+`GENERATE_HEX_32`, `GENERATE_HEX_64` and `GENERATE_BASE64_32` markers for:
 
 - the PostgreSQL superuser, application and internal workflow database roles;
 - bundled Cortex PostgreSQL and ClickHouse;
 - `secretKeyBase`, the agent harness, artifact API and Workflow Engine tokens;
 - internal guardrails, JavaScript transform and tool invocation tokens;
+- the Gateway master key used to encrypt stored SSH credentials;
 - the Gateway entry in `internalServiceTokens`.
 
 It replaces the explicit `DERIVE_*` markers with the PostgreSQL admin, Redis,
@@ -319,11 +380,10 @@ Existing random values are preserved, while derived values are refreshed for
 the selected namespace. Bundled Redis matches the source `test` environment and
 has authentication disabled, so no Redis password is generated.
 
-The marker mechanism is recursive. A new release may add any number of
-`GENERATE_HEX_32` or `GENERATE_HEX_64` fields to the example without adding a
-path-specific generator rule. A derived value still requires explicit release
-logic because its format depends on service names, users, databases and the
-selected namespace.
+The marker mechanism is recursive. A new release may add any number of fields
+using a supported `GENERATE_*` marker without adding a path-specific generator
+rule. A derived value still requires explicit release logic because its format
+depends on service names, users, databases and the selected namespace.
 
 An empty string means that an optional external credential is not configured.
 For example, `sessionToken` is empty for IAM user credentials and

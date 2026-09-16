@@ -56,7 +56,12 @@ StorageClass, node placement and resources to the target cluster. In
 `values.secrets.yaml`, provide only credentials issued by external systems,
 including ECR credentials when direct ECR access is selected and the mail and
 agent-provider credentials used by the installation. Leave all
-`GENERATE_HEX_*` and `DERIVE_*` markers unchanged.
+`GENERATE_*` and `DERIVE_*` markers unchanged.
+
+The optional customer GCP VM pool is configured under
+`services.workflowEngine.csg`. It is disabled by default and uses the standard
+Workflow Engine image when enabled. See
+[Configuration](docs/configuration.md#customer-gcp-vm-pool).
 
 GitHub pull request creation is disabled by default. Enable it explicitly under
 `services.workflowEngine.githubPullRequests`; public repositories require the

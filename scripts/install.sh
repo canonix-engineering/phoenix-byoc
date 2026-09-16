@@ -167,7 +167,7 @@ generate_internal_secrets() (
     fi
   done < <(
     yq eval --no-doc -r '
-      .. | select(tag == "!!str" and test("^GENERATE_HEX_(32|64)$")) |
+      .. | select(tag == "!!str" and test("^GENERATE_(HEX_(32|64)|BASE64_32)$")) |
       [(path | join(".")), .] | @tsv
     ' "$secrets_template"
   )
@@ -179,7 +179,7 @@ generate_internal_secrets() (
       (
         (
           test("^GENERATE_") and
-          (test("^GENERATE_HEX_(32|64)$") | not)
+          (test("^GENERATE_(HEX_(32|64)|BASE64_32)$") | not)
         ) or
         (
           test("^DERIVE_") and
@@ -198,15 +198,22 @@ generate_internal_secrets() (
 
   while IFS=$'\t' read -r generated_path generated_marker; do
     [[ -z "$generated_path" ]] && continue
-    local generated_bytes=${generated_marker#GENERATE_HEX_}
     local generated_value
-    generated_value=$(openssl rand -hex "$generated_bytes")
+    case "$generated_marker" in
+      GENERATE_HEX_*)
+        local generated_bytes=${generated_marker#GENERATE_HEX_}
+        generated_value=$(openssl rand -hex "$generated_bytes")
+        ;;
+      GENERATE_BASE64_32)
+        generated_value=$(openssl rand -base64 32 | tr -d '\n')
+        ;;
+    esac
     SECRET_VALUE="$generated_value" \
       yq -i ".$generated_path = strenv(SECRET_VALUE)" "$generated_file"
     generated_count=$((generated_count + 1))
   done < <(
     yq eval --no-doc -r '
-      .. | select(tag == "!!str" and test("^GENERATE_HEX_(32|64)$")) |
+      .. | select(tag == "!!str" and test("^GENERATE_(HEX_(32|64)|BASE64_32)$")) |
       [(path | join(".")), .] | @tsv
     ' "$generated_file"
   )
@@ -267,6 +274,53 @@ generate_internal_secrets() (
   echo "Secret values were not printed."
 )
 
+ensure_remote_ssh_encryption_secret() (
+  local namespace=$1
+  local selected_secrets=$2
+  local secret_name=phoenix-remote-ssh-encryption
+  local key_field=PHOENIX_REMOTE_SSH_ENCRYPTION_KEY
+  local expected_key
+  local decoded_size
+  local existing_data
+  local existing_key
+
+  if ! command -v openssl >/dev/null 2>&1; then
+    echo "ERROR: Gateway encryption Secret provisioning requires command: openssl" >&2
+    return 1
+  fi
+  expected_key=$(yq -r '.secrets.gateway.remoteSshEncryptionKey // ""' "$selected_secrets")
+  if [[ -z "$expected_key" ]]; then
+    echo "ERROR: secrets.gateway.remoteSshEncryptionKey is required." >&2
+    return 1
+  fi
+  decoded_size=$(printf '%s' "$expected_key" | openssl base64 -d -A | wc -c | tr -d ' ')
+  if [[ "$decoded_size" != "32" ]]; then
+    echo "ERROR: secrets.gateway.remoteSshEncryptionKey must be a base64-encoded 32-byte key." >&2
+    return 1
+  fi
+
+  if ! kubectl get namespace "$namespace" >/dev/null 2>&1; then
+    kubectl create namespace "$namespace" >/dev/null
+  fi
+
+  existing_data=$(kubectl -n "$namespace" get secret "$secret_name" \
+    --ignore-not-found -o "jsonpath={.data.$key_field}")
+  if [[ -n "$existing_data" ]]; then
+    existing_key=$(printf '%s' "$existing_data" | openssl base64 -d -A)
+    if [[ "$existing_key" != "$expected_key" ]]; then
+      echo "ERROR: existing Secret $namespace/$secret_name uses a different Gateway master key." >&2
+      echo "       Restore the matching values.secrets.yaml before upgrading." >&2
+      return 1
+    fi
+    echo "Using existing Gateway encryption Secret $namespace/$secret_name."
+    return 0
+  fi
+
+  printf '%s' "$expected_key" | kubectl -n "$namespace" create secret generic "$secret_name" \
+    --from-file="$key_field=/dev/stdin" >/dev/null
+  echo "Created Gateway encryption Secret $namespace/$secret_name."
+)
+
 if [[ "$generate_secrets" == "true" ]]; then
   generate_internal_secrets "$requested_namespace" "$values_file" "$secrets_file"
 fi
@@ -279,6 +333,8 @@ context=$(kubectl config current-context)
 
 "$repo_root/scripts/preflight.sh"
 "$repo_root/scripts/render.sh"
+
+ensure_remote_ssh_encryption_secret "$requested_namespace" "$secrets_file"
 
 namespace=$requested_namespace
 release_version=$(awk '$1 == "version:" {gsub(/"/, "", $2); print $2; exit}' \
