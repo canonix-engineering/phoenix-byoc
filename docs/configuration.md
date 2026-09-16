@@ -295,6 +295,26 @@ settings. `maxMachines` limits the managed pool, while `commandTimeout` bounds
 each cloud operation. `workspaceRoot` is the Windows workspace root exposed to
 the workflow.
 
+The BYOC values configure these Workflow Engine environment variables; do not
+add them separately to the Kubernetes Deployment:
+
+| BYOC value | Workflow Engine variable | Default |
+| --- | --- | --- |
+| `services.workflowEngine.csg.enabled` | `CSG_INTEGRATION_ENABLED` | `false` |
+| `services.workflowEngine.csg.project` | `CSG_GCP_PROJECT_ID` | Required when enabled |
+| `services.workflowEngine.csg.zone` | `CSG_ZONE` | `us-east4-a` |
+| `services.workflowEngine.csg.role` | `CSG_VM_ROLE` | `devbox` |
+| `services.workflowEngine.csg.poolName` | `CSG_POOL_NAME` | `CSG-Win-Pool` |
+| `services.workflowEngine.csg.workspaceRoot` | `CSG_WORKSPACE_ROOT` | `C:/phoenix` |
+| `services.workflowEngine.csg.maxMachines` | `CSG_MAX_MACHINES` | `4` |
+| `services.workflowEngine.csg.commandTimeout` | `CSG_COMMAND_TIMEOUT` | `20m` |
+
+`CSG_SCRIPT_DIRECTORY` is managed by the release and remains
+`/integrations/csg`, where the provisioning scripts are included in the
+Workflow Engine image. `PHOENIX_WEB_INTERNAL_BASE_URL` is derived from the
+installation namespace and cluster domain. Neither value requires customer
+configuration.
+
 `scriptEnv` is passed to the supplied provisioning scripts. Use it for the
 customer network and VM settings, including `REGION`, `HOST_PROJECT`, `VPC`,
 `SUBNET`, `NET_TAG`, `SSH_TAG`, `DEVBOX_SNAPSHOT`, `TESTBOX_SNAPSHOT`,
