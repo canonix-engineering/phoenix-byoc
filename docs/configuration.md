@@ -258,6 +258,11 @@ not change node labels, placement policy or cluster capacity.
 
 ## Customer GCP VM pool
 
+This section describes the embedded integration in the currently pinned BYOC
+release. For releases supporting manifest-based external pools, follow
+[External pool provisioning](external-pool-provisioning.md), including its
+release prerequisites and migration procedure.
+
 The Workflow Engine can optionally manage an external GCP VM pool for project
 workflows. It is disabled by default and uses the same Workflow Engine image as
 the rest of the installation. Enabling it creates or reuses the configured pool

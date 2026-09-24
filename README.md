@@ -165,6 +165,7 @@ See [Prerequisites](docs/prerequisites.md) for cluster requirements.
 
 - [Installation](docs/installation.md)
 - [Configuration](docs/configuration.md)
+- [External pool provisioning](docs/external-pool-provisioning.md)
 - [Container images](docs/images.md)
 - [PostgreSQL](docs/postgresql.md)
 - [ClickHouse](docs/clickhouse.md)
