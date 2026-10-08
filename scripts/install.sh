@@ -109,6 +109,7 @@ generate_internal_secrets() (
 
   merged_config=$(mktemp)
   generated_file=""
+  # shellcheck disable=SC2329 # Called by the EXIT trap in this subshell.
   cleanup_generated_files() {
     [[ -z "$merged_config" ]] || rm -f -- "$merged_config"
     [[ -z "$generated_file" ]] || rm -f -- "$generated_file"
@@ -333,6 +334,8 @@ context=$(kubectl config current-context)
 
 "$repo_root/scripts/preflight.sh"
 "$repo_root/scripts/render.sh"
+
+"$repo_root/scripts/check-cache-upgrade.sh" "$requested_namespace" "$repo_root/.rendered/all.yaml"
 
 ensure_remote_ssh_encryption_secret "$requested_namespace" "$secrets_file"
 

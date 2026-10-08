@@ -13,6 +13,11 @@ git switch main
 git pull --ff-only origin main
 ```
 
+For releases before `0.2.0-development.15`, read the
+[Redis-to-Valkey migration procedure](redis.md#existing-redis-installations)
+first. The installer blocks an ordinary upgrade while the legacy Redis
+StatefulSet exists; switching to an empty Valkey would discard active state.
+
 Review the new `release.yaml` and repository changes, then back up all
 customer-managed PostgreSQL databases and persistent volumes. Apply the update
 with the same namespace and configuration files used for the installation:

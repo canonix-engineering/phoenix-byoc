@@ -12,7 +12,7 @@ edited during a supported installation.
   controller, or reuse an explicitly customer-provided compatible controller.
 - `postgresql.bundled.enabled`: install PostgreSQL or use the externally
   configured PostgreSQL service.
-- `redis.bundled.enabled`: deploy or omit bundled Redis.
+- `redis.bundled.enabled`: deploy or omit bundled Valkey (the compatibility setting retains its name).
 - `cortex.bundled.enabled`: deploy or omit Cortex PostgreSQL.
 - `clickhouse.bundled.enabled`: deploy or omit ClickHouse.
 - `ingressNginx.enabled`: install or omit ingress-nginx.
@@ -35,7 +35,7 @@ bundled component is enabled:
 | Component | Helm chart | Runtime image |
 | --- | --- | --- |
 | PostgreSQL | `2.0.4` | `postgres:18.4-trixie` |
-| Redis | `1.6.18` | `redis:8.8.0` |
+| Valkey | Helmforge `redis` `1.6.18` | `valkey/valkey:9.1.2`, pinned by digest in `release.yaml` |
 | Cortex PostgreSQL | `0.1.0` | `cortex-postgresql:61b95bb` |
 | ClickHouse | `0.1.0` | `clickhouse-server:25.1-alpine` pinned by the digest in `release.yaml` |
 
@@ -77,8 +77,8 @@ The optional ingress controller uses its dedicated
 
 ## Images
 
-`release.yaml` owns image names, tags and the pinned ClickHouse digest.
-`imageRegistry` changes only their registry prefix after all ten images are
+`release.yaml` owns image names, tags and the pinned ClickHouse and Valkey digests.
+`imageRegistry` changes only their registry prefix after all release images are
 mirrored. `imagePullSecrets` names
 Kubernetes pull secrets used by static Phoenix workloads and dynamic OpenSandbox
 Pods.
@@ -402,7 +402,7 @@ into it with existing values taking priority. The installer then replaces
 It replaces the explicit `DERIVE_*` markers with the PostgreSQL admin, Redis,
 Cortex PostgreSQL and ClickHouse URLs and the internal service-token mapping.
 Existing random values are preserved, while derived values are refreshed for
-the selected namespace. Bundled Redis matches the source `test` environment and
+the selected namespace. Bundled Valkey uses the Redis protocol and
 has authentication disabled, so no Redis password is generated.
 
 The marker mechanism is recursive. A new release may add any number of fields

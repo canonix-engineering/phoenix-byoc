@@ -110,7 +110,7 @@ It derives namespace-specific values for:
 - Redis, Cortex PostgreSQL and ClickHouse connection URLs;
 - the internal service-token mapping.
 
-Bundled Redis has authentication disabled, so only its URL is derived. ECR,
+Bundled Valkey has authentication disabled, so only its URL is derived. ECR,
 mail-provider and agent-provider credentials are never generated.
 Snapshot registry credentials are also external and are never generated.
 
@@ -147,7 +147,7 @@ Run the only installation command with the target namespace:
 ```
 
 `--generate-secrets` currently applies to the complete bundled installation:
-PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse must all be enabled. It:
+PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse must all be enabled. It:
 
 1. creates the selected secrets file from `examples/values.secrets.yaml` when
    it does not exist;

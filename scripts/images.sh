@@ -185,8 +185,12 @@ case "$command" in
       if [[ -n "$registry" ]]; then
         reference="$registry/$name:$tag"
       fi
-      digest=$(crane digest "$reference")
-      printf '%s@%s\n' "$reference" "$digest"
+      actual_digest=$(crane digest "$reference")
+      if [[ -n "$digest" && "$actual_digest" != "$digest" ]]; then
+        echo "ERROR: digest mismatch for $reference: expected $digest, got $actual_digest" >&2
+        exit 1
+      fi
+      printf '%s@%s\n' "${reference%@*}" "$actual_digest"
     done < <(read_images)
     ;;
   ecr-login)
@@ -213,6 +217,11 @@ case "$command" in
       else
         echo "Copying $source -> $target"
         crane copy "$source" "$target"
+        source_digest=${digest:-$(crane digest "$source")}
+        if [[ "$(crane digest "$target")" != "$source_digest" ]]; then
+          echo "ERROR: mirrored image digest differs from source: $target" >&2
+          exit 1
+        fi
       fi
     done < <(read_images)
     ;;

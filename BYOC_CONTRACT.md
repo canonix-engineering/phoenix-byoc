@@ -24,7 +24,7 @@
 - node labels, taints, tolerations and placement policy;
 - a production PostgreSQL service, its backup policy and credentials;
 - DNS, TLS certificates and the preferred ingress controller;
-- Redis when bundled Redis is disabled;
+- a Redis-compatible service when bundled Valkey is disabled;
 - Cortex PostgreSQL when bundled Cortex is disabled;
 - ClickHouse when bundled ClickHouse is disabled;
 - a compatible cluster-wide OpenSandbox controller and CRDs when

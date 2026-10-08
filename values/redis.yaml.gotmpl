@@ -1,4 +1,25 @@
+{{- $repository := .Values.images.valkey.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.valkey.name }}
+{{- end }}
+
 architecture: standalone
+# A separate StatefulSet gives Valkey a fresh PVC; Redis 8 data requires an
+# explicit migration. Keep the existing redis-client endpoint below.
+fullnameOverride: valkey
+nameOverride: valkey
+
+image:
+  repository: {{ $repository | quote }}
+  # Helmforge redis 1.6.18 concatenates repository:tag, without a digest field.
+  tag: {{ printf "%s@%s" .Values.images.valkey.tag (required "images.valkey.digest is required" .Values.images.valkey.digest) | quote }}
+  pullPolicy: {{ .Values.imagePullPolicy }}
+{{- if .Values.imageRegistry }}
+imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 2 }}
+{{- else }}
+imagePullSecrets: []
+{{- end }}
 
 auth:
   enabled: false
@@ -15,3 +36,21 @@ tolerations:
 {{ toYaml .Values.scheduling.tolerations | indent 2 }}
 affinity:
 {{ toYaml .Values.scheduling.affinity | indent 2 }}
+
+# The upstream chart retains the Redis component label and executable names.
+extraManifests:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: redis-client
+    spec:
+      type: ClusterIP
+      ports:
+        - name: redis
+          port: 6379
+          targetPort: redis
+      selector:
+        app.kubernetes.io/name: valkey
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+        app.kubernetes.io/component: redis
+        app.kubernetes.io/role: standalone

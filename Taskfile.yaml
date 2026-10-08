@@ -25,3 +25,8 @@ tasks:
     desc: Run local static validation and render checks
     cmds:
       - ./scripts/test.sh
+
+  test:valkey:
+    desc: Smoke test the rendered Valkey configuration in local Docker after task test
+    cmds:
+      - ./scripts/smoke-valkey.sh

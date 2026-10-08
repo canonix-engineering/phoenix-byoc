@@ -9,7 +9,7 @@ Kubernetes cluster. Phoenix engineers do not require access to that cluster.
 - Phoenix Gateway;
 - Phoenix Workflow Engine;
 - OpenSandbox server and, on a fresh cluster, its cluster-wide controller;
-- Redis;
+- Valkey (Redis-compatible);
 - Cortex PostgreSQL;
 - ClickHouse;
 - optional PostgreSQL and ingress-nginx when enabled in the selected values
@@ -105,7 +105,7 @@ documented in
 
 The exact release versions are recorded in `release.yaml`. Do not replace them
 during installation. See [Configuration](docs/configuration.md#bundled-data-service-versions)
-for the bundled PostgreSQL, Redis, Cortex PostgreSQL and ClickHouse versions.
+for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 
 ## Upgrade
 

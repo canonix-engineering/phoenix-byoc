@@ -226,6 +226,22 @@ done < <(
   ' "$rendered_file"
 )
 
+if [[ "$bundled_redis" == "true" ]]; then
+  if [[ "$(kubectl -n "$namespace" exec statefulset/valkey -- redis-cli -h redis-client --raw PING | tr -d '\r')" != "PONG" ]]; then
+    echo "ERROR: bundled Valkey does not answer through redis-client." >&2
+    exit 1
+  fi
+  valkey_info=$(kubectl -n "$namespace" exec statefulset/valkey -- redis-cli -h redis-client INFO server)
+  expected_valkey_version=$(yq -r '.images.valkey.tag' "$merged_file")
+  if ! tr -d '\r' <<<"$valkey_info" | grep -Fxq "valkey_version:$expected_valkey_version"; then
+    echo "ERROR: redis-client is not serving the expected Valkey version." >&2
+    exit 1
+  fi
+  cache_modules=$(kubectl -n "$namespace" exec statefulset/valkey -- redis-cli -h redis-client --json MODULE LIST)
+  printf '%s\n' "$cache_modules" | "$repo_root/scripts/check-cache-modules.sh"
+  echo "Bundled Valkey version, endpoint and module allowlist verified."
+fi
+
 if [[ "$bundled_clickhouse" == "true" ]]; then
   kubectl -n "$namespace" get service/clickhouse statefulset/clickhouse
 fi

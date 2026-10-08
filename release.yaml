@@ -1,5 +1,5 @@
 release:
-  version: "0.2.0-development.14"
+  version: "0.2.0-development.15"
   channel: development
   sourceEnvironment: test
   observedAt: "2026-09-16"
@@ -24,7 +24,14 @@ versions:
 # runtime packaging change. Set imageRegistry in the selected values file after
 # copying every image to a customer registry while preserving these names and
 # tags.
+# Valkey was independently verified on 2026-10-07; the remaining runtime
+# baseline above is unchanged.
 images:
+  valkey:
+    name: valkey
+    repository: docker.io/valkey/valkey
+    tag: "9.1.2"
+    digest: "sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd"
   clickhouse:
     name: clickhouse
     repository: clickhouse/clickhouse-server

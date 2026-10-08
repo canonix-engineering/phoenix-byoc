@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2329 # Exported kubectl mocks are invoked by child scripts.
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -391,6 +392,7 @@ for scenario in bundled external private-registry direct-ecr; do
       exit 1
     fi
     for image in \
+      valkey \
       clickhouse \
       cortex-postgresql \
       phoenix-agent \
@@ -429,6 +431,8 @@ for scenario in bundled external private-registry direct-ecr; do
     }
   fi
 done
+
+"$repo_root/scripts/test-cache.sh"
 
 # Snapshot pause/resume is opt-in. Its render must keep the existing ECR-only
 # pull Secret and create a separate Docker config containing source ECR and
@@ -515,6 +519,7 @@ snapshot_refresh_script=$(yq -r '
   .spec.jobTemplate.spec.template.spec.initContainers[] |
   select(.name == "generate-pull-secret") | .args[0]
 ' "$snapshot_render_dir/all.yaml")
+# shellcheck disable=SC2016 # Match literal variable references in the rendered script.
 for expected_text in \
   'SNAPSHOT_REGISTRY_USERNAME' \
   'SNAPSHOT_REGISTRY_PASSWORD' \
@@ -819,8 +824,8 @@ if command -v yamllint >/dev/null 2>&1; then
 fi
 
 image_count=$("$repo_root/scripts/images.sh" list | wc -l | tr -d ' ')
-if [[ "$image_count" != "11" ]]; then
-  echo "ERROR: release.yaml must contain 10 core images and the snapshot image committer" >&2
+if [[ "$image_count" != "12" ]]; then
+  echo "ERROR: release.yaml must contain 11 core images and the snapshot image committer" >&2
   exit 1
 fi
 while IFS= read -r image_ref; do
