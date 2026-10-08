@@ -1,0 +1,75 @@
+name: Package BYOC compliance release
+on:
+  workflow_dispatch:
+    inputs:
+      source_release:
+        description: Existing release tag containing corresponding-source.tar.gz and its source-index.json.
+        required: true
+        type: string
+      source_contact:
+        description: Canonix contact page for corresponding-source requests.
+        default: https://canonix.ai/
+        required: true
+        type: string
+      create_draft:
+        description: Attach verified evidence to a draft GitHub release.
+        type: boolean
+        default: false
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+      - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
+      - name: Install release manifest reader
+        run: python3 -m pip install PyYAML==6.0.3
+      - name: Authenticate for release image reads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_USER: ${{ github.actor }}
+        run: echo "$GH_TOKEN" | crane auth login ghcr.io --username "$GH_USER" --password-stdin
+      - name: Download corresponding source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RELEASE: ${{ inputs.source_release }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/corresponding-source"
+          gh release download "$SOURCE_RELEASE" --pattern corresponding-source.tar.gz --dir "$RUNNER_TEMP"
+          python3 - <<'PY'
+          import os, tarfile
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP'])
+          with tarfile.open(root / 'corresponding-source.tar.gz') as archive:
+              archive.extractall(root / 'corresponding-source', filter='data')
+          PY
+      - name: Verify and assemble customer evidence
+        env:
+          SOURCE_CONTACT: ${{ inputs.source_contact }}
+        run: |
+          python3 scripts/package-release.py --source-root "$RUNNER_TEMP/corresponding-source" \
+            --source-contact "$SOURCE_CONTACT" --output dist
+      - name: Keep build output for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: byoc-compliance-bundle
+          path: dist/*-compliance.tar.gz*
+          if-no-files-found: error
+      - name: Attach durable release assets
+        if: inputs.create_draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python3 -c 'import yaml; print(yaml.safe_load(open("release.yaml"))["release"]["version"])')
+          tag="v$version"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --draft --target "$GITHUB_SHA" --title "Phoenix BYOC $version" \
+              --notes-file "dist/phoenix-byoc-$version/SOURCE_OFFER.md"
+          fi
+          # Immutable assets: no --clobber. A published release is never rewritten.
+          test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true
+          gh release upload "$tag" dist/*-compliance.tar.gz* \
+            "dist/phoenix-byoc-$version/THIRD_PARTY_NOTICES.md" \
+            "dist/phoenix-byoc-$version/SOURCE_OFFER.md"

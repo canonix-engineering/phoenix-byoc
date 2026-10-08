@@ -9,3 +9,6 @@ kubectl = "1.32"
 shellcheck = "0.11"
 "pipx:yamllint" = "1.38"
 "aqua:mikefarah/yq" = "4.49.2"
+
+"aqua:sigstore/cosign" = "3.0.6"
+"aqua:oras-project/oras" = "1.3.0"

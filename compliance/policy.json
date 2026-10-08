@@ -1,0 +1,4 @@
+{
+  "schemaVersion": 1,
+  "certificateIdentityRegexp": "^https://github\\.com/canonix-engineering/(phoenix-agents|phoenix-gateway|phoenix-web|phoenix-workflow-engine|phoenix-devops|cortex-postgresql)/\\.github/workflows/(ci\\.yml|build-image\\.yml|release\\.yml|opensandbox-controller-image\\.yaml|byoc-auxiliary-images\\.yml)@refs/(heads/main|tags/v[0-9].*)$"
+}
