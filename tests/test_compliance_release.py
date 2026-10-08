@@ -5,6 +5,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'scripts/package-release.py'
@@ -63,6 +64,22 @@ class ReleaseTests(unittest.TestCase):
                 expected, path = line.split('  ', 1)
                 self.assertEqual(hashlib.sha256(bundle.extractfile(path).read()).hexdigest(), expected)
         self.assertEqual(archive.read_bytes(), self.package('repeat').read_bytes())
+
+    def test_sources_are_downloaded_from_signed_image_artifacts_by_default(self):
+        import shutil
+        def downloader(ref, identity, output):
+            self.assertEqual(identity, 'trusted')
+            output.mkdir(parents=True)
+            for file in self.source.iterdir():
+                shutil.copyfile(file, output / file.name)
+            (output / 'source-attestation.json').write_text('verified fixture')
+            return [self.entry]
+        with patch.object(release, 'download_sources', side_effect=downloader):
+            archive = release.package(self.root / 'release.yaml', None, 'https://canonix.ai/',
+                                      self.root / 'automatic', verifier=self.verifier)
+        with tarfile.open(archive) as bundle:
+            self.assertIn('sources/app/source.tar.gz', bundle.getnames())
+            self.assertIn('images/app/source-attestation.json', bundle.getnames())
 
     def test_missing_digest_stops_before_verification(self):
         path = self.root / 'release.yaml'

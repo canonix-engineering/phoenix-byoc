@@ -13,6 +13,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).with_name('compliance')))
 from verify import verify
+from source_artifacts import download as download_sources
 
 
 def sha(path):
@@ -82,6 +83,10 @@ def package(release_path, source_root, contact, output, verifier=verify):
     policy = json.loads((root / 'compliance/policy.json').read_text())
     directory.mkdir(parents=True)
     required = set()
+    downloaded_sources = {}
+    automatic_sources = source_root is None
+    if automatic_sources:
+        source_root = output / ".source-cache"
     notices = [f'# Phoenix BYOC {version} — third-party notices', '']
     inventory = []
     if not release.get('images'):
@@ -95,12 +100,24 @@ def package(release_path, source_root, contact, output, verifier=verify):
         ref = item['repository'] + '@' + digest
         evidence = directory / 'images' / key
         verifier(ref, policy['certificateIdentityRegexp'], evidence)
+        if automatic_sources:
+            source_dir = source_root / key
+            for entry in download_sources(ref, policy['certificateIdentityRegexp'], source_dir):
+                entry = dict(entry)
+                for field in ('archive', 'buildInstructions'):
+                    entry[field] = key + '/' + entry[field]
+                downloaded_sources.setdefault(entry['purl'], entry)
+            shutil.copyfile(source_dir / 'source-attestation.json', evidence / 'source-attestation.json')
         for path in sorted(evidence.glob('*/components.json')):
             components = json.loads(path.read_text())['components']
             required.update(c['purl'] for c in components if c.get('copyleft'))
         for path in sorted(evidence.glob('*/THIRD_PARTY_NOTICES')):
             notices += [f'## {key} — {path.parent.name}', '', path.read_text(), '']
         inventory.append({'image': key, 'ref': ref})
+    if automatic_sources:
+        source_root.mkdir(parents=True, exist_ok=True)
+        (source_root / 'source-index.json').write_text(json.dumps(
+            {'schemaVersion': 1, 'components': list(downloaded_sources.values())}, indent=2) + '\n')
     sources(required, source_root, directory / 'sources')
     template = (root / 'compliance/SOURCE_OFFER.template.md').read_text()
     offer = template.replace('{{RELEASE_VERSION}}', version).replace('{{SOURCE_CONTACT}}', contact)
@@ -122,7 +139,7 @@ def package(release_path, source_root, contact, output, verifier=verify):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--release', type=Path, default=Path(__file__).resolve().parents[1] / 'release.yaml')
-    parser.add_argument('--source-root', type=Path, required=True)
+    parser.add_argument('--source-root', type=Path, help='Optional reviewed offline sources; otherwise verify and download signed image source artifacts')
     parser.add_argument('--source-contact')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
