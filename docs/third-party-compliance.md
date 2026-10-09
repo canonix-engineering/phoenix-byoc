@@ -113,7 +113,7 @@ check; a real release must explicitly select its separately reviewed BYOC
 commit. Its verification results apply to that test snapshot, not the current
 installation manifest.
 
-[Validation evidence](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/untagged-673bd88f227aa435ec41)
+[Validation evidence](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/untagged-f1660c15926f8e79efcc)
 is retained in an unpublished draft named **OSS compliance validation — not a
 BYOC release**. The archive's historical `0.2.0-development.16` identifier is
 only a test-bundle label, not a selected next release. Do not publish that draft
