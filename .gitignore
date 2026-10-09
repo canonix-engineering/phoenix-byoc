@@ -5,3 +5,6 @@
 /values.secrets.yaml
 /customer-values.yaml
 /customer-secrets.yaml
+
+/dist/
+__pycache__/

@@ -14,10 +14,10 @@ Usage:
 
 Commands:
   list     Print every image reference required by the release.
-  verify   Resolve every image with crane and fail if one is unavailable.
+  verify   Verify availability, license files and signed SBOMs for every image.
   ecr-login
            Authenticate crane to the release's source Amazon ECR registry.
-  mirror   Copy every image to another registry, preserving names and tags.
+  mirror   Copy every image and its signed evidence, preserving names and tags.
 
 Authenticate to private source or destination registries before running
 verify or mirror. For the Phoenix source ECR, either run ecr-login first or pass
@@ -190,6 +190,8 @@ case "$command" in
         echo "ERROR: digest mismatch for $reference: expected $digest, got $actual_digest" >&2
         exit 1
       fi
+      identity=$(python3 "$repo_root/scripts/compliance/release_trust.py" "$repo_root/compliance/policy.json" "$(awk '$1 == "channel:" {print $2; exit}' "$release_file" | tr -d '"')")
+      python3 "$repo_root/scripts/compliance/verify.py" "${reference%@*}@$actual_digest" --identity "$identity"
       printf '%s@%s\n' "${reference%@*}" "$actual_digest"
     done < <(read_images)
     ;;
@@ -213,10 +215,12 @@ case "$command" in
     while IFS=$'\t' read -r name source tag digest; do
       target="$destination/$name:$tag"
       if [[ "$dry_run" == true ]]; then
-        printf 'crane copy %q %q\n' "$source" "$target"
+        printf 'cosign copy %q %q\n' "$source" "$target"
+        printf 'oras cp --recursive %q %q\n' "$source" "$target"
       else
         echo "Copying $source -> $target"
-        crane copy "$source" "$target"
+        identity=$(python3 "$repo_root/scripts/compliance/release_trust.py" "$repo_root/compliance/policy.json" "$(awk '$1 == "channel:" {print $2; exit}' "$release_file" | tr -d '"')")
+        PHOENIX_SBOM_IDENTITY="$identity" "$repo_root/scripts/compliance/mirror.sh" "$source" "$target"
         source_digest=${digest:-$(crane digest "$source")}
         if [[ "$(crane digest "$target")" != "$source_digest" ]]; then
           echo "ERROR: mirrored image digest differs from source: $target" >&2
