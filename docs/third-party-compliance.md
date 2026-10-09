@@ -22,8 +22,9 @@ release in `sources/`.
    inventories produced by the failed build. Never mark missing evidence as
    approved solely because an SPDX identifier is known.
 2. Publish/mirror the final images together with their signatures, attestations
-   and OCI referrers. Update **every** `release.yaml` image to the verified final
-   digest; also update the OpenSandbox chart version after publishing it.
+   and OCI referrers. Selecting new image digests or chart versions is a separate
+   release-promotion change. This compliance PR preserves the existing
+   `release.yaml` versions, repositories, tags and digests.
 3. The pipeline archives source and build instructions in signed OCI artifacts.
    The release packager downloads them automatically. For components not covered
    by automatic resolvers, prepare the exact corresponding source for each component marked
@@ -98,15 +99,30 @@ against the registry using the pinned digests and `compliance/policy.json`.
 
 ## Rollout status
 
-The development candidate records the exact digests produced by the compliance
-builds. The packaging workflow verifies all images again before producing the
-customer bundle. Development-only signing identities are explicitly restricted
-to the reviewed compliance PR/workflow; stable releases use the production
-identity policy. This candidate does not claim a cluster deployment.
+This PR leaves `release.yaml` identical to the existing main-branch baseline.
+It does not select a new BYOC version, change image repositories/tags/digests,
+or promote a new chart version. Rebuilding and selecting the shipped versions
+will be handled separately. The unchanged baseline is **not** claimed to pass
+the new image-evidence gates; those gates remain strict and may reject older
+images that lack the required evidence.
 
-OpenSandbox chart 0.2.2 contains the upstream license and modification notice.
-Its publication to the chart registry is a separate release step; the prepared
-chart archive is available from the DevOps chart workflow.
+The end-to-end test used the historical BYOC snapshot
+`790365eda68fcafa12c690df913a1c1fdd9d8276`, containing 12 compliance validation
+images. The DevOps packaging workflow pins that snapshot for its integration
+check; a real release must explicitly select its separately reviewed BYOC
+commit. Its verification results apply to that test snapshot, not the current
+installation manifest.
+
+[Validation evidence](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/untagged-673bd88f227aa435ec41)
+is retained in an unpublished draft named **OSS compliance validation — not a
+BYOC release**. The archive's historical `0.2.0-development.16` identifier is
+only a test-bundle label, not a selected next release. Do not publish that draft
+or reuse its notices/SBOMs/source offer for a different set of image digests.
+The original verified files are retained unchanged for reproducibility.
+
+The archived OpenSandbox chart contains the upstream license and modification
+notice. Selecting and publishing a new chart version is deferred together with
+release version updates.
 
 Optional chart-provided images outside `release.yaml` also need an explicit
 distribution review before enabling them in a customer release.
