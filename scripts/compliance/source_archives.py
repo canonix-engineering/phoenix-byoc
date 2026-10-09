@@ -5,11 +5,13 @@ import json
 import re
 import tarfile
 import urllib.request
+import urllib.error
+import time
 import zipfile
 from pathlib import Path
 
 MAX_DOWNLOAD = 512 * 1024 * 1024
-NOTICE = re.compile(r'(?i)^(licen[cs]e|copying|copyright|notice|authors)(?:[._-].*)?$')
+NOTICE = re.compile(r'(?i)^(?:[a-z0-9]+[-_.])?(licen[cs]e|copying|copyright|notice|authors)(?:[._-].*)?$')
 
 
 def fetch(url, cache):
@@ -20,8 +22,17 @@ def fetch(url, cache):
     if path.exists():
         return path.read_bytes()
     request = urllib.request.Request(url, headers={'User-Agent': 'Phoenix-OSS-compliance/1'})
-    with urllib.request.urlopen(request, timeout=90) as response:
-        data = response.read(MAX_DOWNLOAD + 1)
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=90) as response:
+                data = response.read(MAX_DOWNLOAD + 1)
+            break
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            if isinstance(error, urllib.error.HTTPError) and error.code not in (429, 500, 502, 503, 504):
+                raise
+            if attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
     if len(data) > MAX_DOWNLOAD:
         raise ValueError('Source download exceeds limit: ' + url)
     path.write_bytes(data)
@@ -53,6 +64,10 @@ def notices(data, origin):
                 for member in archive:
                     if not member.isfile():
                         continue
+                    if Path(member.name).name.lower().startswith('readme') and member.size < 1024 * 1024:
+                        readme = archive.extractfile(member).read().decode('utf-8', 'replace')
+                        if re.search(r'(?i)copyright|permission is hereby granted', readme):
+                            result.append({'origin': origin + '#' + member.name, 'text': readme})
                     header = archive.extractfile(member).read(32768).decode('utf-8', 'replace')
                     blocks = re.findall(r'/\*.*?\*/|(?m:^(?:[ \t]*(?:\#|//)[^\n]*\n)+)', header, re.S)
                     for block in blocks:

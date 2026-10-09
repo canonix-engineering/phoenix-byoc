@@ -10,11 +10,11 @@ import tempfile
 from pathlib import Path
 from evidence import image_targets
 from rootfs import Rootfs
-from policy import first_party
+from policy import first_party, dependency_group
 
 ISSUER = 'https://token.actions.githubusercontent.com'
 PREDICATE = 'https://cyclonedx.org/bom'
-DEFAULT_IDENTITY = r'^https://github\.com/canonix-engineering/[^/]+/\.github/workflows/[^@]+@refs/(heads|tags|pull)/.+'
+DEFAULT_IDENTITY = r'^https://github\.com/canonix-engineering/[^/]+/\.github/workflows/[^@]+@(?:refs/(heads|tags|pull)/.+|[a-f0-9]{40})$'
 
 
 def read_envelopes(text):
@@ -55,6 +55,10 @@ def check_licenses(fs):
     if inventory.get('schemaVersion') != 1 or not inventory.get('components'):
         raise ValueError('Empty or unsupported license inventory')
     for item in inventory['components']:
+        if item.get('scope') == 'dependency-group':
+            if not dependency_group(item, fs):
+                raise ValueError('Invalid dependency-only package exemption')
+            continue
         if item.get('scope') == 'first-party':
             if not first_party(item):
                 raise ValueError('Unrecognized first-party exemption')

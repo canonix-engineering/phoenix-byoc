@@ -1,8 +1,8 @@
 release:
-  version: "0.2.0-development.15"
+  version: "0.2.0-development.16"
   channel: development
-  sourceEnvironment: test
-  observedAt: "2026-09-16"
+  sourceEnvironment: ci-compliance-validation
+  observedAt: "2026-10-09"
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -10,7 +10,7 @@ versions:
   clickhouseChart: "0.1.0"
   cortexPostgresql: "0.1.0"
   ingressNginx: "4.12.2"
-  opensandboxController: "0.2.0"
+  opensandboxController: "0.2.2"
   phoenixGateway: "0.3.0"
   phoenixWeb: "0.2.2"
   phoenixWebFrontend: "0.1.0"
@@ -19,63 +19,79 @@ versions:
   postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
 
-# Runtime baseline observed in the source environment declared above on
-# 2026-09-16. The Workflow Engine tag additionally includes the standard CSG
-# runtime packaging change. Set imageRegistry in the selected values file after
-# copying every image to a customer registry while preserving these names and
-# tags.
-# Valkey was independently verified on 2026-10-07; the remaining runtime
-# baseline above is unchanged.
+# Development release candidate. Images are rebuilt and verified by the OSS
+# compliance workflows; this manifest does not claim deployment to a cluster.
+# Copy every final image together with its signed evidence to the customer
+# registry, preserving the names and tags below.
 images:
   valkey:
     name: valkey
-    repository: docker.io/valkey/valkey
-    tag: "9.1.2"
-    digest: "sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/valkey"
+    tag: "sha-0f132914a1490fbe99e4f406e08be73d4ed9886a-48332870af35"
+    digest: "sha256:5c3743c24442f73d8ba839dc3ddad3ba6a4e12cd7db001298cdef20dd9ea70ff"
+
   clickhouse:
     name: clickhouse
-    repository: clickhouse/clickhouse-server
-    tag: "25.1-alpine"
-    digest: "sha256:22cec0a6f21245b62bc243d458b65fc6c940ae22eeaaecdd789a63da91b57cbc"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/clickhouse"
+    tag: "sha-f6aa867f0b1c3861dbf8cef81b59471df854530f-22cec0a6f212"
+    digest: "sha256:46eeb390e70bbccf4b490d7b48f7475ccb9d37463d2af99166da853c9cc16dd1"
+
   cortexPostgresql:
     name: cortex-postgresql
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/cortex-postgresql
-    tag: "61b95bb"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/cortex-postgresql"
+    tag: "c55de6f"
+    digest: "sha256:7db557de87251d72688503bcf66f1b1f3c7097f8b9237bcd69eee5b4e178bf2b"
+
   opensandboxController:
     name: phoenix-opensandbox-controller
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller
-    tag: "sha-4f017af7a2987e4aef38b0a5b868a5aae68277c5"
-    digest: "sha256:e96c56e12c7c5fe1134c46692e468ca9ee4f554294f7a117f9efd0ab1805d971"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller"
+    tag: "sha-f6aa867f0b1c3861dbf8cef81b59471df854530f"
+    digest: "sha256:2c38b889d6a5fded1fab323f396bac129fe93db473958dd7a47853f8432c6d34"
+
   opensandboxImageCommitter:
     name: phoenix-opensandbox-image-committer
-    repository: ghcr.io/canonix-engineering/phoenix-byoc/opensandbox-controller
-    tag: "image-committer-upstream-6c433a77"
-    digest: "sha256:e71d430aa8647ec5437b1515f77748b06f4c3362756edac0dc75ca053fe21b92"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox-controller"
+    tag: "sha-f6aa867f0b1c3861dbf8cef81b59471df854530f-6c433a77de25"
+    digest: "sha256:1bbd8abd07af97ee7e56010cc7fcf53ef17ffde49d61558cce7a2171aaedf066"
+
   phoenixAgent:
     name: phoenix-agent
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: "sha-afc54f1e541e08524ea974c1c8e0d443559625e2"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent"
+    tag: "sha-e0295ecb24e59187da439758ac0c1e65fee162b7"
+    digest: "sha256:f3432ac2ae141316519358c9c2cdd7c0b063af8526a76c1f96ae2fceca919ac5"
+
   phoenixGateway:
     name: phoenix-gateway
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
-    tag: "sha-27c42b9adb4c272777e66fb4f1c09c4b0575055b"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway"
+    tag: "sha-75896f5bc6663c2c0fc666df74f177a68c37b3a0"
+    digest: "sha256:2b087e9c4592066ebf336762ef6c8e974e67e56d27b9041b1b1c1b0fe9e41bd9"
+
   phoenixLab:
     name: phoenix-lab
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab
-    tag: "agent-lab-poc3"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab"
+    tag: "sha-438dc9d1b84e57f279c8ece4585d71de539fa0df-b84e8fdac13e"
+    digest: "sha256:bcd25a1a7b46c33e82580492dcc54c65cdd985b6697e8f61d7b90aa736c60c60"
+
   phoenixOpensandbox:
     name: phoenix-opensandbox
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: "sha-67827436ecd3953f7f09efddc68412d5e8e59009"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox"
+    tag: "sha-0af8a461a69e5ffa3c95121412a77c1a12d147a5"
+    digest: "sha256:1cc6b75bf955098f2dceb2f76608bfd133c872eba1733a01b5eb001d01838e2c"
+
   phoenixWeb:
     name: phoenix-web
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: "sha-fd7c53f840b03cfd91dfdd79c56ac011110a1083"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-web"
+    tag: "sha-0b8880cda7a9ba052aa3b6693a498aed68ef6a1b"
+    digest: "sha256:51297e953866c4171fc6f4d14dce3d9cf3744a8181bbeafea9b77c74369fad87"
+
   phoenixWebFrontend:
     name: phoenix-web-frontend
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: "sha-fd7c53f840b03cfd91dfdd79c56ac011110a1083"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend"
+    tag: "sha-96075a52867d621d1663391db6cbce0ae988696f"
+    digest: "sha256:30495e7340782a72c7aa80c5dbd92f64e9ca61610218aec49ec1e38298700515"
+
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
-    repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: "sha-86ff11d3706ea2948ada270139db02077b5b3b02"
+    repository: "597532482898.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine"
+    tag: "sha-e2c5158404129ac0a9820fd686adf4dda2f33b72"
+    digest: "sha256:dfd3b3a2f2e2f9ccb965c79c11a5ab4de2a03b955f241af7d99b2a7accdcc969"

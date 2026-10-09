@@ -1,5 +1,12 @@
 name: Package BYOC compliance release
 on:
+  pull_request:
+    paths:
+      - release.yaml
+      - compliance/**
+      - scripts/compliance/**
+      - scripts/package-release.py
+      - .github/workflows/compliance-release.yml
   workflow_dispatch:
     inputs:
       source_release:
@@ -17,12 +24,23 @@ on:
         default: false
 permissions:
   contents: write
+  packages: read
   id-token: write
 jobs:
   package:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Reserve space for source archives and image verification
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+        with:
+          tool-cache: false
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - uses: imjasonh/setup-crane@31b88efe9de28ae0ffa220711af4b60be9435f6e
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6
       - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6
@@ -59,18 +77,35 @@ jobs:
           PY
       - name: Verify and assemble customer evidence
         env:
-          SOURCE_CONTACT: ${{ inputs.source_contact }}
+          SOURCE_CONTACT: ${{ inputs.source_contact || 'https://canonix.ai/' }}
           SOURCE_RELEASE: ${{ inputs.source_release }}
         run: |
           args=()
           if [[ -n "$SOURCE_RELEASE" ]]; then args+=(--source-root "$RUNNER_TEMP/corresponding-source"); fi
           python3 scripts/package-release.py "${args[@]}" \
             --source-contact "$SOURCE_CONTACT" --output dist
+      - name: Prepare individually downloadable release documents and SBOMs
+        run: |
+          python3 - <<'PYCODE'
+          import shutil
+          from pathlib import Path
+          output = Path('dist/release-assets')
+          output.mkdir()
+          for root in Path('dist').glob('phoenix-byoc-*'):
+              if not root.is_dir():
+                  continue
+              for name in ('THIRD_PARTY_NOTICES.md', 'SOURCE_OFFER.md'):
+                  shutil.copyfile(root / name, output / name)
+              for sbom in root.glob('images/*/sbom-*.cdx.json'):
+                  shutil.copyfile(sbom, output / (sbom.parent.name + '-' + sbom.name))
+          PYCODE
       - name: Keep build output for review
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: byoc-compliance-bundle
-          path: dist/*-compliance.tar.gz*
+          path: |
+            dist/*-compliance.tar.gz*
+            dist/release-assets/
           if-no-files-found: error
       - name: Attach durable release assets
         if: inputs.create_draft
@@ -85,6 +120,4 @@ jobs:
           fi
           # Immutable assets: no --clobber. A published release is never rewritten.
           test "$(gh release view "$tag" --json isDraft --jq .isDraft)" = true
-          gh release upload "$tag" dist/*-compliance.tar.gz* \
-            "dist/phoenix-byoc-$version/THIRD_PARTY_NOTICES.md" \
-            "dist/phoenix-byoc-$version/SOURCE_OFFER.md"
+          gh release upload "$tag" dist/*-compliance.tar.gz* dist/release-assets/*

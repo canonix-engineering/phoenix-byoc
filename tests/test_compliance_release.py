@@ -112,3 +112,15 @@ class ReleaseTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ReleaseTrustTests(unittest.TestCase):
+    def test_candidate_identities_cannot_sign_stable_releases(self):
+        import re
+        from release_trust import identity
+        policy = json.loads((SCRIPT.parents[1] / 'compliance/policy.json').read_text())
+        candidate = 'https://github.com/canonix-engineering/cortex-postgresql/.github/workflows/release.yml@refs/heads/codex/oss-license-compliance'
+        self.assertIsNone(re.fullmatch(identity(policy, 'stable'), candidate))
+        self.assertIsNotNone(re.fullmatch(identity(policy, 'development'), candidate))
+        self.assertIsNone(re.fullmatch(identity(policy, 'development'), candidate.replace('canonix-engineering', 'outside-org')))
+        self.assertIsNone(re.fullmatch(identity(policy, 'development'), candidate.replace('codex/oss-license-compliance', 'untrusted-branch')))

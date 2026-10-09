@@ -190,7 +190,7 @@ case "$command" in
         echo "ERROR: digest mismatch for $reference: expected $digest, got $actual_digest" >&2
         exit 1
       fi
-      identity=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["certificateIdentityRegexp"])' "$repo_root/compliance/policy.json")
+      identity=$(python3 "$repo_root/scripts/compliance/release_trust.py" "$repo_root/compliance/policy.json" "$(awk '$1 == "channel:" {print $2; exit}' "$release_file" | tr -d '"')")
       python3 "$repo_root/scripts/compliance/verify.py" "${reference%@*}@$actual_digest" --identity "$identity"
       printf '%s@%s\n' "${reference%@*}" "$actual_digest"
     done < <(read_images)
@@ -219,7 +219,7 @@ case "$command" in
         printf 'oras cp --recursive %q %q\n' "$source" "$target"
       else
         echo "Copying $source -> $target"
-        identity=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["certificateIdentityRegexp"])' "$repo_root/compliance/policy.json")
+        identity=$(python3 "$repo_root/scripts/compliance/release_trust.py" "$repo_root/compliance/policy.json" "$(awk '$1 == "channel:" {print $2; exit}' "$release_file" | tr -d '"')")
         PHOENIX_SBOM_IDENTITY="$identity" "$repo_root/scripts/compliance/mirror.sh" "$source" "$target"
         source_digest=${digest:-$(crane digest "$source")}
         if [[ "$(crane digest "$target")" != "$source_digest" ]]; then

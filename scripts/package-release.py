@@ -14,6 +14,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).with_name('compliance')))
 from verify import verify
 from source_artifacts import download as download_sources
+from release_trust import identity as release_identity
 
 
 def sha(path):
@@ -81,6 +82,7 @@ def package(release_path, source_root, contact, output, verifier=verify):
     if directory.exists():
         raise ValueError('Output bundle already exists; use a new output directory')
     policy = json.loads((root / 'compliance/policy.json').read_text())
+    identity = release_identity(policy, release['release'].get('channel', 'stable'))
     directory.mkdir(parents=True)
     required = set()
     downloaded_sources = {}
@@ -99,10 +101,10 @@ def package(release_path, source_root, contact, output, verifier=verify):
             raise ValueError(f'{key}: release image must be pinned to its final digest')
         ref = item['repository'] + '@' + digest
         evidence = directory / 'images' / key
-        verifier(ref, policy['certificateIdentityRegexp'], evidence)
+        verifier(ref, identity, evidence)
         if automatic_sources:
             source_dir = source_root / key
-            for entry in download_sources(ref, policy['certificateIdentityRegexp'], source_dir):
+            for entry in download_sources(ref, identity, source_dir):
                 entry = dict(entry)
                 for field in ('archive', 'buildInstructions'):
                     entry[field] = key + '/' + entry[field]
