@@ -1,12 +1,5 @@
 name: Package BYOC compliance release
 on:
-  pull_request:
-    paths:
-      - release.yaml
-      - compliance/**
-      - scripts/compliance/**
-      - scripts/package-release.py
-      - .github/workflows/compliance-release.yml
   workflow_dispatch:
     inputs:
       source_release:
@@ -28,12 +21,23 @@ permissions:
   id-token: write
 jobs:
   package:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.sha }}
+      - name: Resolve registry access requirements
+        id: access
+        env:
+          ECR_ROLE: ${{ secrets.AWS_ROLE_BYOC_ECR_READ }}
+        run: |
+          if grep -q '\.dkr\.ecr\.' release.yaml; then
+            if [[ -z "$ECR_ROLE" ]]; then
+              echo "Private ECR candidates must be packaged by phoenix-devops/Package BYOC compliance release, or with a configured AWS_ROLE_BYOC_ECR_READ role." >&2
+              exit 1
+            fi
+            echo "ecr=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Reserve space for source archives and image verification
         uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
         with:
@@ -46,11 +50,13 @@ jobs:
       - uses: oras-project/setup-oras@22ce207df3b08e061f537244349aac6ae1d214f6
         with:
           version: 1.3.0
-      - uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b
+      - if: steps.access.outputs.ecr == 'true'
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b
         with:
-          role-to-assume: arn:aws:iam::597532482898:role/github-actions-ecr-push
+          role-to-assume: ${{ secrets.AWS_ROLE_BYOC_ECR_READ }}
           aws-region: us-east-1
-      - uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419
+      - if: steps.access.outputs.ecr == 'true'
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419
         with:
           registries: "597532482898"
       - name: Install release manifest reader

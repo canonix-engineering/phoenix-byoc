@@ -65,14 +65,25 @@ release in `sources/`.
    `scripts/compliance` verifier is vendored from `phoenix-devops`; update its
    Python/shell files together with upstream changes.
 
-6. Alternatively run **Package BYOC compliance release**. Leave `source_release`
+6. For private ECR development candidates, run **Package BYOC compliance release**
+   in `phoenix-devops` with the reviewed full BYOC commit SHA. DevOps already
+   owns ECR publication access. Its job checks out that exact public BYOC
+   revision, runs this same packager with all verification gates, and produces
+   the complete release artifact. Download the artifact and attach its archive,
+   checksum and individual documents/SBOMs to the draft BYOC GitHub release.
+   Do not grant a public repository the shared ECR push role merely to package
+   a release.
+
+7. For published images, alternatively run **Package BYOC compliance release**
+   in this repository. Leave `source_release`
    empty to use signed image source artifacts. An optional offline override is an
    existing release asset named `corresponding-source.tar.gz` whose root holds
    the index and source files. `create_draft=true` attaches the archive, checksum,
    source offer, combined notices and individual per-image SBOMs to a draft customer release. Publishing
-   that reviewed draft is the release owner's final handoff step. The workflow
-   authenticates to shared ECR and GHCR; local packaging uses existing registry
-   credentials. No customer cluster access is involved.
+   that reviewed draft is the release owner's final handoff step. The workflow authenticates to GHCR. Private ECR use here requires an
+   explicitly configured `AWS_ROLE_BYOC_ECR_READ` role with read-only registry
+   permissions and narrowly scoped GitHub OIDC trust; otherwise use DevOps as
+   above. Local packaging uses existing registry credentials. No customer cluster access is involved.
 
 ## Verification and mirroring
 
