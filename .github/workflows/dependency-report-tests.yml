@@ -1,0 +1,40 @@
+name: Dependency report tests
+on:
+  pull_request:
+    paths:
+      - .github/dependency-report/**
+      - .github/dependency-report.json
+      - .github/workflows/dependency-report*.yml
+permissions:
+  contents: read
+  pull-requests: read
+jobs:
+  test:
+    name: Dependency report regression tests (optional)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s .github/dependency-report/tests -v
+      - name: Analyze the real PR (read-only)
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPORT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 .github/dependency-report/report.py \
+            --repo "$REPORT_REPO" --pr "$PR_NUMBER" \
+            --output "$RUNNER_TEMP/dependency-report-preview"
+      - name: Upload report for review
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-report-preview
+          path: ${{ runner.temp }}/dependency-report-preview/
+          if-no-files-found: ignore
+          retention-days: 30
