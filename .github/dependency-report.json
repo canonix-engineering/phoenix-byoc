@@ -1,0 +1,7 @@
+{
+  "excludePaths": [
+    "tests/fixtures/",
+    "test/e2e/fixtures/"
+  ],
+  "referencesOnly": true
+}
