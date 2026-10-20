@@ -18,8 +18,8 @@ For releases before `0.2.0-development.15`, read the
 first. The installer blocks an ordinary upgrade while the legacy Redis
 StatefulSet exists; switching to an empty Valkey would discard active state.
 
-Review the new `release.yaml` and repository changes, then back up all
-customer-managed PostgreSQL databases and persistent volumes. Apply the update
+Review the new `release.yaml` and repository changes, then back up the bundled
+PostgreSQL application and internal databases and persistent volumes. Apply the update
 with the same namespace and configuration files used for the installation:
 
 ```bash
@@ -49,3 +49,60 @@ release. It preserves existing passwords, tokens and customer-specific fields,
 generates new supported `GENERATE_*` values and refreshes derived internal URLs. New
 external `CHANGE_ME_*` fields stop preflight and are reported by path until the
 customer supplies them.
+
+## Preparation for the next application release
+
+This chart preparation does not promote application images. The chart packages
+referenced by `release.yaml` must be published before handing this revision to a
+customer. Testing local chart sources is a development rehearsal, not a substitute
+for checking that the customer can pull the final packages.
+
+When the next application release enables artifact-backed agent bundles, add to
+the existing `values.yaml` (merge into `application`, do not duplicate the key):
+
+```yaml
+application:
+  agentBundles:
+    standaloneEnabled: true
+    publicationEnabled: false
+    namespace: agent-bundles
+    globalPublisherUserIds: []
+```
+
+Keep the existing `application.tenantId`, GCP project and VM pool settings,
+Workload Identity annotations, storage, DNS, registry and placement settings.
+No EKS configuration is needed at the customer.
+
+Run the ordinary install command above with `--generate-secrets`. It adds the
+new publisher token while retaining existing passwords, the Gateway encryption
+key and service tokens. Do not copy credentials from the supplier's Test
+environment. Web publication is a separate opt-in documented in
+[Configuration](configuration.md#agent-bundle-lookup-and-publication).
+
+Do not copy Test's concurrency or placement values into the customer deployment.
+Retain an existing sandbox admission limit and resource classes. Evaluation result
+details and metrics are optional; enable
+`services.workflowEngine.operator.evalResultDetailEnabled` only with compatible
+Web/Engine images. Gateway defaults to `observe`; `enforce` requires an Engine
+release that signs toolbox capabilities.
+
+If the customer has custom agent bundles, validate them against the new Agent
+release before rollout. The tested Agent requires a bundle-local result schema
+referenced by `output_schema_relpath`; legacy `status_file`, `status_schema`,
+`stage_data_schema_relpath` and inline `output_schema` are rejected. A chart
+upgrade cannot migrate custom bundle contents. Bundles supplied inside the
+released Agent image are maintained with that image.
+
+Web runs `db:create`, `db:migrate`, then `apps:rematerialize`; demo seeding is
+disabled. Gateway and Engine follow Web so the new schema exists before they
+start. Expect an application maintenance window during this sequence.
+
+After verification, sign in with an existing user, open an existing app, run a
+workflow, check its artifact, and complete a human-input question and resume.
+Check the worker and any customer-enabled GCP integration separately. If a
+migration or workflow fails, retain the command output and stop further rollout;
+do not reinstall into an empty namespace or regenerate secrets.
+
+Application/database rollback is not guaranteed by Helm rollback. Review the
+release's migrations and restore a coordinated database/PVC backup when a
+schema change cannot be reversed safely.

@@ -54,6 +54,19 @@ web:
     # injected below from Secret/clickhouse and overrides this compatibility URL.
     url: "http://clickhouse.invalid/phoenix"
   extraEnv:
+    - name: AGENT_BUNDLES_PUBLICATION_ENABLED
+      value: {{ .Values.application.agentBundles.publicationEnabled | quote }}
+{{- if .Values.application.agentBundles.publicationEnabled }}
+    - name: PHOENIX_ARTIFACT_PUBLISHER_NAMESPACE
+      value: {{ .Values.application.agentBundles.namespace | quote }}
+    - name: AGENT_BUNDLES_GLOBAL_PUBLISHER_USER_IDS
+      value: {{ join "," .Values.application.agentBundles.globalPublisherUserIds | quote }}
+    - name: PHOENIX_ARTIFACT_PUBLISHER_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: phoenix-artifact-publisher
+          key: token
+{{- end }}
     - name: INVOCATION_LOGS_CLICKHOUSE_URL
       valueFrom:
         secretKeyRef:
@@ -122,6 +135,7 @@ externalDatabase:
   password: {{ required "secrets.postgresql.applicationPassword is required" .Values.secrets.postgresql.applicationPassword | quote }}
   init:
     enabled: {{ .Values.postgresql.hooks.phoenixWeb }}
+    prepareTasks: [db:create, db:migrate]
     rematerializeApps: true
     runSeed: false
     adminUrl: {{ $adminUrl | quote }}

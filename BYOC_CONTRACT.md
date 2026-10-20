@@ -22,7 +22,8 @@
 - a supported Kubernetes cluster and administrative access for installation;
 - namespaces, StorageClasses and sufficient compute capacity;
 - node labels, taints, tolerations and placement policy;
-- a production PostgreSQL service, its backup policy and credentials;
+- a backup and recovery policy for the bundled PostgreSQL databases and volumes,
+  or a PostgreSQL service and credentials when bundled PostgreSQL is disabled;
 - DNS, TLS certificates and the preferred ingress controller;
 - a Redis-compatible service when bundled Valkey is disabled;
 - Cortex PostgreSQL when bundled Cortex is disabled;
@@ -56,8 +57,9 @@ PostgreSQL URL, or disable the hooks and create users/databases independently.
 When the hooks are disabled, database provisioning and migrations are the
 customer's responsibility.
 
-Bundled PostgreSQL is optional and is not the supported production database
-topology.
+The bundled BYOC topology deploys PostgreSQL and Valkey alongside Phoenix.
+It is a single-instance topology; availability, backups and recovery remain
+the customer's responsibility.
 
 ## Release support
 

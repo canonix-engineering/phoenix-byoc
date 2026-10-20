@@ -100,6 +100,7 @@ Do not replace `GENERATE_HEX_32`, `GENERATE_HEX_64`, `GENERATE_BASE64_32` or
 - PostgreSQL superuser, application and internal workflow-role passwords;
 - Cortex PostgreSQL and ClickHouse passwords;
 - `secretKeyBase`, agent harness, Workflow Engine and Artifact API tokens;
+- a separate publisher token for optional agent bundle publication;
 - guardrails, JavaScript transform and tool invocation tokens;
 - the Gateway master key used to encrypt stored SSH credentials;
 - the Gateway entry in `internalServiceTokens`.

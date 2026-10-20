@@ -37,6 +37,7 @@ opensandboxController:
     enabled: false
     registry: ""
     registryInsecure: false
+    imageURITemplate: ""
     commitJobTimeout: 10m
     secretName: opensandbox-registry-auth
     credentialsSecretName: ""
@@ -135,6 +136,12 @@ application:
   actionCableAllowedOrigins: ""
   skipCsrf: true
   toolboxId: ""
+  agentBundles:
+    # Enable with the next application release, after keyed-artifact migrations.
+    standaloneEnabled: false
+    publicationEnabled: false
+    namespace: agent-bundles
+    globalPublisherUserIds: []
   cortex:
     host: ""
     scheme: http
@@ -176,6 +183,7 @@ services:
         memory: 512Mi
   gateway:
     replicas: 1
+    toolboxAuthMode: observe
     allowUnauthenticatedIngress: true
     resources:
       requests:
@@ -213,6 +221,14 @@ services:
       enabled: false
     operator:
       serviceAccountAnnotations: {}
+      sandboxAdmissionLimit: 0
+      maxConcurrentSandboxTasksEval: 0
+      maxConcurrentInProcessTasksEval: 0
+      evalWorkflowStepRunTimeout: ""
+      evalResultDetailEnabled: false
+      metrics:
+        enabled: false
+        port: 9090
       maxConcurrentSandboxTasks: 5
       maxConcurrentInProcessTasks: 5
       inProcessWorkflowStepRunTimeout: 30m
@@ -224,6 +240,11 @@ services:
           cpu: "1"
           memory: 6Gi
   opensandbox:
+    costLimitCheckIntervalSeconds: 60
+    scheduling:
+      nodeSelector: {}
+      tolerations: []
+      podAnnotations: {}
     executionTimeout: 360m
     agentSandboxIdleTTL: 6h
     sandboxCreateTimeoutSeconds: 300
@@ -252,6 +273,19 @@ ingress:
     host: gateway.phoenix.example.com
     annotations: {}
     tls: []
+    paths:
+      - path: /mcp/v1/toolboxes/
+        pathType: Prefix
+      - path: /v1/github/git/
+        pathType: Prefix
+      - path: /v1/github/api/
+        pathType: Prefix
+      - path: /v1/remote-ssh/config
+        pathType: Exact
+      - path: /v1/remote-ssh/sign
+        pathType: Exact
+      - path: /v1/remote-ssh/connect
+        pathType: Exact
   workflowApi:
     enabled: false
     host: workflow.phoenix.example.com
@@ -340,6 +374,7 @@ secrets:
     secretKeyBase: ""
     agentHarnessToken: ""
     workflowEngineArtifactApiToken: ""
+    artifactPublisherToken: ""
     workflowEngineToken: ""
     internalServiceTokens: ""
     mailgunApiKey: ""

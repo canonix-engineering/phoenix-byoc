@@ -36,6 +36,7 @@ controller:
     commitJobTimeout: {{ .Values.opensandboxController.snapshot.commitJobTimeout | quote }}
     registry: {{ .Values.opensandboxController.snapshot.registry | quote }}
     registryInsecure: {{ .Values.opensandboxController.snapshot.registryInsecure }}
+    imageURITemplate: {{ .Values.opensandboxController.snapshot.imageURITemplate | quote }}
     snapshotPushSecret: {{ .Values.opensandboxController.snapshot.secretName | quote }}
     resumePullSecret: {{ .Values.opensandboxController.snapshot.secretName | quote }}
 {{- else }}

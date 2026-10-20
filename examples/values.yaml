@@ -123,6 +123,13 @@ vertex:
     haiku: claude-haiku-4-5@20251001
 
 application:
+  agentBundles:
+    # Enable standalone lookup only with applications supporting keyed artifacts.
+    standaloneEnabled: false
+    # Publishing custom bundles is a separate opt-in.
+    publicationEnabled: false
+    namespace: agent-bundles
+    globalPublisherUserIds: []
   # Stable identifier for this deployment. It is passed to workflows and
   # tenant-scoped application data. Example: acme_prod.
   tenantId: CHANGE_ME_TENANT
@@ -188,6 +195,7 @@ services:
       limits:
         memory: 512Mi
   gateway:
+    toolboxAuthMode: observe
     replicas: 1
     allowUnauthenticatedIngress: true
     resources:
@@ -232,6 +240,14 @@ services:
       # Disabled to match the source test environment.
       enabled: false
     operator:
+      sandboxAdmissionLimit: 0
+      maxConcurrentSandboxTasksEval: 0
+      maxConcurrentInProcessTasksEval: 0
+      evalWorkflowStepRunTimeout: ""
+      evalResultDetailEnabled: false
+      metrics:
+        enabled: false
+        port: 9090
       # For GKE Workload Identity, annotate this service account with the GCP
       # service account allowed to create and delete the configured VMs.
       serviceAccountAnnotations: {}
@@ -246,6 +262,12 @@ services:
           cpu: "1"
           memory: 6Gi
   opensandbox:
+    costLimitCheckIntervalSeconds: 60
+    # Independent sandbox placement; replace with the customer's node policy.
+    scheduling:
+      nodeSelector: {}
+      tolerations: []
+      podAnnotations: {}
     executionTimeout: 360m
     agentSandboxIdleTTL: 6h
     sandboxCreateTimeoutSeconds: 300

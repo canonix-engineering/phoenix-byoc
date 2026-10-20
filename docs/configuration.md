@@ -49,15 +49,65 @@ The current release installs these exact Phoenix-owned chart versions:
 | Component | Helm chart version |
 | --- | --- |
 | Cortex PostgreSQL | `0.1.0` |
-| OpenSandbox controller | `0.2.0` |
-| Phoenix Gateway | `0.3.0` |
-| Phoenix Web | `0.2.2` |
+| OpenSandbox controller | `0.2.3` |
+| Phoenix Gateway | `0.5.0` |
+| Phoenix Web | `0.2.3` |
 | Phoenix Web Frontend | `0.1.0` |
-| Phoenix Workflow Engine | `0.2.4` |
+| Phoenix Workflow Engine | `0.2.5` |
 | PostgreSQL bootstrap (included in this repository) | `0.1.0` |
+| Artifact publisher credential (included; opt-in) | `0.1.0` |
 
 The chart version is independent from the runtime image tag. Both are pinned
 in `release.yaml` and must be updated as one tested release.
+
+## Agent bundle lookup and publication
+
+`application.agentBundles.standaloneEnabled` enables keyed artifact lookup in
+Engine. Enable it with the application release that introduces artifact-backed
+agent bundles, after Web's database migrations. It remains disabled by default
+while this preparation retains the previous application image pins.
+
+`application.agentBundles.publicationEnabled` independently allows Web to publish
+bundles. It requires standalone lookup. Both components use
+`application.agentBundles.namespace` (must be `agent-bundles` for the current
+Web and Agent contract) and Engine uses
+`application.tenantId` as the deployment identity. Keep that tenant unchanged.
+
+The installer generates `secrets.application.artifactPublisherToken` separately
+from the engine and artifact service tokens. Reusing either token is rejected.
+With publication enabled, the local `artifact-publisher` chart creates a Secret
+before Web starts. The existing Web chart consumes it through `web.extraEnv`
+and `secretKeyRef`, for both Web and worker. No publisher token is placed in a
+ConfigMap or a literal Deployment environment value.
+
+Global bundle publication permissions are granted only to the application user
+IDs listed in `application.agentBundles.globalPublisherUserIds`. The default
+empty list grants none. Lookup does not require enabling Web publication.
+
+## Gateway and execution controls
+
+`services.gateway.toolboxAuthMode` accepts `off`, `observe` (default), or
+`enforce`. Enable `enforce` only after validating an Engine image with toolbox
+capability signing. Updating the Gateway chart alone does not establish that
+compatibility.
+
+`ingress.gateway.paths` defaults to toolbox MCP, GitHub proxy and remote SSH
+routes. It does not expose `/metrics` or every Gateway endpoint through `/`.
+
+`services.workflowEngine.operator.sandboxAdmissionLimit` caps combined sandbox
+admission; zero keeps the chart's uncapped behavior. Preserve an existing
+nonzero deployment limit when preparing values. Separate evaluation queue sizes,
+evaluation timeout, result details and opt-in operator metrics are also exposed
+under `services.workflowEngine.operator`.
+
+`services.opensandbox.costLimitCheckIntervalSeconds` controls budget polling.
+`services.opensandbox.scheduling` configures sandbox node selectors, tolerations
+and annotations independently from the API/operator placement.
+Keep the customer's resource classes and GCP identity annotations.
+
+For enabled snapshots, `opensandboxController.snapshot.imageURITemplate` can
+override the controller's snapshot URI format. Empty preserves its default.
+Updating this setting does not enable snapshots or install another controller.
 
 ## Scheduling
 

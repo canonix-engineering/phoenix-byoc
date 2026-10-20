@@ -136,6 +136,9 @@ check_helm_release() {
 
 check_helm_release ecr-pull-secret-refresh "$namespace" ecr-pull-secret-refresh \
   "$(local_chart_version ecr-pull-secret-refresh)" "$ecr_refresh_enabled"
+check_helm_release artifact-publisher "$namespace" artifact-publisher \
+  "$(local_chart_version artifact-publisher)" \
+  "$(yq -r '.application.agentBundles.publicationEnabled' "$merged_file")"
 check_helm_release ingress-nginx "$ingress_namespace" ingress-nginx \
   "$(yq -r '.versions.ingressNginx' "$merged_file")" "$bundled_ingress"
 check_helm_release postgresql "$namespace" postgresql \
@@ -245,6 +248,31 @@ fi
 if [[ "$bundled_clickhouse" == "true" ]]; then
   kubectl -n "$namespace" get service/clickhouse statefulset/clickhouse
 fi
+
+# These values control dynamically created sandboxes and are not covered by
+# checking Deployment image fields. Compare the deployed configuration with the
+# rendered release without printing credentials from the rest of the ConfigMap.
+for config_name in phoenix-workflow-engine phoenix-gateway; do
+  live_config="$verify_dir/$config_name-config.json"
+  kubectl -n "$namespace" get configmap "$config_name" -o json >"$live_config"
+  export CONFIG_NAME="$config_name"
+  for config_key in WORKFLOW_RUNTIME_IMAGES WORKFLOW_DEFINITION_CATALOG_ROOT \
+    PHOENIX_ARTIFACT_STANDALONE_ENABLED PHOENIX_ARTIFACT_KEY_DELEGATOR_NAMESPACES \
+    PHOENIX_ARTIFACT_PUBLISHER_NAMESPACE PHOENIX_ARTIFACT_TENANT_ID \
+    OPERATOR_SANDBOX_ADMISSION_LIMIT OPERATOR_EVAL_RESULT_DETAIL_ENABLED \
+    PHOENIX_COST_LIMIT_CHECK_INTERVAL_SECONDS PHOENIX_TOOLBOX_AUTH_MODE; do
+    export CONFIG_KEY="$config_key"
+    expected=$(yq -r 'select(.kind == "ConfigMap" and .metadata.name == strenv(CONFIG_NAME)) |
+      .data[strenv(CONFIG_KEY)] // ""' "$rendered_file")
+    [[ -z "$expected" ]] && continue
+    actual=$(yq -r '.data[strenv(CONFIG_KEY)] // ""' "$live_config")
+    if [[ "$actual" != "$expected" ]]; then
+      echo "ERROR: deployed $config_name configuration differs at $config_key." >&2
+      exit 1
+    fi
+  done
+done
+echo "Runtime image map and release configuration verified."
 
 if [[ "$ecr_refresh_enabled" == "true" ]]; then
   kubectl -n "$namespace" get cronjob/ecr-pull-secret-refresh
