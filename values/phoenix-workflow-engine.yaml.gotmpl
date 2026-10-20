@@ -1,3 +1,19 @@
+{{- $engineTag := .Values.images.phoenixWorkflowEngine.tag }}
+{{- with (.Values.images.phoenixWorkflowEngine | get "digest" "") }}
+{{- $engineTag = printf "%s@%s" $engineTag . }}
+{{- end }}
+{{- $agentTag := .Values.images.phoenixAgent.tag }}
+{{- with (.Values.images.phoenixAgent | get "digest" "") }}
+{{- $agentTag = printf "%s@%s" $agentTag . }}
+{{- end }}
+{{- $labTag := .Values.images.phoenixLab.tag }}
+{{- with (.Values.images.phoenixLab | get "digest" "") }}
+{{- $labTag = printf "%s@%s" $labTag . }}
+{{- end }}
+{{- $opensandboxTag := .Values.images.phoenixOpensandbox.tag }}
+{{- with (.Values.images.phoenixOpensandbox | get "digest" "") }}
+{{- $opensandboxTag = printf "%s@%s" $opensandboxTag . }}
+{{- end }}
 {{- $databaseHost := .Values.postgresql.external.host }}
 {{- $databaseSslmode := .Values.postgresql.external.sslmode }}
 {{- if .Values.postgresql.bundled.enabled }}
@@ -34,7 +50,7 @@
 
 image:
   repository: {{ $engineRepository | quote }}
-  tag: {{ .Values.images.phoenixWorkflowEngine.tag | quote }}
+  tag: {{ $engineTag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
 imagePullSecrets:
@@ -43,8 +59,8 @@ imagePullSecrets:
 workflow:
   definitionCatalogRoot: /workflow_definitions
   runtimeImages:
-    phoenix-agent: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
-    phoenix-lab: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
+    phoenix-agent: {{ printf "%s:%s" $agentRepository $agentTag | quote }}
+    phoenix-lab: {{ printf "%s:%s" $labRepository $labTag | quote }}
 
 phoenixWeb:
 {{- if .Values.services.workflowEngine.supervisor.enabled }}
@@ -72,14 +88,14 @@ sandboxScheduling:
 {{ toYaml .Values.scheduling.sandboxResourceClasses | indent 4 }}
 
 agent:
-  image: {{ printf "%s:%s" $agentRepository .Values.images.phoenixAgent.tag | quote }}
+  image: {{ printf "%s:%s" $agentRepository $agentTag | quote }}
 
 cortexMigration:
   enabled: {{ .Values.cortex.migrations.enabled }}
   requiredRlsScopeVersion: {{ .Values.cortex.migrations.requiredRlsScopeVersion | quote }}
 
 lab:
-  image: {{ printf "%s:%s" $labRepository .Values.images.phoenixLab.tag | quote }}
+  image: {{ printf "%s:%s" $labRepository $labTag | quote }}
 
 database:
   host: {{ required "postgresql.external.host is required when bundled PostgreSQL is disabled" $databaseHost | quote }}
@@ -184,7 +200,7 @@ opensandbox:
   outputArchiveMaxTotalFileBytes: {{ .Values.services.opensandbox.outputArchiveMaxTotalFileBytes | quote }}
   image:
     repository: {{ $opensandboxRepository | quote }}
-    tag: {{ .Values.images.phoenixOpensandbox.tag | quote }}
+    tag: {{ $opensandboxTag | quote }}
     pullPolicy: {{ .Values.imagePullPolicy }}
   server:
     sandboxCreateTimeoutSeconds: {{ .Values.services.opensandbox.sandboxCreateTimeoutSeconds }}

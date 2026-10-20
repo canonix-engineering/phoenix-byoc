@@ -1,3 +1,7 @@
+{{- $tag := .Values.images.phoenixWebFrontend.tag }}
+{{- with (.Values.images.phoenixWebFrontend | get "digest" "") }}
+{{- $tag = printf "%s@%s" $tag . }}
+{{- end }}
 {{- $repository := .Values.images.phoenixWebFrontend.repository }}
 {{- if .Values.imageRegistry }}
 {{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) .Values.images.phoenixWebFrontend.name }}
@@ -5,7 +9,7 @@
 
 image:
   repository: {{ $repository | quote }}
-  tag: {{ .Values.images.phoenixWebFrontend.tag | quote }}
+  tag: {{ $tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
 imagePullSecrets:

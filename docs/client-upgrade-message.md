@@ -1,8 +1,8 @@
 # Client message for the application release
 
-Draft for Pushpendra. Send only after the application release and the referenced
-chart packages are published and accessible to CSG. This preparation PR itself
-does not release new application images.
+Draft for Pushpendra for the 2026-10-20 release candidate. Charts are published;
+send only after the candidate is promoted to a verified stable release and image
+access is confirmed. See [release gates](releases/0.2.0-rc.1.md).
 
 ---
 
@@ -14,7 +14,8 @@ new secrets file.
 
 Before starting, take a backup of the bundled PostgreSQL application and internal
 databases and the persistent volumes. Plan a maintenance window for the application
-update and database migrations.
+update and database migrations. Record the currently installed Git revision and
+backup locations so the application and database can be recovered together.
 
 Merge the following settings into the existing `application` section of your
 `values.yaml`:

@@ -115,6 +115,22 @@ if __name__ == '__main__':
 
 
 class ReleaseTrustTests(unittest.TestCase):
+    def test_release_builders_are_pinned_to_reviewed_commits(self):
+        import re
+        from release_trust import identity
+        policy = json.loads((SCRIPT.parents[1] / 'compliance/policy.json').read_text())
+        prefix = 'https://github.com/canonix-engineering/phoenix-devops/.github/workflows/build-image.yml@'
+        for channel in ('stable', 'development'):
+            pattern = identity(policy, channel)
+            for commit in (
+                '368d0f6c9fa20e4118553d066adf17cee9b02265',
+                'f0d04b5e0811c51b9874d6c6af070609177e5d84',
+            ):
+                self.assertIsNotNone(re.fullmatch(pattern, prefix + commit))
+            self.assertIsNone(re.fullmatch(pattern, prefix + 'a' * 40))
+            self.assertIsNone(re.fullmatch(pattern, prefix + 'refs/heads/preview'))
+            self.assertIsNone(re.fullmatch(pattern, prefix.replace('canonix-engineering', 'outside-org') + 'f0d04b5e0811c51b9874d6c6af070609177e5d84'))
+
     def test_candidate_identities_cannot_sign_stable_releases(self):
         import re
         from release_trust import identity
