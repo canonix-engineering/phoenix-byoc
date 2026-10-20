@@ -1,7 +1,7 @@
 # Upgrades
 
 Stable BYOC releases are delivered through immutable Git tags and release
-archives. For version `0.2.0`, follow [the exact customer procedure](../UPGRADE.md).
+archives. For version `0.2.1`, follow [the exact customer procedure](../UPGRADE.md).
 Keep the existing `values.yaml` and generated `values.secrets.yaml`; do not copy
 the examples over them or create a new secrets file. Record the installed
 revision and download the new release into a separate directory.
@@ -10,17 +10,19 @@ If using a Git checkout instead of the release archive:
 
 ```bash
 git rev-parse HEAD
-git fetch origin tag v0.2.0
-git switch --detach v0.2.0
+git fetch origin tag v0.2.1
+git switch --detach v0.2.1
 ```
 
 For releases before `0.2.0-development.15`, read the
 [Redis-to-Valkey migration procedure](redis.md#existing-redis-installations)
 first. The installer blocks an ordinary upgrade while the legacy Redis
-StatefulSet exists; switching to an empty Valkey would discard active state.
+StatefulSet exists. For a PoC that can discard Redis-held state, use the explicit
+`--discard-redis-state` option described in [UPGRADE.md](../UPGRADE.md).
 
-Review the new `release.yaml` and repository changes, then back up the bundled
-PostgreSQL application and internal databases and persistent volumes. Apply the update
+Review the new `release.yaml` and repository changes. Backups are optional for a
+disposable PoC if you accept the risk of data loss; back up databases and volumes
+when their contents must be recoverable. Apply the update
 with the same namespace and configuration files used for the installation:
 
 ```bash

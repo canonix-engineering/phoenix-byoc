@@ -8,6 +8,8 @@
 - kubectl compatible with the cluster
 - kubeconform for local schema validation
 - yq 4.49
+- Python 3.9 or newer for the optional `--discard-redis-state` PoC upgrade
+  (standard library only; no Python packages to install)
 
 `mise install` installs the versions declared in `.mise.toml`.
 

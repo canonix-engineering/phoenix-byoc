@@ -1,5 +1,5 @@
 release:
-  version: 0.2.0
+  version: 0.2.1
   channel: stable
   sourceEnvironment: preview
   observedAt: '2026-10-20'

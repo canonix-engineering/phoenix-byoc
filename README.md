@@ -109,8 +109,8 @@ for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 
 ## Upgrade
 
-Stable BYOC updates are delivered as immutable versioned releases. For `0.2.0`,
-use the archive attached to [release v0.2.0](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.0)
+Stable BYOC updates are delivered as immutable versioned releases. For `0.2.1`,
+use the archive attached to [release v0.2.1](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.1)
 and follow [the customer upgrade instructions](UPGRADE.md). Keep the existing
 `values.yaml`, `values.secrets.yaml` and namespace. Do not upgrade a customer
 installation from a moving `main` checkout. See [Upgrades](docs/upgrades.md) for

@@ -1,8 +1,8 @@
-# Upgrade an existing CSG installation to Phoenix BYOC 0.2.0
+# Upgrade an existing CSG installation to Phoenix BYOC 0.2.1
 
-Release: **0.2.0**, channel: **stable**, Git tag: **v0.2.0**.
+Release: **0.2.1**, channel: **stable**, Git tag: **v0.2.1**.
 
-Use this procedure for the existing bundled PostgreSQL/Valkey installation on
+Use this procedure for the existing bundled PostgreSQL and Redis/Valkey installation on
 GCP, keeping its current direct-ECR access. This is an online installer: the
 archive contains the installer, local charts, templates and documentation;
 container images and external charts are downloaded from their pinned registries.
@@ -42,14 +42,18 @@ kubectl -n "$BYOC_NAMESPACE" get deployments,statefulsets,pvc
 Confirm the displayed context is the intended existing GCP cluster. The
 installer does not change it. Do not proceed with an unexpected context.
 
-## 2. Take a coordinated recovery checkpoint
+## 2. Optional backup
 
-Prevent application writes while taking the database and volume checkpoint,
-using your existing maintenance procedure. Keep backups private:
+For a disposable PoC, you may skip this section if you accept the risk of
+losing data if the update goes wrong. A backup is recommended for anything you
+want to keep. The installer does not back up databases or volumes.
+
+If taking a backup, prevent application writes while taking the database and
+volume checkpoint, using your existing maintenance procedure. Keep backups private:
 
 ```bash
 umask 077
-export BYOC_BACKUP="$BYOC_CONFIG/backups/before-0.2.0-$(date -u +%Y%m%dT%H%M%SZ)"
+export BYOC_BACKUP="$BYOC_CONFIG/backups/before-0.2.1-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$BYOC_BACKUP"
 cp "$BYOC_CONFIG/values.yaml" "$BYOC_BACKUP/values.yaml"
 cp "$BYOC_CONFIG/values.secrets.yaml" "$BYOC_BACKUP/values.secrets.yaml"
@@ -78,21 +82,26 @@ the snapshot/backup IDs with the database dump and previous release revision.
 The dump contains sensitive database contents and role hashes; do not send it
 in a support message. Confirm the checkpoint can be restored before updating.
 
-If this installation still has the legacy Redis StatefulSet from a release
-before `0.2.0-development.15`, first complete the documented
-[Redis-to-Valkey migration](docs/redis.md#existing-redis-installations).
-Do not switch a live legacy Redis deployment to an empty Valkey instance.
+For the small PoC, the command in step 5 replaces legacy Redis with a fresh
+Valkey instance, without copying Redis contents. Finish active workflows and ask
+users to pause activity first. Old Redis queues, streams and other Redis-held
+state will not be available in Valkey; start new workflows after the update.
+PostgreSQL records and artifact files are not deleted by this cache cutover.
+The old Redis PVC is retained, but it is not a coordinated application backup.
+
+If you need to preserve Redis-held state, do not use the PoC option. Follow the
+[coordinated migration](docs/redis.md#existing-redis-installations) instead.
 
 ## 3. Download the immutable release
 
 Use a new directory, keeping the old installer and configuration available:
 
 ```bash
-curl -fLO https://github.com/canonix-engineering/phoenix-byoc/releases/download/v0.2.0/phoenix-byoc-0.2.0.tar.gz
-curl -fLO https://github.com/canonix-engineering/phoenix-byoc/releases/download/v0.2.0/phoenix-byoc-0.2.0.tar.gz.sha256
-sha256sum -c phoenix-byoc-0.2.0.tar.gz.sha256
-tar -xzf phoenix-byoc-0.2.0.tar.gz
-cd phoenix-byoc-0.2.0
+curl -fLO https://github.com/canonix-engineering/phoenix-byoc/releases/download/v0.2.1/phoenix-byoc-0.2.1.tar.gz
+curl -fLO https://github.com/canonix-engineering/phoenix-byoc/releases/download/v0.2.1/phoenix-byoc-0.2.1.tar.gz.sha256
+sha256sum -c phoenix-byoc-0.2.1.tar.gz.sha256
+tar -xzf phoenix-byoc-0.2.1.tar.gz
+cd phoenix-byoc-0.2.1
 ```
 
 On macOS use `shasum -a 256 -c` in place of `sha256sum -c`. The extracted
@@ -161,8 +170,20 @@ umask 077
   --namespace "$BYOC_NAMESPACE" \
   --values "$BYOC_CONFIG/values.yaml" \
   --secrets "$BYOC_CONFIG/values.secrets.yaml" \
-  --generate-secrets 2>&1 | tee "$BYOC_BACKUP/upgrade-0.2.0.log"
+  --generate-secrets \
+  --discard-redis-state 2>&1 | tee "$BYOC_CONFIG/upgrade-0.2.1.log"
 ```
+
+`--discard-redis-state` explicitly accepts starting with empty Valkey data. It
+pauses the Phoenix Deployments, waits for their Pods to exit, upgrades only the
+cache, checks Valkey through the existing `redis-client` endpoint and restores
+the original replica counts before continuing the platform update. It preserves
+the old Redis PVC and does not reuse it for Valkey. If Valkey is already
+installed, the option does not clear or reset it.
+
+The shortcut supports the standard PoC namespace with only Phoenix workloads
+and no autoscalers. Active sandbox Pods, jobs or remaining Redis clients stop
+the cutover so you can finish them and retry. Do not run two installers at once.
 
 The installer preserves existing passwords/tokens, adds the publisher token,
 checks inputs, renders manifests and updates the enabled Helm releases. Web
@@ -203,7 +224,15 @@ the existing support conversation.
 
 ## 7. If an upgrade step fails
 
-Keep the maintenance window active and stop further rollout. Preserve the
+If the cache cutover fails, the script attempts to restore the original
+application replica counts and keeps its recovery journal under `.tmp/`.
+Keep the same extracted directory. Resolve the reported cause (for example,
+finish active workflows/jobs or fix image-pull/storage errors) and rerun the
+same install command. Do not delete the journal or the old Redis PVC. If the
+cache is unavailable, the applications may remain unready until the retry
+succeeds.
+
+For other failures, keep the maintenance window active and stop further rollout. Preserve the
 upgrade log, failed Job/Pod names and events. Share only redacted diagnostics;
 never share the secrets file, rendered manifests, database dump or registry
 credentials. See [Troubleshooting](docs/troubleshooting.md).
