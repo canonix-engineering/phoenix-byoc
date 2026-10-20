@@ -1,3 +1,7 @@
+{{- $tag := .Values.images.phoenixWeb.tag }}
+{{- with (.Values.images.phoenixWeb | get "digest" "") }}
+{{- $tag = printf "%s@%s" $tag . }}
+{{- end }}
 {{- $databaseHost := .Values.postgresql.external.host }}
 {{- $databaseSslmode := .Values.postgresql.external.sslmode }}
 {{- if .Values.postgresql.bundled.enabled }}
@@ -31,7 +35,7 @@
 
 image:
   repository: {{ $repository | quote }}
-  tag: {{ .Values.images.phoenixWeb.tag | quote }}
+  tag: {{ $tag | quote }}
   pullPolicy: {{ .Values.imagePullPolicy }}
 
 imagePullSecrets:
