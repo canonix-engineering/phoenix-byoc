@@ -1,16 +1,17 @@
 # Upgrades
 
-BYOC releases are delivered through the `main` branch. Before updating, keep
-the existing `values.yaml` and generated `values.secrets.yaml`; do not copy the
-examples over them or create a new secrets file.
+Stable BYOC releases are delivered through immutable Git tags and release
+archives. For version `0.2.0`, follow [the exact customer procedure](../UPGRADE.md).
+Keep the existing `values.yaml` and generated `values.secrets.yaml`; do not copy
+the examples over them or create a new secrets file. Record the installed
+revision and download the new release into a separate directory.
 
-Record the currently installed repository revision, then update the local
-checkout:
+If using a Git checkout instead of the release archive:
 
 ```bash
 git rev-parse HEAD
-git switch main
-git pull --ff-only origin main
+git fetch origin tag v0.2.0
+git switch --detach v0.2.0
 ```
 
 For releases before `0.2.0-development.15`, read the
@@ -50,14 +51,10 @@ generates new supported `GENERATE_*` values and refreshes derived internal URLs.
 external `CHANGE_ME_*` fields stop preflight and are reported by path until the
 customer supplies them.
 
-## Preparation for the next application release
+## Required configuration for 0.2.0
 
-This chart preparation does not promote application images. The chart packages
-referenced by `release.yaml` must be published before handing this revision to a
-customer. Testing local chart sources is a development rehearsal, not a substitute
-for checking that the customer can pull the final packages.
-
-When the next application release enables artifact-backed agent bundles, add to
+The `0.2.0` chart packages are published and the application images are pinned
+to the digests used during qualification. For artifact-backed agent bundles, add to
 the existing `values.yaml` (merge into `application`, do not duplicate the key):
 
 ```yaml

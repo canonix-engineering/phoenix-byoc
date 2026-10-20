@@ -1,6 +1,6 @@
 release:
-  version: 0.2.0-rc.1
-  channel: development
+  version: 0.2.0
+  channel: stable
   sourceEnvironment: preview
   observedAt: '2026-10-20'
 
@@ -19,9 +19,9 @@ versions:
   postgresqlBootstrap: "0.1.0"
   redis: "1.6.18"
 
-# Application candidate frozen from preview on 2026-10-20. Web deliberately
+# Applications frozen from preview and qualified on 2026-10-20. Web deliberately
 # excludes later main commits. Infrastructure images retain the existing baseline.
-# Customer handoff requires successful release verification and artifact access.
+# Exact image access verified with the existing customer read-only credentials.
 images:
   valkey:
     name: valkey

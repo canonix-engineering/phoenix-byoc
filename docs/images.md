@@ -2,8 +2,8 @@
 
 ## Supported images
 
-`release.yaml` pins the ten core runtime images and the optional snapshot
-image-committer:
+`release.yaml` pins twelve image references, including bundled Valkey and the
+optional snapshot image-committer:
 
 1. `clickhouse`
 2. `cortex-postgresql`
@@ -15,7 +15,8 @@ image-committer:
 8. `phoenix-web`
 9. `phoenix-web-frontend`
 10. `phoenix-workflow-engine`
-11. `phoenix-opensandbox-image-committer`, used only when OpenSandbox snapshot
+11. `valkey`
+12. `phoenix-opensandbox-image-committer`, used only when OpenSandbox snapshot
     pause/resume is enabled
 
 Print exact references:
@@ -24,7 +25,7 @@ Print exact references:
 ./scripts/images.sh list
 ```
 
-Images such as PostgreSQL, Redis, OpenSandbox execd/egress and init containers
+Images such as PostgreSQL, OpenSandbox execd/egress and init containers
 come from the upstream charts. Inspect `.rendered/all.yaml` for the complete
 deployment inventory.
 
@@ -41,10 +42,10 @@ imageRegistry: ""
 ```
 
 The cluster must be able to pull the references printed by `images.sh list`.
-The current development snapshot records the exact references from the source
-environment declared in `release.yaml`. Authenticate to that registry or mirror
-the images before installation. A stable customer release must use
-customer-accessible image locations.
+Release `0.2.0` retains the existing direct-ECR access method. Exact tags/digests
+and ECR layer-download permission were checked using the existing customer
+read-only IAM credentials. Public images and charts were checked without private
+registry credentials. Keep the existing ECR refresher and credentials.
 
 ## Mirror to a customer registry
 
@@ -185,7 +186,16 @@ Nodes may instead use a customer-configured registry credential provider.
 Cross-account registries also require a repository policy permitting that
 identity to pull.
 
-## Verify availability
+## Verify signed image evidence
+
+`images.sh verify` and `images.sh mirror` enforce the all-images compliance
+policy, in addition to registry access. Some unchanged infrastructure images
+inherited by `0.2.0` lack the required historical attestations, so these commands
+currently fail for the complete inventory. This does not indicate an ECR access
+failure. The `0.2.0` customer procedure uses the existing direct-ECR installation;
+it does not require these commands or a registry migration. Their enforcement
+has not been weakened.
+
 
 ```bash
 ./scripts/images.sh verify
