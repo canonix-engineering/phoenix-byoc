@@ -130,5 +130,5 @@ credential maintenance is not a customer GCP upgrade step.
 - Gateway `enforce` mode was not tested: the actual Test Engine image does not
   establish compatibility with capability signing.
 
-Use [the customer draft](client-upgrade-message.md) only after the final
-application release and chart packages are available.
+Use [the customer upgrade procedure](../UPGRADE.md) for the published application
+release and chart packages.
