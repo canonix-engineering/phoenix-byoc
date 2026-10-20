@@ -12,11 +12,13 @@ the images actually running in Test.
 - Local chart versions: Web `0.2.3`, Gateway `0.5.0`, Workflow Engine `0.2.5`,
   OpenSandbox controller `0.2.3`.
 
-These four OCI package versions were not available when checked. Publish them
-through the normal chart release process before merging the BYOC package pins
-for customer use. No chart packages or application release were published during
-this preparation. Local chart tests do not prove that customers can pull the
-future packages.
+These four OCI package versions were subsequently published from DevOps commit
+`454a77cd597960988d866bb6da0e74678064cb23` by
+[Publish BYOC charts run 39476082654](https://github.com/canonix-engineering/phoenix-devops/actions/runs/39476082654).
+Public visibility and exact-version pulls passed. A subsequent rehearsal with
+the frozen Preview application candidate installed the published OCI charts and
+passed `verify.sh`. This report records the original chart-only rehearsal;
+application release pins are maintained in the separate release-candidate PR.
 
 ## Rehearsal configuration
 
