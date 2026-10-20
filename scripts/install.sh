@@ -5,6 +5,7 @@ requested_namespace=""
 requested_values=""
 requested_secrets=""
 generate_secrets=false
+discard_redis_state=false
 while (($# > 0)); do
   case "$1" in
     --namespace)
@@ -35,6 +36,10 @@ while (($# > 0)); do
       generate_secrets=true
       shift
       ;;
+    --discard-redis-state)
+      discard_redis_state=true
+      shift
+      ;;
     *)
       echo "ERROR: unknown argument: $1" >&2
       exit 2
@@ -43,7 +48,7 @@ while (($# > 0)); do
 done
 
 if [[ -z "$requested_namespace" || -z "$requested_values" || -z "$requested_secrets" ]]; then
-  echo "Usage: ./scripts/install.sh --namespace <name> --values <path> --secrets <path> [--generate-secrets]" >&2
+  echo "Usage: ./scripts/install.sh --namespace <name> --values <path> --secrets <path> [--generate-secrets] [--discard-redis-state]" >&2
   exit 2
 fi
 if [[ ! "$requested_namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
@@ -52,6 +57,10 @@ if [[ ! "$requested_namespace" =~ ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$ ]]; then
 fi
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+if [[ "$discard_redis_state" == "true" ]] && ! command -v python3 >/dev/null 2>&1; then
+  echo "ERROR: --discard-redis-state requires Python 3 (standard library only)." >&2
+  exit 1
+fi
 values_file=$requested_values
 if [[ "$values_file" != /* ]]; then
   values_file="$repo_root/$values_file"
@@ -335,6 +344,11 @@ context=$(kubectl config current-context)
 "$repo_root/scripts/preflight.sh"
 "$repo_root/scripts/render.sh"
 
+if [[ "$discard_redis_state" == "true" ]]; then
+  python3 "$repo_root/scripts/upgrade-poc-cache.py" \
+    --namespace "$requested_namespace" --context "$context" \
+    --rendered "$repo_root/.rendered/all.yaml" --discard-redis-state
+fi
 "$repo_root/scripts/check-cache-upgrade.sh" "$requested_namespace" "$repo_root/.rendered/all.yaml"
 
 ensure_remote_ssh_encryption_secret "$requested_namespace" "$secrets_file"

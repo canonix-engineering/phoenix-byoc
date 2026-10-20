@@ -45,8 +45,27 @@ PVC. Redis 8 RDB/AOF files are not assumed compatible. The installer blocks an
 upgrade while `statefulset/redis` exists, and blocks a fresh install over a
 retained `data-redis-0` PVC without an existing Valkey deployment.
 
-An operator must complete a coordinated migration before normal installation
-can resume:
+### Small PoC: start with empty Valkey
+
+From BYOC 0.2.1, add `--discard-redis-state` to the normal `install.sh` command
+to accept discarding Redis-held state. Finish workflows and pause user activity
+first. This shortcut stops Phoenix Deployments, waits for their Pods to exit,
+checks for remaining clients/workloads, upgrades the cache and restores replica
+counts. PostgreSQL and artifact files are not deleted by this cutover. The old
+Redis volume is retained; Valkey gets its own volume. Repeating the command does
+not clear an existing Valkey.
+
+Backups are optional for a disposable PoC if you accept the risk of data loss.
+Keeping the old Redis volume alone is not a complete application backup.
+See [UPGRADE.md](../UPGRADE.md) for the complete self-service command and retry
+instructions. This option is for the standard Phoenix-only namespace without
+autoscalers. It is not a logical migration and does not preserve queues, streams
+or other state held only in Redis.
+
+### Preserve Redis-held state
+
+When Redis contents must be preserved, complete a coordinated migration before
+normal installation can resume:
 
 1. Record the context, namespace, installed images, Helm revisions, clients,
    database numbers, key types, expirations and any stream consumer state.

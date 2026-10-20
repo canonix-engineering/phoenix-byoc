@@ -187,6 +187,12 @@ For later upgrades, reuse the same generated secrets file and supply
 `--generate-secrets` again. Existing random values are preserved, while new
 fields from the release template are synchronized before validation.
 
+For an existing Redis-based PoC that can start with empty Valkey state, add
+`--discard-redis-state`. Finish active workflows and pause user activity first.
+This option preserves the old Redis volume and never resets existing Valkey.
+See [the upgrade instructions](../UPGRADE.md) for its scope and recovery steps.
+Without this option, the legacy Redis migration guard remains in effect.
+
 The same explicit inputs are used for standalone verification:
 
 ```bash
