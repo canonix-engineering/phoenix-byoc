@@ -1,0 +1,5 @@
+apiVersion: v2
+name: artifact-publisher
+description: Namespace-local publisher credential for Phoenix Web
+type: application
+version: 0.1.0

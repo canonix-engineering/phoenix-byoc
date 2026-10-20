@@ -30,6 +30,13 @@ helmDefaults:
 {{- $chartRegistry := .Values.registry.charts }}
 
 releases:
+  - name: artifact-publisher
+    namespace: {{ $namespace }}
+    installed: {{ .Values.application.agentBundles.publicationEnabled }}
+    chart: ./charts/artifact-publisher
+    values:
+      - values/artifact-publisher.yaml.gotmpl
+
   - name: ecr-pull-secret-refresh
     namespace: {{ $namespace }}
     installed: {{ .Values.registry.ecrRefresh.enabled }}
@@ -125,6 +132,9 @@ releases:
     values:
       - values/phoenix-web.yaml.gotmpl
     needs:
+{{- if .Values.application.agentBundles.publicationEnabled }}
+      - {{ $namespace }}/artifact-publisher
+{{- end }}
 {{- if .Values.registry.ecrRefresh.enabled }}
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}

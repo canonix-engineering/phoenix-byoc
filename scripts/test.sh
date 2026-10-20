@@ -262,6 +262,11 @@ grep -q 'secrets.application.mailgunApiKey' "$generator_tmp/first.log" || {
 workflow_token=$(yq -r '.secrets.application.workflowEngineToken' \
   "$generator_tmp/values.secrets.yaml")
 workflow_token_hash=$(printf '%s' "$workflow_token" | shasum -a 256 | cut -d ' ' -f 1)
+publisher_token=$(yq -r '.secrets.application.artifactPublisherToken' "$generator_tmp/values.secrets.yaml")
+if [[ ! "$publisher_token" =~ ^[0-9a-f]{64}$ || "$publisher_token" == "$workflow_token" ]]; then
+  echo "ERROR: publisher token must be generated independently." >&2
+  exit 1
+fi
 if grep -Fq "$workflow_token" "$generator_tmp/first.log"; then
   echo "ERROR: generator printed a generated secret value" >&2
   exit 1
@@ -302,6 +307,10 @@ if [[ "$(yq -r '.secrets.application.mailgunApiKey' \
 fi
 workflow_token_after=$(yq -r '.secrets.application.workflowEngineToken' \
   "$generator_tmp/values.secrets.yaml")
+if [[ "$(yq -r '.secrets.application.artifactPublisherToken' "$generator_tmp/values.secrets.yaml")" != "$publisher_token" ]]; then
+  echo "ERROR: reconciliation rotated the publisher token." >&2
+  exit 1
+fi
 workflow_token_hash_after=$(printf '%s' "$workflow_token_after" | \
   shasum -a 256 | cut -d ' ' -f 1)
 if [[ "$workflow_token_hash" != "$workflow_token_hash_after" ]]; then
@@ -838,5 +847,7 @@ while IFS= read -r image_ref; do
     exit 1
   }
 done < <("$repo_root/scripts/images.sh" list)
+
+bash "$repo_root/scripts/test-release-preparation.sh"
 
 echo "Static BYOC tests passed."

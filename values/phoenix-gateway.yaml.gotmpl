@@ -18,6 +18,7 @@ imagePullSecrets:
 {{ toYaml .Values.imagePullSecrets | indent 2 }}
 
 gateway:
+  toolboxAuthMode: {{ .Values.services.gateway.toolboxAuthMode | quote }}
   allowUnauthenticatedIngress: {{ .Values.services.gateway.allowUnauthenticatedIngress }}
   logLevel: info
   dbDsn: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=%s&connect_timeout=10" .Values.postgresql.users.application .Values.secrets.postgresql.applicationPassword $databaseHost .Values.postgresql.external.port .Values.postgresql.databases.primary $databaseSslmode | quote }}
@@ -45,8 +46,7 @@ ingress:
   hosts:
     - host: {{ .Values.ingress.gateway.host | quote }}
       paths:
-        - path: /
-          pathType: Prefix
+{{ toYaml .Values.ingress.gateway.paths | indent 8 }}
   tls:
 {{ toYaml .Values.ingress.gateway.tls | indent 4 }}
 

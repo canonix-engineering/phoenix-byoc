@@ -71,7 +71,7 @@ from Vertex Workload Identity.
 Cluster workloads require access to:
 
 - public GHCR and any referenced upstream image registries;
-- the customer PostgreSQL endpoint;
+- the bundled PostgreSQL service, or the configured external PostgreSQL endpoint;
 - the customer Redis endpoint when external Redis is selected;
 - Git and model-provider endpoints required by enabled workflows.
 
