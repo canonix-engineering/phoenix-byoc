@@ -1,0 +1,8 @@
+# Merge into the EXISTING values.yaml; this is not a complete installation file.
+# Retain all existing customer settings and intentionally configured publishers.
+application:
+  agentBundles:
+    standaloneEnabled: true
+    publicationEnabled: false
+    namespace: agent-bundles
+    globalPublisherUserIds: []
