@@ -12,8 +12,6 @@ export PHOENIX_BYOC_LOCAL_CHARTS="${PHOENIX_BYOC_LOCAL_CHARTS:-$repo_root/../pho
 export HELMFILE_CACHE_HOME="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
 yq -i '
   .postgresql.hooks.phoenixWeb = true |
-  .application.agentBundles.standaloneEnabled = true |
-  .application.agentBundles.publicationEnabled = true |
   .application.agentBundles.namespace = "agent-bundles" |
   .application.agentBundles.globalPublisherUserIds = ["test-publisher"] |
   .services.workflowEngine.operator.sandboxAdmissionLimit = 6 |
@@ -44,7 +42,7 @@ engine=$(yq -r 'select(.kind == "Secret" and .metadata.name == "phoenix-workflow
 [[ -n "$publisher" && "$publisher" == "$engine" ]]
 unset publisher engine
 yq -e 'select(.kind == "ConfigMap" and .metadata.name == "phoenix-workflow-engine") |
-  .data.PHOENIX_ARTIFACT_STANDALONE_ENABLED == "true" and
+  (.data.PHOENIX_ARTIFACT_STANDALONE_ENABLED // "true") == "true" and
   .data.PHOENIX_ARTIFACT_KEY_DELEGATOR_NAMESPACES == "agent-bundles" and
   .data.OPERATOR_SANDBOX_ADMISSION_LIMIT == "6" and
   .data.OPERATOR_EVAL_RESULT_DETAIL_ENABLED == "true" and
@@ -68,14 +66,15 @@ if "$repo_root/scripts/preflight.sh" >"$test_dir/preflight.log" 2>&1; then
   exit 1
 fi
 grep -q 'artifactPublisherToken must differ' "$test_dir/preflight.log"
-yq -i '.application.agentBundles.standaloneEnabled = false' "$test_dir/values.yaml"
+# Missing publisher credentials must fail even without any customer enable switch.
+yq -i '.secrets.application.artifactPublisherToken = ""' "$test_dir/secrets.yaml"
 if "$repo_root/scripts/preflight.sh" >"$test_dir/preflight.log" 2>&1; then
-  echo "ERROR: preflight accepted publication without standalone artifacts." >&2
+  echo "ERROR: preflight accepted missing publisher credentials." >&2
   exit 1
 fi
-grep -q 'publication requires' "$test_dir/preflight.log"
-yq -i '.application.agentBundles.standaloneEnabled = true |
-  .application.agentBundles.namespace = "unsupported-namespace"' "$test_dir/values.yaml"
+grep -q 'secrets.application.artifactPublisherToken' "$test_dir/preflight.log"
+yq -i '.secrets.application.artifactPublisherToken = "test-only-publisher"' "$test_dir/secrets.yaml"
+yq -i '.application.agentBundles.namespace = "unsupported-namespace"' "$test_dir/values.yaml"
 if "$repo_root/scripts/preflight.sh" >"$test_dir/preflight.log" 2>&1; then
   echo "ERROR: preflight accepted a namespace unsupported by Web and Agent." >&2
   exit 1

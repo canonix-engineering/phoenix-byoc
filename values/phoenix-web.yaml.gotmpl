@@ -50,6 +50,7 @@ web:
   appHost: {{ .Values.application.appHost | quote }}
   spaHost: {{ required "application.spaHost is required" .Values.application.spaHost | quote }}
   tenantId: {{ .Values.application.tenantId | quote }}
+  artifactPublisherNamespace: {{ .Values.application.agentBundles.namespace | quote }}
   cortex:
     host: {{ required "application.cortex.host is required" .Values.application.cortex.host | quote }}
     scheme: {{ .Values.application.cortex.scheme | quote }}
@@ -58,9 +59,9 @@ web:
     # injected below from Secret/clickhouse and overrides this compatibility URL.
     url: "http://clickhouse.invalid/phoenix"
   extraEnv:
+    # The pinned Web image requires this compatibility setting.
     - name: AGENT_BUNDLES_PUBLICATION_ENABLED
-      value: {{ .Values.application.agentBundles.publicationEnabled | quote }}
-{{- if .Values.application.agentBundles.publicationEnabled }}
+      value: "true"
     - name: PHOENIX_ARTIFACT_PUBLISHER_NAMESPACE
       value: {{ .Values.application.agentBundles.namespace | quote }}
     - name: AGENT_BUNDLES_GLOBAL_PUBLISHER_USER_IDS
@@ -70,7 +71,6 @@ web:
         secretKeyRef:
           name: phoenix-artifact-publisher
           key: token
-{{- end }}
     - name: INVOCATION_LOGS_CLICKHOUSE_URL
       valueFrom:
         secretKeyRef:
@@ -145,6 +145,7 @@ externalDatabase:
     adminUrl: {{ $adminUrl | quote }}
 
 secret:
+  artifactPublisherToken: {{ .Values.secrets.application.artifactPublisherToken | quote }}
   secretKeyBase: {{ required "secrets.application.secretKeyBase is required" .Values.secrets.application.secretKeyBase | quote }}
   agentHarnessToken: {{ required "secrets.application.agentHarnessToken is required" .Values.secrets.application.agentHarnessToken | quote }}
   workflowEngineArtifactApiToken: {{ required "secrets.application.workflowEngineArtifactApiToken is required" .Values.secrets.application.workflowEngineArtifactApiToken | quote }}

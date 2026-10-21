@@ -137,8 +137,7 @@ check_helm_release() {
 check_helm_release ecr-pull-secret-refresh "$namespace" ecr-pull-secret-refresh \
   "$(local_chart_version ecr-pull-secret-refresh)" "$ecr_refresh_enabled"
 check_helm_release artifact-publisher "$namespace" artifact-publisher \
-  "$(local_chart_version artifact-publisher)" \
-  "$(yq -r '.application.agentBundles.publicationEnabled' "$merged_file")"
+  "$(local_chart_version artifact-publisher)" true
 check_helm_release ingress-nginx "$ingress_namespace" ingress-nginx \
   "$(yq -r '.versions.ingressNginx' "$merged_file")" "$bundled_ingress"
 check_helm_release postgresql "$namespace" postgresql \

@@ -32,7 +32,6 @@ helmDefaults:
 releases:
   - name: artifact-publisher
     namespace: {{ $namespace }}
-    installed: {{ .Values.application.agentBundles.publicationEnabled }}
     chart: ./charts/artifact-publisher
     values:
       - values/artifact-publisher.yaml.gotmpl
@@ -132,9 +131,7 @@ releases:
     values:
       - values/phoenix-web.yaml.gotmpl
     needs:
-{{- if .Values.application.agentBundles.publicationEnabled }}
       - {{ $namespace }}/artifact-publisher
-{{- end }}
 {{- if .Values.registry.ecrRefresh.enabled }}
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}

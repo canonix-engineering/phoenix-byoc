@@ -121,15 +121,13 @@ whole section. A copy is in `examples/upgrade-0.2.0.values.yaml`.
 ```yaml
 application:
   agentBundles:
-    standaloneEnabled: true
-    publicationEnabled: false
     namespace: agent-bundles
     globalPublisherUserIds: []
 ```
 
-This enables the immutable artifact lookup used by the new agents. Publishing
-custom bundles from Web remains disabled. If publication was already configured
-intentionally, retain its publisher settings and use the
+Agent bundle lookup and publication are enabled by default. Remove obsolete
+`standaloneEnabled` and `publicationEnabled` overrides from existing values.
+Retain publisher credentials and the global publisher-user allowlist; see the
 [publication configuration](docs/configuration.md#agent-bundle-lookup-and-publication).
 
 | Setting | Required action |

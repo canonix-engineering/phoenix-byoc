@@ -62,8 +62,6 @@ the existing `values.yaml` (merge into `application`, do not duplicate the key):
 ```yaml
 application:
   agentBundles:
-    standaloneEnabled: true
-    publicationEnabled: false
     namespace: agent-bundles
     globalPublisherUserIds: []
 ```
@@ -75,7 +73,9 @@ No EKS configuration is needed at the customer.
 Run the ordinary install command above with `--generate-secrets`. It adds the
 new publisher token while retaining existing passwords, the Gateway encryption
 key and service tokens. Do not copy credentials from the supplier's Test
-environment. Web publication is a separate opt-in documented in
+environment. Web publication is enabled by default. Remove obsolete
+`standaloneEnabled` and `publicationEnabled` overrides; retain credentials and
+permissions as documented in
 [Configuration](configuration.md#agent-bundle-lookup-and-publication).
 
 Do not copy Test's concurrency or placement values into the customer deployment.
