@@ -62,27 +62,28 @@ in `release.yaml` and must be updated as one tested release.
 
 ## Agent bundle lookup and publication
 
-`application.agentBundles.standaloneEnabled` enables keyed artifact lookup in
-Engine. Enable it with the application release that introduces artifact-backed
-agent bundles, after Web's database migrations. It remains disabled by default
-while this preparation retains the previous application image pins.
-
-`application.agentBundles.publicationEnabled` independently allows Web to publish
-bundles. It requires standalone lookup. Both components use
+Agent bundle lookup and publication are enabled by default. Both components use
 `application.agentBundles.namespace` (must be `agent-bundles` for the current
-Web and Agent contract) and Engine uses
-`application.tenantId` as the deployment identity. Keep that tenant unchanged.
+Web and Agent contract), and Engine uses `application.tenantId` as the deployment
+identity. Keep that tenant unchanged. The customer-facing `standaloneEnabled`
+and `publicationEnabled` switches are removed; delete them from existing values.
 
 The installer generates `secrets.application.artifactPublisherToken` separately
-from the engine and artifact service tokens. Reusing either token is rejected.
-With publication enabled, the local `artifact-publisher` chart creates a Secret
-before Web starts. The existing Web chart consumes it through `web.extraEnv`
-and `secretKeyRef`, for both Web and worker. No publisher token is placed in a
-ConfigMap or a literal Deployment environment value.
+from the Engine and Artifact API service tokens. Missing credentials or reusing
+either token is rejected. The local `artifact-publisher` chart always creates a
+Secret before Web starts. Web and worker consume it through `web.extraEnv` and
+`secretKeyRef`; credentials are also passed through the Web chart's publisher
+settings for database-init compatibility with newer charts.
+
+The exact chart and image pins in `release.yaml` remain unchanged. The adapters
+supply always-on compatibility settings required by those pinned versions; these
+are not customer feature switches. Remove those translations only when a qualified
+release pins the flag-free Web and Engine artifacts.
 
 Global bundle publication permissions are granted only to the application user
 IDs listed in `application.agentBundles.globalPublisherUserIds`. The default
-empty list grants none. Lookup does not require enabling Web publication.
+empty list grants none. App/repository publication still requires the caller's
+normal ownership and publish permissions.
 
 ## Gateway and execution controls
 

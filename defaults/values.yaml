@@ -137,9 +137,6 @@ application:
   skipCsrf: true
   toolboxId: ""
   agentBundles:
-    # Enable with the next application release, after keyed-artifact migrations.
-    standaloneEnabled: false
-    publicationEnabled: false
     namespace: agent-bundles
     globalPublisherUserIds: []
   cortex:

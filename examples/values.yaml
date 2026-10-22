@@ -124,10 +124,6 @@ vertex:
 
 application:
   agentBundles:
-    # Enable standalone lookup only with applications supporting keyed artifacts.
-    standaloneEnabled: false
-    # Publishing custom bundles is a separate opt-in.
-    publicationEnabled: false
     namespace: agent-bundles
     globalPublisherUserIds: []
   # Stable identifier for this deployment. It is passed to workflows and

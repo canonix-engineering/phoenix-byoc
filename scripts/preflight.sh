@@ -105,8 +105,6 @@ value() {
 }
 
 for boolean_path in \
-  application.agentBundles.standaloneEnabled \
-  application.agentBundles.publicationEnabled \
   services.workflowEngine.operator.evalResultDetailEnabled \
   services.workflowEngine.operator.metrics.enabled \
   services.workflowEngine.githubPullRequests.creationEnabled \
@@ -127,11 +125,6 @@ case "$(value services.gateway.toolboxAuthMode)" in
     exit 1
     ;;
 esac
-if [[ "$(value application.agentBundles.publicationEnabled)" == "true" &&
-      "$(value application.agentBundles.standaloneEnabled)" != "true" ]]; then
-  echo "ERROR: agent bundle publication requires application.agentBundles.standaloneEnabled=true." >&2
-  exit 1
-fi
 if ! yq -e '.application.agentBundles.globalPublisherUserIds | tag == "!!seq"' "$merged_file" >/dev/null; then
   echo "ERROR: application.agentBundles.globalPublisherUserIds must be a list." >&2
   exit 1
@@ -174,23 +167,21 @@ for path in \
   require_value "$path"
 done
 
-if [[ "$(value application.agentBundles.standaloneEnabled)" == "true" ]]; then
-  require_value application.agentBundles.namespace
-  require_value secrets.application.artifactPublisherToken
-  if [[ "$(value application.agentBundles.namespace)" != "agent-bundles" ]]; then
-    echo "ERROR: current Web and Agent applications require application.agentBundles.namespace=agent-bundles." >&2
-    exit 1
-  fi
-  publisher_token=$(value secrets.application.artifactPublisherToken)
-  if [[ -n "$publisher_token" ]] && {
-      [[ "$publisher_token" == "$(value secrets.application.workflowEngineToken)" ]] ||
-      [[ "$publisher_token" == "$(value secrets.application.workflowEngineArtifactApiToken)" ]];
-    }; then
-    echo "ERROR: artifactPublisherToken must differ from Workflow Engine and Artifact API service tokens." >&2
-    exit 1
-  fi
-  unset publisher_token
+require_value application.agentBundles.namespace
+require_value secrets.application.artifactPublisherToken
+if [[ "$(value application.agentBundles.namespace)" != "agent-bundles" ]]; then
+  echo "ERROR: current Web and Agent applications require application.agentBundles.namespace=agent-bundles." >&2
+  exit 1
 fi
+publisher_token=$(value secrets.application.artifactPublisherToken)
+if [[ -n "$publisher_token" ]] && {
+    [[ "$publisher_token" == "$(value secrets.application.workflowEngineToken)" ]] ||
+    [[ "$publisher_token" == "$(value secrets.application.workflowEngineArtifactApiToken)" ]];
+  }; then
+  echo "ERROR: artifactPublisherToken must differ from Workflow Engine and Artifact API service tokens." >&2
+  exit 1
+fi
+unset publisher_token
 
 if [[ "$(value services.workflowEngine.csg.enabled)" == "true" ]]; then
   for path in \

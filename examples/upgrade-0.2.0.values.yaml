@@ -2,7 +2,5 @@
 # Retain all existing customer settings and intentionally configured publishers.
 application:
   agentBundles:
-    standaloneEnabled: true
-    publicationEnabled: false
     namespace: agent-bundles
     globalPublisherUserIds: []
