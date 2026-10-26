@@ -23,8 +23,7 @@ the installer does not change namespace security policies or node labels.
 For GCP, use eligible Linux nodes in GKE Standard. The usual
 [GKE Autopilot restrictions](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security)
 block the required privileged node plugin, host paths and sandbox capabilities;
-this deployment is not qualified for Autopilot or GKE Sandbox. Verify the
-customer's cluster mode and admission policies before handing over the release.
+this deployment is not qualified for Autopilot or GKE Sandbox. The customer cluster must permit the documented plugin and sandbox permissions.
 
 ## Install or reuse the node plugin
 
@@ -108,5 +107,6 @@ not disable FUSE as a shortcut. Removing an obsolete image permission is a
 separate manual operation after confirming no workflow or session needs it.
 
 No migration of existing workspace files is performed by this chart change.
-Fresh sandbox startup and workflow pause/resume must pass in `phoenix-byoc`
-before a customer release is published.
+The 0.2.2 AWS rehearsal verified fresh sandbox startup and a real workflow
+using a non-root FUSE workspace. Pause/resume and checkpoint recovery were not
+validated in that rehearsal.

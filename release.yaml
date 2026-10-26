@@ -1,6 +1,6 @@
 release:
-  version: 0.2.2-rc.1
-  channel: development
+  version: 0.2.2
+  channel: stable
   sourceEnvironment: preview
   observedAt: '2026-10-26'
 
@@ -20,7 +20,7 @@ versions:
   postgresqlBootstrap: "0.1.1"
   redis: "1.6.18"
 
-# Candidate frozen from preview on 2026-10-26; AWS EKS upgrade qualification pending.
+# Frozen from preview on 2026-10-26; upgrade verified on AWS EKS phoenix-byoc.
 # Infrastructure images retain the existing baseline, with the pinned FUSE plugin.
 # Exact application image access verified with customer read-only credentials.
 images:
