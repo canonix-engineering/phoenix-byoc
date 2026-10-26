@@ -1,8 +1,8 @@
 release:
-  version: 0.2.1
+  version: 0.2.2
   channel: stable
   sourceEnvironment: preview
-  observedAt: '2026-10-20'
+  observedAt: '2026-10-26'
 
 # Exact Helm chart versions in this Phoenix BYOC release.
 versions:
@@ -17,12 +17,12 @@ versions:
   phoenixWebFrontend: "0.1.0"
   phoenixWorkflowEngine: "0.2.6"
   postgresql: "2.0.4"
-  postgresqlBootstrap: "0.1.0"
+  postgresqlBootstrap: "0.1.1"
   redis: "1.6.18"
 
-# Applications frozen from preview and qualified on 2026-10-20. Web deliberately
-# excludes later main commits. Infrastructure images retain the existing baseline.
-# Exact image access verified with the existing customer read-only credentials.
+# Frozen from preview on 2026-10-26; upgrade verified on AWS EKS phoenix-byoc.
+# Infrastructure images retain the existing baseline, with the pinned FUSE plugin.
+# Exact application image access verified with customer read-only credentials.
 images:
   fuseDevicePlugin:
     name: fuse-device-plugin
@@ -57,13 +57,13 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: sha-76dce9774c4ccb161b5f649b75e0cbcce67ee7a4
-    digest: sha256:4ede192b76919957ada89be4296a7d93c1bb798f22016158ab3fa1269cd18bcc
+    tag: sha-f9737a8849b54167bde64482fc8f9f60afd3bc19
+    digest: sha256:9df63abfe7ea2637687bf1c0f4f7eafac31f67fefd63067485a41f601128410f
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
-    tag: sha-8b8b7f93388c0861c150f209b8b2d4cc1a99f4cb
-    digest: sha256:00ce10a67903610e19fc8992cdea723734a5f17d2bd51dd2dd07a629593c7440
+    tag: sha-4f848cb052ee774443a2babedca03c7040947d16
+    digest: sha256:433289702d520de0e7f5063c8dcfb17354489a538a5135f7b84e035685194898
   phoenixLab:
     name: phoenix-lab
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab
@@ -72,20 +72,20 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: sha-d6d6555af39752f5a10b32b007154470f751e8c1
-    digest: sha256:140ab288228cc6eef4d39787012cbaa5e095f79d5d448bfe6f2b1bd50128e871
+    tag: sha-552cf60ee03b3ce5f8b5fc70a5c94414773597ac
+    digest: sha256:62861e99818b6fdfd814529329f091f74902707c19685178a399263cf4b6b2fb
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: sha-e5724f05c24d5bede71472ef8935729071b54b5d
-    digest: sha256:e8651a90a3ed28649cb4012011cda00ac960d7d873bd83bff4f189277b10ba2b
+    tag: sha-37d65eda0c1db6d042546a980f49155bb9524c8e
+    digest: sha256:d9accc71114ac5bb18f185955ab80f22e8fc46e4e1529d8d8a714c50203b3295
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: sha-e5724f05c24d5bede71472ef8935729071b54b5d
-    digest: sha256:b55f84860671d0fb2482db470970944d87a6f224adb5c7b6788539b697adfffb
+    tag: sha-37d65eda0c1db6d042546a980f49155bb9524c8e
+    digest: sha256:7fcc30a7d161c9a44672ec780caeca1d43d5c698e84ae7a664641bab60f608c5
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: sha-d6d6555af39752f5a10b32b007154470f751e8c1
-    digest: sha256:eb0a6ad940ac7a051cbc59588e45310d82e2135db1ba27a50be0e3ccde3612af
+    tag: sha-552cf60ee03b3ce5f8b5fc70a5c94414773597ac
+    digest: sha256:6b5b069a55d1898850c2e41b1be56aced094c07808c5cea4e33ee7e13bd65964

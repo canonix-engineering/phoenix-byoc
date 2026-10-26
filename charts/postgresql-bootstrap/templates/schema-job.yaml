@@ -54,6 +54,10 @@ spec:
               value: {{ .Values.web.spaHost | quote }}
             - name: TENANT_ID
               value: {{ .Values.web.tenantId | quote }}
+            - name: PHOENIX_ARTIFACT_PUBLISHER_NAMESPACE
+              value: {{ .Values.web.artifactPublisherNamespace | quote }}
+            - name: PHOENIX_ARTIFACT_PUBLISHER_TOKEN
+              value: {{ .Values.secret.artifactPublisherToken | quote }}
             - name: CORTEX_HOST
               value: {{ .Values.web.cortex.host | quote }}
             - name: CORTEX_SCHEME
