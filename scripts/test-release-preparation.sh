@@ -62,7 +62,7 @@ yq -e 'select(.kind == "Job" and .metadata.name == "phoenix-web-db-init") |
 # The migration jobs must receive incoming publisher values directly, before
 # Helm updates the previous release's Secret/ConfigMap. This is the 0.2.1 upgrade
 # case where those old objects may not contain publisher credentials at all.
-for job in phoenix-web-db-init phoenix-workflow-engine-migrate; do
+for job in postgresql-bootstrap-schema phoenix-web-db-init phoenix-workflow-engine-migrate; do
   export JOB_NAME="$job"
   token=$(yq -r 'select(.kind == "Job" and .metadata.name == strenv(JOB_NAME)) |
     .spec.template.spec.containers[0].env[] |

@@ -17,7 +17,7 @@ versions:
   phoenixWebFrontend: "0.1.0"
   phoenixWorkflowEngine: "0.2.6"
   postgresql: "2.0.4"
-  postgresqlBootstrap: "0.1.0"
+  postgresqlBootstrap: "0.1.1"
   redis: "1.6.18"
 
 # Candidate frozen from preview on 2026-10-26; AWS EKS upgrade qualification pending.
