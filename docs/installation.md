@@ -135,6 +135,14 @@ kubectl config current-context
 
 The installer never selects or changes a context.
 
+## AgentFS prerequisites
+
+See [AgentFS prerequisites and upgrades](agentfs.md) for the default Agent
+runtime configuration. The installer checks FUSE node capacity and preserves permissions
+for images pinned by existing workflows. It requires Python 3 in addition to
+Helm, Helmfile, kubectl and yq. Reuse an existing cluster FUSE provider with
+`fuseDevicePlugin.install: false`; otherwise the installer manages the plugin.
+
 ## Install
 
 Run the only installation command with the target namespace:

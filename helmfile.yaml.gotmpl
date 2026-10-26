@@ -30,6 +30,18 @@ helmDefaults:
 {{- $chartRegistry := .Values.registry.charts }}
 
 releases:
+{{- if and .Values.services.opensandbox.fuse.enabled .Values.fuseDevicePlugin.install }}
+  - name: fuse-device-plugin
+    namespace: {{ .Values.fuseDevicePlugin.namespace | quote }}
+{{- if $localCharts }}
+    chart: {{ printf "%s/fuse-device-plugin" $localCharts | quote }}
+{{- else }}
+    chart: {{ printf "%s/fuse-device-plugin" $chartRegistry | quote }}
+    version: {{ .Values.versions.fuseDevicePlugin | quote }}
+{{- end }}
+    values:
+      - values/fuse-device-plugin.yaml.gotmpl
+{{- end }}
   - name: artifact-publisher
     namespace: {{ $namespace }}
     chart: ./charts/artifact-publisher
@@ -188,6 +200,9 @@ releases:
     values:
       - values/phoenix-workflow-engine.yaml.gotmpl
     needs:
+{{- if and .Values.services.opensandbox.fuse.enabled .Values.fuseDevicePlugin.install }}
+      - {{ .Values.fuseDevicePlugin.namespace }}/fuse-device-plugin
+{{- end }}
 {{- if .Values.registry.ecrRefresh.enabled }}
       - {{ $namespace }}/ecr-pull-secret-refresh
 {{- end }}

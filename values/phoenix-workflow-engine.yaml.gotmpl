@@ -1,3 +1,10 @@
+{{- $retainedFuseImages := (env "PHOENIX_AGENTFS_RETAINED_IMAGES_JSON" | default "[]") | fromJson }}
+{{- if not (kindIs "slice" $retainedFuseImages) }}
+{{- fail "PHOENIX_AGENTFS_RETAINED_IMAGES_JSON must be a JSON array" }}
+{{- end }}
+{{- if and .Values.services.opensandbox.fuse.enabled (not (semverCompare ">=0.2.6" .Values.versions.phoenixWorkflowEngine)) }}
+{{- fail "AgentFS requires phoenixWorkflowEngine chart >=0.2.6; update the release pins first" }}
+{{- end }}
 {{- $engineTag := .Values.images.phoenixWorkflowEngine.tag }}
 {{- with (.Values.images.phoenixWorkflowEngine | get "digest" "") }}
 {{- $engineTag = printf "%s@%s" $engineTag . }}
@@ -185,6 +192,9 @@ operator:
 {{ toYaml .Values.services.workflowEngine.operator.resources | indent 4 }}
 
 opensandbox:
+  fuse:
+    enabled: {{ .Values.services.opensandbox.fuse.enabled }}
+    retainedImages: {{ concat .Values.services.opensandbox.fuse.retainedImages $retainedFuseImages | uniq | toJson }}
   costLimitCheckIntervalSeconds: {{ .Values.services.opensandbox.costLimitCheckIntervalSeconds }}
   scheduling:
 {{ toYaml .Values.services.opensandbox.scheduling | indent 4 }}

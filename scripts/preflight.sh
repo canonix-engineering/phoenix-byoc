@@ -16,7 +16,7 @@ if [[ "$secrets_file" != /* ]]; then
   secrets_file="$repo_root/$secrets_file"
 fi
 
-for command in helm helmfile kubectl yq; do
+for command in helm helmfile kubectl yq python3; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "ERROR: required command is not installed: $command" >&2
     exit 1
@@ -289,12 +289,15 @@ if [[ "$bundled_clickhouse" == "true" ]]; then
   fi
 fi
 
+"$repo_root/scripts/agentfs.sh" validate
+
 context=$(kubectl config current-context 2>/dev/null || true)
 if [[ -z "$context" ]]; then
   echo "ERROR: kubectl has no current context" >&2
   exit 1
 fi
 kubectl version --output=json >/dev/null
+PHOENIX_AGENTFS_CONTEXT="$context" "$repo_root/scripts/agentfs.sh" preflight
 
 opensandbox_crds=(
   batchsandboxes.sandbox.opensandbox.io

@@ -28,6 +28,24 @@ ingressNginx:
   tolerations: []
   affinity: {}
 
+# Installed once per cluster; set install=false to reuse a compatible plugin.
+# AgentFS requires Engine >=0.2.6 and compatible Agent/OpenSandbox images.
+fuseDevicePlugin:
+  install: true
+  namespace: phoenix-system
+  slotsPerNode: 64
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
 opensandboxController:
   enabled: true
   crds:
@@ -237,6 +255,9 @@ services:
           cpu: "1"
           memory: 6Gi
   opensandbox:
+    fuse:
+      enabled: true
+      retainedImages: []
     costLimitCheckIntervalSeconds: 60
     scheduling:
       nodeSelector: {}

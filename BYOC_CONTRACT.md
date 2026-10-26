@@ -9,6 +9,8 @@
 - optional OpenSandbox pause/resume snapshots in a customer-provided OCI
   registry, including combined source/target registry credentials;
 - Helmfile orchestration and example values;
+- optional FUSE node-plugin installation or reuse, with retained Agent image
+  permissions for AgentFS upgrades;
 - opt-in generation of bundled database passwords, internal service tokens and
   the Gateway credential-encryption master key;
 - opt-in lifecycle management for workflow VMs in a customer-provided GCP
@@ -22,6 +24,8 @@
 - a supported Kubernetes cluster and administrative access for installation;
 - namespaces, StorageClasses and sufficient compute capacity;
 - node labels, taints, tolerations and placement policy;
+- Linux sandbox nodes with `/dev/fuse` and admission policies permitting the
+  documented AgentFS plugin and sandbox capabilities when AgentFS is enabled;
 - a backup and recovery policy for the bundled PostgreSQL databases and volumes,
   or a PostgreSQL service and credentials when bundled PostgreSQL is disabled;
 - DNS, TLS certificates and the preferred ingress controller;

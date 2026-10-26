@@ -833,11 +833,13 @@ if command -v yamllint >/dev/null 2>&1; then
 fi
 
 image_count=$("$repo_root/scripts/images.sh" list | wc -l | tr -d ' ')
-if [[ "$image_count" != "12" ]]; then
-  echo "ERROR: release.yaml must contain 11 core images and the snapshot image committer" >&2
+if [[ "$image_count" != "13" ]]; then
+  echo "ERROR: release.yaml must contain 11 core images, the snapshot image committer and FUSE plugin" >&2
   exit 1
 fi
 while IFS= read -r image_ref; do
+  # The plugin is staged for the next Engine release and checked by test-agentfs.sh.
+  [[ "$image_ref" != *"squat/generic-device-plugin:"* ]] || continue
   image_render="$repo_root/.rendered/test-bundled/all.yaml"
   if [[ "$image_ref" == *"image-committer-upstream-6c433a77"* ]]; then
     image_render="$snapshot_render_dir/all.yaml"
@@ -849,5 +851,7 @@ while IFS= read -r image_ref; do
 done < <("$repo_root/scripts/images.sh" list)
 
 bash "$repo_root/scripts/test-release-preparation.sh"
+
+bash "$repo_root/scripts/test-agentfs.sh"
 
 echo "Static BYOC tests passed."
