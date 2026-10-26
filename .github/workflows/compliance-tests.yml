@@ -13,3 +13,4 @@ jobs:
       - run: python3 -m pip install PyYAML==6.0.3
       - run: python3 -m unittest discover -s tests -p 'test_compliance_*.py' -v
       - run: python3 -m unittest discover -s tests -p 'test_cache_upgrade.py' -v
+      - run: python3 -m unittest discover -s tests -p 'test_agentfs.py' -v

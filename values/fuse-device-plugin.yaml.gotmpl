@@ -1,0 +1,13 @@
+{{- $image := .Values.images.fuseDevicePlugin }}
+{{- $repository := $image.repository }}
+{{- if .Values.imageRegistry }}
+{{- $repository = printf "%s/%s" (trimSuffix "/" .Values.imageRegistry) $image.name }}
+{{- end }}
+image: {{ printf "%s:%s@%s" $repository $image.tag $image.digest | quote }}
+slotsPerNode: {{ .Values.fuseDevicePlugin.slotsPerNode }}
+nodeSelector:
+{{ toYaml .Values.fuseDevicePlugin.nodeSelector | indent 2 }}
+tolerations:
+{{ toYaml .Values.fuseDevicePlugin.tolerations | indent 2 }}
+resources:
+{{ toYaml .Values.fuseDevicePlugin.resources | indent 2 }}

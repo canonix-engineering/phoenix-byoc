@@ -91,6 +91,14 @@ opensandbox_controller=$(yq -r '.opensandboxController.enabled' "$merged_file")
 postgresql_bootstrap=$(yq -r '.postgresql.hooks.phoenixWeb' "$merged_file")
 rendered_file="$repo_root/.rendered/all.yaml"
 
+if [[ "$("$repo_root/scripts/agentfs.sh" enabled)" == "true" ]]; then
+  if [[ -z "${PHOENIX_AGENTFS_RETAINED_IMAGES_JSON:-}" ]]; then
+    PHOENIX_AGENTFS_RETAINED_IMAGES_JSON=$("$repo_root/scripts/agentfs.sh" retain)
+    export PHOENIX_AGENTFS_RETAINED_IMAGES_JSON
+  fi
+  "$repo_root/scripts/agentfs.sh" verify
+fi
+
 "$repo_root/scripts/render.sh"
 
 local_chart_version() {
@@ -133,6 +141,14 @@ check_helm_release() {
     exit 1
   fi
 }
+
+if [[ "$("$repo_root/scripts/agentfs.sh" enabled)" == "true" &&
+      "$("$repo_root/scripts/agentfs.sh" managed)" == "true" ]]; then
+  plugin_namespace=$("$repo_root/scripts/agentfs.sh" namespace)
+  check_helm_release fuse-device-plugin "$plugin_namespace" fuse-device-plugin \
+    "$(yq -r '.versions.fuseDevicePlugin' "$merged_file")" true
+  kubectl -n "$plugin_namespace" rollout status daemonset/fuse-device-plugin --timeout=600s
+fi
 
 check_helm_release ecr-pull-secret-refresh "$namespace" ecr-pull-secret-refresh \
   "$(local_chart_version ecr-pull-secret-refresh)" "$ecr_refresh_enabled"
@@ -185,6 +201,9 @@ while IFS=$'\t' read -r workload_kind workload_namespace workload_name; do
     workload_namespace=$namespace
   fi
 
+  if [[ "$workload_kind" == "DaemonSet" && "$workload_name" == "fuse-device-plugin" ]]; then
+    workload_namespace=$("$repo_root/scripts/agentfs.sh" namespace)
+  fi
   live_file="$verify_dir/${workload_kind}-${workload_namespace}-${workload_name}.json"
   if ! kubectl -n "$workload_namespace" get "$workload_kind/$workload_name" \
       --output json >"$live_file"; then
@@ -212,7 +231,7 @@ while IFS=$'\t' read -r workload_kind workload_namespace workload_name; do
       yq eval --no-doc -r '
         select(
           .kind == strenv(WORKLOAD_KIND) and
-          (.metadata.namespace // strenv(PHOENIX_BYOC_NAMESPACE)) == strenv(WORKLOAD_NAMESPACE) and
+          (.metadata.namespace // strenv(WORKLOAD_NAMESPACE)) == strenv(WORKLOAD_NAMESPACE) and
           .metadata.name == strenv(WORKLOAD_NAME)
         ) |
         .spec.template.spec[strenv(CONTAINER_PATH)][]? |
@@ -222,7 +241,7 @@ while IFS=$'\t' read -r workload_kind workload_namespace workload_name; do
   done
 done < <(
   yq eval --no-doc -r '
-    select(.kind == "Deployment" or .kind == "StatefulSet") |
+    select(.kind == "Deployment" or .kind == "StatefulSet" or (.kind == "DaemonSet" and .metadata.name == "fuse-device-plugin")) |
     [.kind, (.metadata.namespace // strenv(PHOENIX_BYOC_NAMESPACE)), .metadata.name] |
     @tsv
   ' "$rendered_file"

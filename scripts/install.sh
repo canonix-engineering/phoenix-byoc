@@ -340,8 +340,15 @@ export PHOENIX_BYOC_VALUES_FILE="$values_file"
 export PHOENIX_BYOC_SECRETS_FILE="$secrets_file"
 
 context=$(kubectl config current-context)
+export PHOENIX_AGENTFS_CONTEXT="$context"
 
 "$repo_root/scripts/preflight.sh"
+agentfs_enabled=$("$repo_root/scripts/agentfs.sh" enabled)
+if [[ "$agentfs_enabled" == "true" ]]; then
+  # Preserve every previously allowed exact image before changing any workload.
+  PHOENIX_AGENTFS_RETAINED_IMAGES_JSON=$("$repo_root/scripts/agentfs.sh" retain)
+  export PHOENIX_AGENTFS_RETAINED_IMAGES_JSON
+fi
 "$repo_root/scripts/render.sh"
 
 if [[ "$discard_redis_state" == "true" ]]; then
@@ -374,6 +381,20 @@ echo "Secrets:     $secrets_file"
 echo "Rendered:    $repo_root/.rendered/all.yaml"
 
 cache_dir="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
+
+if [[ "$agentfs_enabled" == "true" ]]; then
+  if [[ "$("$repo_root/scripts/agentfs.sh" managed)" == "true" ]]; then
+    (
+      cd "$repo_root"
+      HELMFILE_CACHE_HOME="$cache_dir" helmfile --selector name=fuse-device-plugin sync
+    )
+    plugin_namespace=$("$repo_root/scripts/agentfs.sh" namespace)
+    kubectl --context "$context" -n "$plugin_namespace" rollout status \
+      daemonset/fuse-device-plugin --timeout=600s
+  fi
+  # An empty DaemonSet can look ready. Require actual FUSE capacity before Engine.
+  "$repo_root/scripts/agentfs.sh" capacity
+fi
 
 (
   cd "$repo_root"

@@ -135,6 +135,14 @@ kubectl config current-context
 
 The installer never selects or changes a context.
 
+## AgentFS prerequisites
+
+See [AgentFS prerequisites and upgrades](agentfs.md) before enabling the new
+Agent runtime. The installer checks FUSE node capacity and preserves permissions
+for images pinned by existing workflows. It requires Python 3 in addition to
+Helm, Helmfile, kubectl and yq. This preparation leaves AgentFS disabled until the
+compatible charts and application images are pinned in a subsequent release.
+
 ## Install
 
 Run the only installation command with the target namespace:

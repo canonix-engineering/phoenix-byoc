@@ -28,6 +28,24 @@ ingressNginx:
   tolerations: []
   affinity: {}
 
+# Installed once per cluster; set install=false to reuse a compatible plugin.
+# Inactive until services.opensandbox.fuse.enabled is enabled with Engine >=0.2.6.
+fuseDevicePlugin:
+  install: true
+  namespace: phoenix-system
+  slotsPerNode: 64
+  nodeSelector:
+    kubernetes.io/os: linux
+  tolerations:
+    - operator: Exists
+      effect: NoSchedule
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
 opensandboxController:
   enabled: true
   crds:
@@ -237,6 +255,10 @@ services:
           cpu: "1"
           memory: 6Gi
   opensandbox:
+    fuse:
+      # Release preparation: enable when the new Engine chart/images are pinned.
+      enabled: false
+      retainedImages: []
     costLimitCheckIntervalSeconds: 60
     scheduling:
       nodeSelector: {}
