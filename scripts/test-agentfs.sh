@@ -10,7 +10,7 @@ export PHOENIX_BYOC_SECRETS_FILE="$test_dir/secrets.yaml"
 export PHOENIX_BYOC_NAMESPACE=phoenix
 export PHOENIX_BYOC_LOCAL_CHARTS="${PHOENIX_BYOC_LOCAL_CHARTS:-$repo_root/../phoenix-devops/charts}"
 export HELMFILE_CACHE_HOME="${HELMFILE_CACHE_HOME:-$repo_root/.tmp/helmfile-cache}"
-yq -i '.services.opensandbox.fuse.enabled = true' "$test_dir/values.yaml"
+yq -i '.services.opensandbox.fuse.enabled = true | .versions.phoenixWorkflowEngine = "0.2.5"' "$test_dir/values.yaml"
 # An enabled FUSE setting must not silently disappear into the older pinned chart.
 if (cd "$repo_root" && helmfile template --skip-deps --quiet >"$test_dir/old.yaml" 2>"$test_dir/old.log"); then
   echo "ERROR: AgentFS accepted the older Engine chart." >&2

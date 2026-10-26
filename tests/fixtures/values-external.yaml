@@ -33,3 +33,10 @@ application:
   mailer:
     from: Phoenix <noreply@test.invalid>
     domain: test.invalid
+
+# Baseline fixtures exercise the pre-AgentFS topology. test-agentfs.sh and the
+# customer example render cover the default AgentFS configuration separately.
+services:
+  opensandbox:
+    fuse:
+      enabled: false

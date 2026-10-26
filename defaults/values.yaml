@@ -29,7 +29,7 @@ ingressNginx:
   affinity: {}
 
 # Installed once per cluster; set install=false to reuse a compatible plugin.
-# Inactive until services.opensandbox.fuse.enabled is enabled with Engine >=0.2.6.
+# AgentFS requires Engine >=0.2.6 and compatible Agent/OpenSandbox images.
 fuseDevicePlugin:
   install: true
   namespace: phoenix-system
@@ -256,8 +256,7 @@ services:
           memory: 6Gi
   opensandbox:
     fuse:
-      # Release preparation: enable when the new Engine chart/images are pinned.
-      enabled: false
+      enabled: true
       retainedImages: []
     costLimitCheckIntervalSeconds: 60
     scheduling:

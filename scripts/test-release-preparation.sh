@@ -59,6 +59,30 @@ grep -q 'customer-sandbox' "$test_dir/rendered.yaml"
 yq -e 'select(.kind == "Job" and .metadata.name == "phoenix-web-db-init") |
   .spec.template.spec.containers[0].args | join(",") == "db:create,db:migrate,apps:rematerialize"' "$test_dir/rendered.yaml" >/dev/null
 
+# The migration jobs must receive incoming publisher values directly, before
+# Helm updates the previous release's Secret/ConfigMap. This is the 0.2.1 upgrade
+# case where those old objects may not contain publisher credentials at all.
+for job in phoenix-web-db-init phoenix-workflow-engine-migrate; do
+  export JOB_NAME="$job"
+  token=$(yq -r 'select(.kind == "Job" and .metadata.name == strenv(JOB_NAME)) |
+    .spec.template.spec.containers[0].env[] |
+    select(.name == "PHOENIX_ARTIFACT_PUBLISHER_TOKEN") | .value' "$test_dir/rendered.yaml")
+  [[ "$token" == "test-only-publisher" ]]
+  unset token
+  yq -e 'select(.kind == "Job" and .metadata.name == strenv(JOB_NAME)) |
+    .spec.template.spec.containers[0].env[] |
+    select(.name == "PHOENIX_ARTIFACT_PUBLISHER_NAMESPACE") |
+    .value == "agent-bundles"' "$test_dir/rendered.yaml" >/dev/null
+done
+yq -e 'select(.kind == "Job" and .metadata.name == "phoenix-workflow-engine-migrate") |
+  .metadata.annotations."helm.sh/hook" == "post-install,pre-upgrade"' "$test_dir/rendered.yaml" >/dev/null
+for key in PHOENIX_ARTIFACT_TENANT_ID PHOENIX_ARTIFACT_KEY_DELEGATOR_NAMESPACES; do
+  export ENV_NAME="$key"
+  yq -e 'select(.kind == "Job" and .metadata.name == "phoenix-workflow-engine-migrate") |
+    .spec.template.spec.containers[0].env[] |
+    select(.name == strenv(ENV_NAME)) | .value != ""' "$test_dir/rendered.yaml" >/dev/null
+done
+
 # A misconfigured token must fail before any cluster interaction.
 yq -i '.secrets.application.artifactPublisherToken = .secrets.application.workflowEngineToken' "$test_dir/secrets.yaml"
 if "$repo_root/scripts/preflight.sh" >"$test_dir/preflight.log" 2>&1; then

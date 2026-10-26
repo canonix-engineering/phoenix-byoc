@@ -1,11 +1,10 @@
 # AgentFS prerequisites and upgrades
 
-This is release preparation. AgentFS is disabled in the current `0.2.1`
-configuration. The next release must publish and pin Engine chart `0.2.6` or
-later, the FUSE device-plugin chart, and compatible Engine/OpenSandbox and Agent
-images before enabling `services.opensandbox.fuse.enabled`. Enabling it against
-Engine chart `0.2.5` fails preflight and rendering instead of silently ignoring it.
-Application versions are not changed by this preparation.
+AgentFS is enabled by default. The release pins Engine chart `0.2.6` and
+FUSE device-plugin chart `0.1.0`. The application release must also include
+compatible Engine/OpenSandbox and Agent images; changing chart versions alone
+is not a complete application release. Engine charts older than `0.2.6` are
+rejected when FUSE is enabled.
 
 ## Cluster requirements
 
@@ -29,7 +28,7 @@ customer's cluster mode and admission policies before handing over the release.
 
 ## Install or reuse the node plugin
 
-Once AgentFS is enabled by the release, the installer manages one
+The installer manages one
 `fuse-device-plugin` Helm release in `phoenix-system` by default. The plugin
 selects Linux nodes. Narrow `fuseDevicePlugin.nodeSelector` and its `tolerations`
 to the customer's sandbox pools where needed; retain `kubernetes.io/os: linux`.
