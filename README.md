@@ -109,9 +109,12 @@ for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 
 ## Upgrade
 
-Stable BYOC updates are delivered as immutable versioned releases. For `0.2.1`,
-use the archive attached to [release v0.2.1](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.1)
-and follow [the customer upgrade instructions](UPGRADE.md). Keep the existing
+This branch prepares `0.2.2-rc.1` from Preview for an upgrade rehearsal in the
+`phoenix-byoc` AWS EKS environment. It is not a published customer release. See
+[the candidate record](docs/releases/0.2.2-rc.1.md) and
+[the upgrade procedure](UPGRADE.md). The latest published stable release remains
+[0.2.1](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.1).
+Keep the existing
 `values.yaml`, `values.secrets.yaml` and namespace. Do not upgrade a customer
 installation from a moving `main` checkout. See [Upgrades](docs/upgrades.md) for
 the general upgrade and recovery policy.
