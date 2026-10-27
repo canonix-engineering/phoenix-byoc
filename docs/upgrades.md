@@ -1,7 +1,7 @@
 # Upgrades
 
 Stable BYOC releases are delivered through immutable Git tags and release
-archives. For `0.2.2`, follow [the upgrade procedure](../UPGRADE.md).
+archives. For `0.2.3`, follow [the upgrade procedure](../UPGRADE.md).
 Keep the existing `values.yaml` and generated `values.secrets.yaml`; do not copy
 the examples over them or create a new secrets file. Record the installed
 revision and download the new release into a separate directory.
