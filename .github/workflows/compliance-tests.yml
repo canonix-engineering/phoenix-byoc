@@ -14,3 +14,9 @@ jobs:
       - run: python3 -m unittest discover -s tests -p 'test_compliance_*.py' -v
       - run: python3 -m unittest discover -s tests -p 'test_cache_upgrade.py' -v
       - run: python3 -m unittest discover -s tests -p 'test_agentfs.py' -v
+      - name: Install yq for eval configuration tests
+        run: |
+          curl -fsSL https://github.com/mikefarah/yq/releases/download/v4.47.2/yq_linux_amd64 -o "$RUNNER_TEMP/yq"
+          chmod +x "$RUNNER_TEMP/yq"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: python3 -m unittest discover -s tests -p 'test_evals.py' -v

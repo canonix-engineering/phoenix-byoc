@@ -26,6 +26,8 @@ Replace every `CHANGE_ME` value and review these groups:
 - `application.mailer` sender, domain and optional SMTP settings;
 - `services.workflowEngine.githubPullRequests` when ticket workflows may
   create GitHub pull requests;
+- `services.workflowEngine.operator` eval capacities, enabled at five workers
+  per lane by default; see [evaluation configuration](configuration.md#evaluations);
 - `services.workflowEngine.csg` and
   `services.workflowEngine.operator.serviceAccountAnnotations` when the
   customer GCP VM pool is enabled;
