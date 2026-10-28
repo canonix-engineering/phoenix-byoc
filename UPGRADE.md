@@ -1,11 +1,10 @@
 # Draft upgrade from Phoenix BYOC 0.2.3 to 0.2.4
 
-**Not ready for customer use.** The final Agents promotion and qualification
+**Not ready for customer use.** The final Agents CI, Preview rollout and qualification
 are pending. The instructions below will be finalized before tag `v0.2.4`
 is published. Do not apply this preparation branch to a customer installation.
 
-This candidate updates Web and Engine and their selected charts. Agents retain
-the exact 0.2.3 version. Engine adds pool configuration schema; existing
+This candidate updates Web, Engine and Agents, plus the Engine/frontend charts. Engine adds pool configuration schema; existing
 databases and Valkey remain in place.
 
 ## Before updating
@@ -28,6 +27,8 @@ when reusing a provider managed outside this BYOC installation.
 
 Keep any existing agent bundle namespace and publisher allowlist. The normal
 `--generate-secrets` option preserves populated passwords and tokens.
+The installer generates the new pool-secret encryption key once and keeps it
+in your existing secrets file. Preserve that file for future upgrades and recovery.
 No manual token generation is needed. The eval settings command below updates
 permissions while preserving existing tokens.
 
@@ -89,11 +90,11 @@ Wait until it exits successfully with `Phoenix verification passed in namespace
 phoenix` before starting new workflows. Use your namespace in place of `phoenix`
 if different. Do not run two installers at once or create another administrator.
 
-Afterward, sign in with your existing account and use your normal text-based
-workflows. Agents remain at 0.2.3: do not use chat attachments or pool setup
-scripts yet. Do not enable pool secret variables or supply
-`DEV_BOX_SECRETS_KEY`; this Agent does not implement their new redaction
-contract. Existing workflows keep their pinned Agent image and bundle.
+Afterward, sign in with your existing account. Start a new workflow to use the
+new Agent features, including chat attachments and pool setup scripts. Existing
+workflows keep their pinned Agent image and bundle. If a pool overrides the Agent
+image, update that override to a compatible version before using the new features.
+Pool secret variables use the encryption key retained in `values.secrets.yaml`.
 
 ## Alternative: release archive
 

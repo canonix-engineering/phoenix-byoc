@@ -110,9 +110,8 @@ for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 ## Upgrade
 
 The `0.2.4-rc.1` development candidate (not published for customer use)
-updates Web and Engine from Preview, temporarily retains Agents from 0.2.3, and updates the
-Engine/frontend charts. Agents promotion and final qualification are pending. See [release notes](docs/releases/0.2.4.md) for retained
-Agent feature limitations and [the upgrade procedure](UPGRADE.md) for the saved
+updates Web, Engine and Agents from Preview, and updates the
+Engine/frontend charts. Agents CI, Preview deployment and final qualification are pending. See [release notes](docs/releases/0.2.4.md) for changes and validation status and [the upgrade procedure](UPGRADE.md) for the saved
 eval configuration migration.
 Keep the existing
 `values.yaml`, `values.secrets.yaml` and namespace. Do not upgrade a customer

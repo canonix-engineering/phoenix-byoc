@@ -1,7 +1,7 @@
 # Upgrades
 
 Stable BYOC releases are delivered through immutable Git tags and release
-archives. The `0.2.4` procedure is currently a [draft](../UPGRADE.md) pending Agents promotion.
+archives. The `0.2.4` procedure is currently a [draft](../UPGRADE.md) pending final qualification.
 Do not apply the development preparation branch to a customer installation.
 Keep the existing `values.yaml` and generated `values.secrets.yaml`; do not copy
 the examples over them or create a new secrets file. Record the installed

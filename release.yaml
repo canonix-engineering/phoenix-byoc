@@ -20,8 +20,8 @@ versions:
   postgresqlBootstrap: "0.1.1"
   redis: "1.6.18"
 
-# Preview Web/Engine frozen on 2026-10-28; Agent temporarily retained from 0.2.3.
-# Candidate only: awaiting the Agents preview promotion before final qualification.
+# Preview application sources frozen on 2026-10-28, including Agents PR #432.
+# Candidate only: final Agents CI, Preview rollout and BYOC qualification pending.
 # Exact application image access verified with customer read-only credentials.
 images:
   fuseDevicePlugin:
@@ -57,8 +57,8 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: sha-51e8083b455f0ad2e9624998269bf3063bf583a6
-    digest: sha256:0ccfd3b2f63fe9e98a2f32e2d109437bdcdbc0b8967a9c7ec54a9734f0253fb6
+    tag: sha-f28a6a5f455a6804c0b2e2ac53a912c62a6b7b99
+    digest: sha256:0ffe02ce56395c4a7b1f045c761caf99787d6bc8b1169cf312cf17ddd6ae76f1
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
