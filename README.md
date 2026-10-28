@@ -109,11 +109,11 @@ for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 
 ## Upgrade
 
-Release [0.2.3](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.3)
-updates Web, Engine and Agents from Preview. CI and the live Preview rollout were
-verified; this release did not receive a separate BYOC upgrade rehearsal. Chart
-and infrastructure versions are unchanged from 0.2.2. See
-[release notes](docs/releases/0.2.3.md) and [the upgrade procedure](UPGRADE.md).
+The `0.2.4-rc.1` development candidate (not published for customer use)
+updates Web and Engine from Preview, temporarily retains Agents from 0.2.3, and updates the
+Engine/frontend charts. Agents promotion and final qualification are pending. See [release notes](docs/releases/0.2.4.md) for retained
+Agent feature limitations and [the upgrade procedure](UPGRADE.md) for the saved
+eval configuration migration.
 Keep the existing
 `values.yaml`, `values.secrets.yaml` and namespace. Do not upgrade a customer
 installation from a moving `main` checkout. See [Upgrades](docs/upgrades.md) for

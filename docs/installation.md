@@ -105,6 +105,7 @@ Do not replace `GENERATE_HEX_32`, `GENERATE_HEX_64`, `GENERATE_BASE64_32` or
 - a separate publisher token for agent bundle publication;
 - guardrails, JavaScript transform and tool invocation tokens;
 - the Gateway master key used to encrypt stored SSH credentials;
+- the Engine key used to encrypt pool secret environment variables;
 - the Gateway entry in `internalServiceTokens`.
 
 It derives namespace-specific values for:

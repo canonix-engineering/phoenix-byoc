@@ -92,6 +92,12 @@ sandboxScheduling:
   supervisorResourceClass: ""
 {{- end }}
   resourceClasses:
+{{- /* Helm merges map defaults; omit new upstream presets unless explicitly configured. */}}
+{{- range $name := list "small" "large" "xlarge" }}
+{{- if not (hasKey $.Values.scheduling.sandboxResourceClasses $name) }}
+    {{ $name }}: null
+{{- end }}
+{{- end }}
 {{ toYaml .Values.scheduling.sandboxResourceClasses | indent 4 }}
 
 agent:
@@ -152,6 +158,16 @@ api:
 {{ toYaml .Values.services.workflowEngine.apiResources | indent 4 }}
 
 engineToken: {{ required "secrets.application.workflowEngineToken is required" .Values.secrets.application.workflowEngineToken | quote }}
+
+{{- $devBoxSecretsKey := .Values.secrets.application.devBoxSecretsKey }}
+{{- if $devBoxSecretsKey }}
+{{- $decodedDevBoxSecretsKey := b64dec $devBoxSecretsKey }}
+{{- if or (ne (len $decodedDevBoxSecretsKey) 32) (ne (b64enc $decodedDevBoxSecretsKey) $devBoxSecretsKey) }}
+{{- fail "secrets.application.devBoxSecretsKey must be a base64-encoded 32-byte key" }}
+{{- end }}
+{{- end }}
+devBox:
+  secretsKey: {{ $devBoxSecretsKey | quote }}
 
 artifactApi:
   replicaCount: {{ .Values.services.workflowEngine.artifactApiReplicas }}

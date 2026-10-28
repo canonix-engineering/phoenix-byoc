@@ -1,9 +1,12 @@
-# Upgrade from Phoenix BYOC 0.2.2 to 0.2.3
+# Draft upgrade from Phoenix BYOC 0.2.3 to 0.2.4
 
-This release updates Web, Engine and Agents, with the same charts and
-infrastructure versions as 0.2.2. There are no new database schema migrations,
-required values or secrets. CI and the live Preview deployment were verified;
-no separate upgrade rehearsal was performed in `phoenix-byoc` for 0.2.3.
+**Not ready for customer use.** The final Agents promotion and qualification
+are pending. The instructions below will be finalized before tag `v0.2.4`
+is published. Do not apply this preparation branch to a customer installation.
+
+This candidate updates Web and Engine and their selected charts. Agents retain
+the exact 0.2.3 version. Engine adds pool configuration schema; existing
+databases and Valkey remain in place.
 
 ## Before updating
 
@@ -24,8 +27,9 @@ Keep the existing `fuseDevicePlugin.install` setting. Set it to `false` only
 when reusing a provider managed outside this BYOC installation.
 
 Keep any existing agent bundle namespace and publisher allowlist. The normal
-`--generate-secrets` option preserves populated passwords and tokens. This
-release adds no new secret fields. No manual token generation is needed.
+`--generate-secrets` option preserves populated passwords and tokens.
+No manual token generation is needed. The eval settings command below updates
+permissions while preserving existing tokens.
 
 During installation or standalone verification, keep a Ready FUSE-capable node
 available for each configured Linux sandbox class. This is an existing 0.2.2
@@ -39,7 +43,7 @@ From the Phoenix BYOC directory, fetch and select the exact release:
 
 ```bash
 git fetch origin --tags
-git checkout v0.2.3
+git checkout v0.2.4
 ```
 
 Keep your existing local configuration files. If Git reports tracked local
@@ -50,6 +54,20 @@ customer cluster:
 ```bash
 kubectl config current-context
 ```
+
+Enable evals in your saved configuration before installing:
+
+```bash
+python3 scripts/eval-config.py enable \
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
+```
+
+This local migration sets missing or zero eval capacities to five, preserves
+positive custom capacities, and adds eval permissions to the matching service
+identity. It preserves existing passwords, tokens and identity restrictions.
+If evals were intentionally disabled, skip this command and keep both eval
+capacities at zero.
 
 Apply the update using your existing namespace and files (the example assumes
 namespace `phoenix`):
@@ -71,23 +89,22 @@ Wait until it exits successfully with `Phoenix verification passed in namespace
 phoenix` before starting new workflows. Use your namespace in place of `phoenix`
 if different. Do not run two installers at once or create another administrator.
 
-Afterward, sign in with your existing account and use your normal workflows.
-Ticket imports now use the ticket integration assigned to the app. If an app
-has no assigned ticket integration, select it in App Settings before importing.
-Existing workflows retain their pinned Agent image and bundle; the new Agent
-behavior applies to new workflows. The Engine fix does not reopen already
-failed or otherwise terminal attempts.
+Afterward, sign in with your existing account and use your normal text-based
+workflows. Agents remain at 0.2.3: do not use chat attachments or pool setup
+scripts yet. Do not enable pool secret variables or supply
+`DEV_BOX_SECRETS_KEY`; this Agent does not implement their new redaction
+contract. Existing workflows keep their pinned Agent image and bundle.
 
 ## Alternative: release archive
 
-Download `phoenix-byoc-0.2.3.tar.gz` and its `.sha256` file from the
-[release page](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.3).
+Download `phoenix-byoc-0.2.4.tar.gz` and its `.sha256` file from the
+[release page](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.4).
 Verify and extract them into a new directory:
 
 ```bash
-sha256sum -c phoenix-byoc-0.2.3.tar.gz.sha256
-tar -xzf phoenix-byoc-0.2.3.tar.gz
-cd phoenix-byoc-0.2.3
+sha256sum -c phoenix-byoc-0.2.4.tar.gz.sha256
+tar -xzf phoenix-byoc-0.2.4.tar.gz
+cd phoenix-byoc-0.2.4
 sha256sum -c SHA256SUMS
 ```
 
