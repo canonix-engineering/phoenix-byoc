@@ -12,7 +12,7 @@
 - optional FUSE node-plugin installation or reuse, with retained Agent image
   permissions for AgentFS upgrades;
 - opt-in generation of bundled database passwords, internal service tokens and
-  the Gateway credential-encryption master key;
+  the Gateway credential-encryption master key and Engine pool-secret encryption key;
 - opt-in lifecycle management for workflow VMs in a customer-provided GCP
   project, network and image or snapshot;
 - BYOC database bootstrap orchestration and the application database hooks;

@@ -1,10 +1,6 @@
-# Draft upgrade from Phoenix BYOC 0.2.3 to 0.2.4
+# Upgrade from Phoenix BYOC 0.2.3 to 0.2.4
 
-**Not ready for customer use.** The final Agents CI, Preview rollout and qualification
-are pending. The instructions below will be finalized before tag `v0.2.4`
-is published. Do not apply this preparation branch to a customer installation.
-
-This candidate updates Web, Engine and Agents, plus the Engine/frontend charts. Engine adds pool configuration schema; existing
+This release updates Web, Engine and Agents, plus the Engine/frontend charts. Engine adds pool configuration schema; existing
 databases and Valkey remain in place.
 
 ## Before updating

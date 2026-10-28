@@ -1,6 +1,6 @@
 release:
-  version: 0.2.4-rc.1
-  channel: development
+  version: 0.2.4
+  channel: stable
   sourceEnvironment: preview
   observedAt: '2026-10-28'
 
@@ -21,7 +21,7 @@ versions:
   redis: "1.6.18"
 
 # Preview application sources frozen on 2026-10-28, including Agents PR #432.
-# Candidate only: final Agents CI, Preview rollout and BYOC qualification pending.
+# Application CI, Preview rollout and AWS BYOC upgrade/workflow smoke verified.
 # Exact application image access verified with customer read-only credentials.
 images:
   fuseDevicePlugin:
