@@ -395,6 +395,7 @@ secrets:
     workflowEngineArtifactApiToken: ""
     artifactPublisherToken: ""
     workflowEngineToken: ""
+    devBoxSecretsKey: ""
     internalServiceTokens: ""
     mailgunApiKey: ""
     smtpPassword: ""

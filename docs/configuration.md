@@ -510,3 +510,13 @@ contains the Cortex compatibility value; no Cortex HTTP service is installed.
 `secrets.application.internalServiceTokens` is an advanced override. Leave it
 empty to derive the Phoenix Gateway service identity from
 `secrets.application.workflowEngineToken`.
+
+## Pool secret environment variables
+
+`secrets.application.devBoxSecretsKey` is the base64-encoded 32-byte AES-256 key
+used by Engine to encrypt pool secret environment variables. The installer
+creates it once with `--generate-secrets` and preserves it on later upgrades.
+Keep the existing secrets file: losing or replacing this key prevents decryption
+of already stored pool secrets. An empty key disables pool secret variables.
+Use the Agent image pinned by the release; older Agents do not implement the
+pool-secret redaction and setup-script contracts.
