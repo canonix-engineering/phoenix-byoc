@@ -237,8 +237,9 @@ services:
     operator:
       serviceAccountAnnotations: {}
       sandboxAdmissionLimit: 0
-      maxConcurrentSandboxTasksEval: 0
-      maxConcurrentInProcessTasksEval: 0
+      # Set both to 0 only when this installation intentionally disables evals.
+      maxConcurrentSandboxTasksEval: 5
+      maxConcurrentInProcessTasksEval: 5
       evalWorkflowStepRunTimeout: ""
       evalResultDetailEnabled: false
       metrics:

@@ -126,6 +126,35 @@ The optional ingress controller uses its dedicated
 `ingressNginx.nodeSelector`, `ingressNginx.tolerations` and
 `ingressNginx.affinity` values.
 
+## Evaluations
+
+New installations enable both eval queues with five workers per operator pod:
+
+```yaml
+services:
+  workflowEngine:
+    operator:
+      maxConcurrentSandboxTasksEval: 5
+      maxConcurrentInProcessTasksEval: 5
+```
+
+These limits are separate from the normal ticket queues. Size them for the
+installation and its eval fan-out; five is a starting default, not a guarantee
+that every evaluation tree fits. `sandboxAdmissionLimit` still caps the combined
+sandbox lanes when configured. To intentionally disable evaluations, set both
+eval capacities to `0`. Preflight rejects negative, non-integer or partially
+disabled capacity settings.
+
+Generated Gateway service identities include `workflow:evals:read` and
+`workflow:evals:write`. The empty `internalServiceTokens` override derives the
+same permissions. With a custom override, the identity matching
+`workflowEngineToken` must have both scopes when eval workers are enabled;
+preflight checks this without printing credentials.
+
+Existing saved files retain their overrides. See
+[enabling evaluations on an existing installation](upgrades.md#enable-evaluations-on-an-existing-installation)
+to migrate old zero-capacity settings and service-token permissions.
+
 ## Images
 
 `release.yaml` owns image names, tags and the pinned ClickHouse and Valkey digests.

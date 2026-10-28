@@ -55,6 +55,45 @@ generates new supported `GENERATE_*` values and refreshes derived internal URLs.
 external `CHANGE_ME_*` fields stop preflight and are reported by path until the
 customer supplies them.
 
+## Enable evaluations on an existing installation
+
+The eval defaults fix is a source change after `0.2.3`; use a release containing
+`scripts/eval-config.py`. It does not change application image or chart pins.
+Existing values override the new defaults, and an existing service-token mapping
+is deliberately preserved by `--generate-secrets`.
+
+To enable evaluations, update the same saved files used for installation:
+
+```bash
+python3 scripts/eval-config.py enable \
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
+```
+
+This command only edits local files. It changes missing or zero eval capacities
+to `5`, preserves positive custom capacities, and adds the two eval scopes to
+the identity matching the Gateway's `workflowEngineToken`. It preserves tokens,
+other identities, existing scopes and tenant/app restrictions. An empty mapping
+continues to use the values template's generated identity. The command refuses
+tracked secrets, ambiguous credentials and malformed mappings; it never prints
+secret values. If eval capacity overrides are stored in the secrets file, move
+them to the values file first; otherwise their higher precedence would hide the
+updated settings. Repeating the command does not rotate credentials or duplicate
+scopes.
+
+Do not run this command if evals are deliberately disabled. Keep both capacities
+at `0` in that case. Custom identity mappings must already contain the credential
+used by Gateway; repair a missing/mismatched entry before using the command.
+
+Then run the normal install/upgrade and verification commands above with these
+same files and the existing namespace. Helm's configuration checksums roll the
+operator, Web and Web worker automatically. Manual edits to running ConfigMaps
+or Secrets are not durable substitutes for these saved inputs.
+
+After deployment, launch a small eval and confirm its child ticket progresses
+and its result is saved without a 403. Local render tests do not replace this
+runtime acceptance check.
+
 ## Required configuration for 0.2.0
 
 The `0.2.0` chart packages are published and the application images are pinned
