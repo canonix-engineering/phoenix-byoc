@@ -254,6 +254,14 @@ if [[ "$gateway_encryption_key_size" != "32" ]]; then
   echo "ERROR: Gateway master key was not generated as 32-byte base64" >&2
   exit 1
 fi
+# The generated mapping must authorize eval API calls with the same credential.
+yq -o=json '.secrets.application' "$generator_tmp/values.secrets.yaml" | python3 -c '
+import json, sys
+application = json.load(sys.stdin)
+entries = json.loads(application["internalServiceTokens"])
+entry = next(item for item in entries if item["token"] == application["workflowEngineToken"])
+assert {"workflow:evals:read", "workflow:evals:write"} <= set(entry["scopes"]), "Generated Gateway token lacks eval scopes"
+'
 grep -q 'secrets.application.mailgunApiKey' "$generator_tmp/first.log" || {
   echo "ERROR: preflight did not report the unresolved mail credential path" >&2
   exit 1
@@ -650,6 +658,9 @@ sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.yaml" >"$example_tmp/values.yaml"
 sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g; s/GENERATE_(HEX_(32|64)|BASE64_32)/test-only/g; s/DERIVE_[A-Z0-9_]*/test-only/g' \
   "$repo_root/examples/values.secrets.yaml" >"$example_tmp/secrets.yaml"
+# Use the real identity fallback instead of treating arbitrary placeholder text
+# as a valid JSON service-token override.
+yq -i '.secrets.application.internalServiceTokens = ""' "$example_tmp/secrets.yaml"
 example_render_dir="$repo_root/.rendered/test-customer-example"
 mkdir -p "$example_render_dir"
 (
@@ -853,5 +864,7 @@ done < <("$repo_root/scripts/images.sh" list)
 bash "$repo_root/scripts/test-release-preparation.sh"
 
 bash "$repo_root/scripts/test-agentfs.sh"
+
+bash "$repo_root/scripts/test-evals.sh"
 
 echo "Static BYOC tests passed."

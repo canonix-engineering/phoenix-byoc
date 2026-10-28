@@ -266,7 +266,7 @@ generate_internal_secrets() (
         "$internal_service_tokens" == CHANGE_ME_* || \
         "$internal_service_tokens" == DERIVE_INTERNAL_SERVICE_TOKENS ]]; then
     internal_service_tokens=$(printf \
-      '[{"identity":"phoenix-gateway","token":"%s","scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write"],"tenant_ids":[],"app_slugs":[]}]' \
+      '[{"identity":"phoenix-gateway","token":"%s","scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write","workflow:evals:read","workflow:evals:write"],"tenant_ids":[],"app_slugs":[]}]' \
       "$workflow_engine_token")
     set_derived_value secrets.application.internalServiceTokens "$internal_service_tokens"
   fi

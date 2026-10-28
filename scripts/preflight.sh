@@ -104,6 +104,10 @@ value() {
   printf '%s\n' "$result"
 }
 
+# Check the effective merged configuration, including custom token overrides.
+# JSON travels over stdin; never put credentials in command arguments or logs.
+yq -o=json '.' "$merged_file" | python3 "$repo_root/scripts/eval-config.py" check
+
 for boolean_path in \
   services.workflowEngine.operator.evalResultDetailEnabled \
   services.workflowEngine.operator.metrics.enabled \
