@@ -109,12 +109,11 @@ for the bundled PostgreSQL, Valkey, Cortex PostgreSQL and ClickHouse versions.
 
 ## Upgrade
 
-Release [0.2.4](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.4)
-updates Web, Engine and Agents from Preview, plus the Engine/frontend charts.
-Application CI, Preview deployment and an AWS BYOC upgrade/workflow smoke check
-passed. See [release notes](docs/releases/0.2.4.md) and
-[the upgrade procedure](UPGRADE.md), including the saved eval configuration
-migration and automatic generation of the pool-secret encryption key.
+Release [0.2.5](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.5)
+updates the applications from Preview and migrates workflow definitions into the
+Engine database catalog. The installer prepares the database before upgrading
+Engine, then updates Web and Gateway. See [release notes](docs/releases/0.2.5.md)
+and [the upgrade procedure](UPGRADE.md).
 Keep the existing
 `values.yaml`, `values.secrets.yaml` and namespace. Do not upgrade a customer
 installation from a moving `main` checkout. See [Upgrades](docs/upgrades.md) for
