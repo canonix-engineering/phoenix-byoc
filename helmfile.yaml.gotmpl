@@ -87,8 +87,15 @@ releases:
     values:
       - values/phoenix-web.yaml.gotmpl
       - values/postgresql-bootstrap.yaml.gotmpl
-{{- if .Values.postgresql.bundled.enabled }}
     needs:
+{{- if .Values.registry.ecrRefresh.enabled }}
+      - {{ $namespace }}/ecr-pull-secret-refresh
+{{- end }}
+      - {{ $namespace }}/clickhouse
+{{- if .Values.redis.bundled.enabled }}
+      - {{ $namespace }}/redis
+{{- end }}
+{{- if .Values.postgresql.bundled.enabled }}
       - {{ $namespace }}/postgresql
 {{- end }}
 
@@ -143,6 +150,7 @@ releases:
     values:
       - values/phoenix-web.yaml.gotmpl
     needs:
+      - {{ $namespace }}/phoenix-workflow-engine
       - {{ $namespace }}/artifact-publisher
 {{- if .Values.registry.ecrRefresh.enabled }}
       - {{ $namespace }}/ecr-pull-secret-refresh
@@ -221,7 +229,7 @@ releases:
 {{- if .Values.redis.bundled.enabled }}
       - {{ $namespace }}/redis
 {{- end }}
-      - {{ $namespace }}/phoenix-web
-      - {{ $namespace }}/phoenix-gateway
+      - {{ $namespace }}/artifact-publisher
+      - {{ $namespace }}/clickhouse
     wait: true
     timeout: 1860

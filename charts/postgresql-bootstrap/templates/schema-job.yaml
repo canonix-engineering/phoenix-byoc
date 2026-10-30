@@ -35,6 +35,7 @@ spec:
           args:
             - db:create
             - db:migrate
+            - db:workflow_definitions:bootstrap
           env:
             - name: DATABASE_HOST
               value: {{ required "externalDatabase.host is required" .Values.externalDatabase.host | quote }}

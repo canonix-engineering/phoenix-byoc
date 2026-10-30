@@ -187,8 +187,8 @@ The script then:
 3. renders `.rendered/all.yaml`;
 4. displays the release, context, namespace and bundled components;
 5. creates or validates the durable Gateway master-key Secret;
-6. installs or upgrades enabled Helm releases in dependency order: Web,
-   Gateway, then Workflow Engine;
+6. prepares the Web database and legacy workflow definitions with a database-only
+   job, upgrades Workflow Engine and its catalog, then upgrades Web and Gateway;
 7. waits for Deployments and StatefulSets and prints Pods, Services and PVCs.
 
 The rendered file contains Kubernetes Secrets and remains local with mode
