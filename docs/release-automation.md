@@ -115,8 +115,9 @@ committed checkout, retains executable modes and includes internal checksums.
 The nine public delivery assets are the archive, its checksum, release manifest,
 image/chart inventories, delivery metadata, verification record, upgrade guide
 and release notes. Rendered manifests, kubeconfig and secrets are not artifacts.
-The image inventory covers `release.yaml`; chart-internal helper images are
-visible in rendering and must be reviewed when chart content changes.
+The image inventory covers `release.yaml` and additional image references from
+fixture-rendered charts. Chart-internal helpers require review when changed;
+rendered Secret contents are never copied into the delivery.
 
 The tool creates a draft GitHub release, uploads and downloads each asset to
 verify exact bytes, then publishes. Retry is allowed for identical artifacts;

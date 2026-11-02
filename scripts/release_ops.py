@@ -461,6 +461,20 @@ def package(args):
                 'byocUpgradeRehearsalPerformed': review['rehearsal']['performed'],
                 'qualification': review, 'gcpTestingInScope': False}
     images = {'release': v, 'images': [{'key': k, **item, 'reference': ref(item)} for k, item in release['images'].items()]}
+    def image_refs(value):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if key == 'image' and isinstance(item, str):
+                    yield item
+                else:
+                    yield from image_refs(item)
+        elif isinstance(value, list):
+            for item in value:
+                yield from image_refs(item)
+    rendered = list(yaml.safe_load_all(Path(args.rendered).read_text()))
+    require(any(isinstance(item, dict) and item.get('kind') for item in rendered), 'Rendered manifests are empty')
+    pinned = {item['reference'] for item in images['images']}
+    images['additionalDeploymentImages'] = [{'reference': item} for item in sorted(set(image_refs(rendered)) - pinned)]
     for name, data in [('DELIVERY.json', metadata), ('image-index.json', images), ('chart-index.json', chart_index)]:
         files[name] = (json.dumps(data, indent=2, sort_keys=True) + '\n').encode()
     # Release review records are internal. Technical docs remain in the delivery.
@@ -651,6 +665,7 @@ def main():
     p.add_argument('--output', required=True)
     p = commands.add_parser('package', help='Package clean committed candidate from verified evidence')
     p.add_argument('--evidence', required=True)
+    p.add_argument('--rendered', required=True, help='Fixture-rendered manifests; only image references enter delivery')
     p.add_argument('--output', required=True)
     p = commands.add_parser('chart-diff', help='Compare published chart content with frozen DevOps sources')
     p.add_argument('--devops-root', required=True)

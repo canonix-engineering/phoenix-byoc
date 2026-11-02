@@ -163,9 +163,11 @@ class ReleaseTests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as artifacts:
                     evidence = Path(artifacts) / 'evidence'
                     ops.save(evidence / 'chart-index.json', {'remoteCharts': []})
+                    rendered = Path(artifacts) / 'render.yaml'
+                    rendered.write_text('kind: Pod\nspec:\n  containers:\n    - image: example/helper@sha256:abc\n')
                     for i in range(2):
                         ops.save(evidence / 'verification.json', {'inputSha256': review['inputSha256'], 'checkedAt': str(i)})
-                        ops.package(argparse.Namespace(evidence=str(evidence), output=str(Path(artifacts) / str(i))))
+                        ops.package(argparse.Namespace(evidence=str(evidence), rendered=str(rendered), output=str(Path(artifacts) / str(i))))
                     first = Path(artifacts) / '0'
                     second = Path(artifacts) / '1'
                     for name in first.iterdir():
@@ -178,6 +180,8 @@ class ReleaseTests(unittest.TestCase):
                             self.assertEqual(digest, ops.sha256(archive.extractfile(prefix + name).read()))
                         self.assertFalse(any('/.release/' in m.name for m in archive))
                     self.assertFalse(ops.load(first / 'DELIVERY.json')['byocUpgradeRehearsalPerformed'])
+                    self.assertEqual(ops.load(first / 'image-index.json')['additionalDeploymentImages'],
+                                     [{'reference': 'example/helper@sha256:abc'}])
                     ops.verify_delivery(first, '1.0.1', git('rev-parse', 'HEAD'))
                     (first / 'UPGRADE.md').write_text('corrupt asset')
                     with self.assertRaisesRegex(ValueError, 'Archive/asset mismatch'):
