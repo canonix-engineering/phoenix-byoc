@@ -1,0 +1,86 @@
+{
+  "baseCommit": "a2972883c7d0778aed31f6363db69a369c07c140",
+  "baseTag": "v0.2.5",
+  "blockers": [
+    "phoenixWeb: aws ecr failed (exit 255); inspect privately",
+    "phoenixWebFrontend: aws ecr failed (exit 255); inspect privately",
+    "phoenixWorkflowEngine: aws ecr failed (exit 255); inspect privately",
+    "phoenixOpensandbox: aws ecr failed (exit 255); inspect privately",
+    "phoenixAgent: aws ecr failed (exit 255); inspect privately",
+    "phoenix-gateway: latest same-SHA branch CI is not successful: https://github.com/canonix-engineering/phoenix-gateway/actions/runs/42802706957",
+    "phoenixGateway: aws ecr failed (exit 255); inspect privately"
+  ],
+  "createdAt": "2026-11-10T14:23:41.333951+00:00",
+  "devopsCommit": "c519c153f8652a7046c18afe2fb6482963384b10",
+  "releaseToolSha256": "9ed420e0bf49e28dee557d8acd8a1898860d940082ea8481de1930f70658ab96",
+  "schemaVersion": 1,
+  "selectedServices": [
+    "web",
+    "engine",
+    "agents",
+    "gateway"
+  ],
+  "services": {
+    "agents": {
+      "ci": {
+        "conclusion": "success",
+        "head_branch": "preview",
+        "head_sha": "ba492b4c587eda3b6f21fa48475979cfd189fd6f",
+        "html_url": "https://github.com/canonix-engineering/phoenix-agents/actions/runs/42806155782",
+        "id": 42806155782,
+        "run_attempt": 1
+      },
+      "compareUrl": "https://github.com/canonix-engineering/phoenix-agents/compare/a3f3609376cde6e61f2856a76df6ad461f6ceab9...ba492b4c587eda3b6f21fa48475979cfd189fd6f",
+      "images": {},
+      "mainCommit": "186ac73a22491e4affb2da4eae46b3770637ecf5",
+      "previewCommit": "ba492b4c587eda3b6f21fa48475979cfd189fd6f",
+      "repository": "phoenix-agents",
+      "selected": true,
+      "treesEqual": false
+    },
+    "engine": {
+      "ci": {
+        "conclusion": "success",
+        "head_branch": "main",
+        "head_sha": "2cdbffd40b80bf55779ee03b7893a5f12edd8ff2",
+        "html_url": "https://github.com/canonix-engineering/phoenix-workflow-engine/actions/runs/42784537685",
+        "id": 42784537685,
+        "run_attempt": 1
+      },
+      "compareUrl": "https://github.com/canonix-engineering/phoenix-workflow-engine/compare/98839e41e8a7c6e1d6b78feff5bbf9f086dcfa73...2cdbffd40b80bf55779ee03b7893a5f12edd8ff2",
+      "images": {},
+      "mainCommit": "2cdbffd40b80bf55779ee03b7893a5f12edd8ff2",
+      "previewCommit": "2cdbffd40b80bf55779ee03b7893a5f12edd8ff2",
+      "repository": "phoenix-workflow-engine",
+      "selected": true,
+      "treesEqual": true
+    },
+    "gateway": {
+      "compareUrl": "https://github.com/canonix-engineering/phoenix-gateway/compare/34430765908eeaef442dcf3c2651f319799f5e47...a0f6b604a7ecc9bebff3d6f487d8aa9a691ad184",
+      "images": {},
+      "mainCommit": "8de089811579cb837cc508a75f410bae4ee030d5",
+      "previewCommit": "a0f6b604a7ecc9bebff3d6f487d8aa9a691ad184",
+      "repository": "phoenix-gateway",
+      "selected": true,
+      "treesEqual": true
+    },
+    "web": {
+      "ci": {
+        "conclusion": "success",
+        "head_branch": "preview",
+        "head_sha": "90d83bd7a2a8e1429c023e73516a595d9355ba75",
+        "html_url": "https://github.com/canonix-engineering/phoenix-web/actions/runs/42802602774",
+        "id": 42802602774,
+        "run_attempt": 1
+      },
+      "compareUrl": "https://github.com/canonix-engineering/phoenix-web/compare/6ed895a91f520df3e041d630bee18bebc01cd66b...90d83bd7a2a8e1429c023e73516a595d9355ba75",
+      "images": {},
+      "mainCommit": "ded6b7bf0914d7c0340e10c53fc31abaab8d5dd3",
+      "previewCommit": "90d83bd7a2a8e1429c023e73516a595d9355ba75",
+      "repository": "phoenix-web",
+      "selected": true,
+      "treesEqual": false
+    }
+  },
+  "version": "0.2.6"
+}

@@ -1,27 +1,22 @@
 release:
-  version: 0.2.5
+  version: 0.2.6
   channel: stable
   sourceEnvironment: preview
-  observedAt: '2026-10-30'
-
-# Exact Helm chart versions in this Phoenix BYOC release.
+  observedAt: '2026-11-10'
 versions:
-  clickhouse: "25.1.8.25"
-  clickhouseChart: "0.1.0"
-  fuseDevicePlugin: "0.1.0"
-  cortexPostgresql: "0.1.0"
-  ingressNginx: "4.12.2"
-  opensandboxController: "0.2.3"
-  phoenixGateway: "0.5.0"
-  phoenixWeb: "0.2.4"
-  phoenixWebFrontend: "0.1.1"
-  phoenixWorkflowEngine: "0.2.7"
-  postgresql: "2.0.4"
-  postgresqlBootstrap: "0.1.2"
-  redis: "1.6.18"
-
-# Preview application sources frozen on 2026-10-30.
-# Existing CI-built images; infrastructure pins remain unchanged.
+  clickhouse: 25.1.8.25
+  clickhouseChart: 0.1.0
+  fuseDevicePlugin: 0.1.0
+  cortexPostgresql: 0.1.0
+  ingressNginx: 4.12.2
+  opensandboxController: 0.2.3
+  phoenixGateway: 0.5.0
+  phoenixWeb: 0.2.4
+  phoenixWebFrontend: 0.1.1
+  phoenixWorkflowEngine: 0.2.7
+  postgresql: 2.0.4
+  postgresqlBootstrap: 0.1.2
+  redis: 1.6.18
 images:
   fuseDevicePlugin:
     name: fuse-device-plugin

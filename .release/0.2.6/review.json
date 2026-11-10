@@ -1,0 +1,20 @@
+{
+  "chartsAndValues": "Retain existing published pins. Anonymous downloads and content comparisons are recorded in chart-diff.json; optional internal Testbox and startup-probe configurability are not required by this candidate. Retention policy configuration remains unresolved; see REVIEW-NOTES.md.",
+  "compatibility": "",
+  "criticalChanges": true,
+  "customerChanges": "Proposed: application discovery and workflow UI updates; CI and scoped repository tools; repository recovery and pinned-bundle resume; workflow/artifact retention. Candidate is incomplete and must not be delivered.",
+  "customerRegistryAccess": "",
+  "inputSha256": "",
+  "planSha256": "5602ac1f0344cfee22143170594cb9fefb1bc842c9bc4f76ece766630126c1fe",
+  "rehearsal": {
+    "performed": false,
+    "reason": "Pending qualified image access and explicit authorization. Six Web migrations and enabled-by-default historical run/snapshot deletion warrant an AWS upgrade rehearsal.",
+    "evidence": ""
+  },
+  "upgradeInstructions": "",
+  "validationEvidence": [
+    "46 existing BYOC tests passed locally on 2026-11-10.",
+    "15 internal release-tool tests passed locally on 2026-11-10.",
+    "chart-diff.json: seven anonymous published chart downloads and comparison with the exact frozen DevOps commit."
+  ]
+}
