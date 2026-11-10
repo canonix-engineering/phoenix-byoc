@@ -520,3 +520,34 @@ Keep the existing secrets file: losing or replacing this key prevents decryption
 of already stored pool secrets. An empty key disables pool secret variables.
 Use the Agent image pinned by the release; older Agents do not implement the
 pool-secret redaction and setup-script contracts.
+
+## Workflow history retention
+
+BYOC disables completed-workflow retention by default, including upgrades from
+0.2.5. Existing values files inherit this default; no new credentials are needed.
+The installer does not enable cleanup after the upgrade.
+
+```yaml
+services:
+  workflowEngine:
+    runRetention:
+      enabled: false
+      ttlSeconds: 1209600
+      attemptPreviousSnapshotsToKeep: 0
+      batchSize: 100
+```
+
+Keep `enabled: false` throughout the initial upgrade. Only opt in after all Web
+and Engine components have been upgraded and the customer has chosen a policy.
+Changing `enabled` to `true` and applying the values restarts the affected
+components. The displayed settings then make terminal runs eligible for deletion
+14 days after completion and keep no previous suspension snapshots beyond the
+latest certified snapshot. Historical runs can qualify immediately; snapshot
+pruning does not wait for the 14-day expiry. Deleted history and files are not
+restored by disabling retention or rolling back images.
+
+BYOC adds `workflow:retention:write` to the rendered Web identity whose token
+matches `secrets.application.workflowEngineToken`, including explicitly supplied
+`internalServiceTokens`. Existing tokens, other scopes, identities, tenant/app
+restrictions and the saved secrets file are preserved. There must be exactly
+one matching identity. The permission alone does not enable cleanup.

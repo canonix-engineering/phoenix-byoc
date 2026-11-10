@@ -1,27 +1,22 @@
 release:
-  version: 0.2.5
+  version: 0.2.6
   channel: stable
   sourceEnvironment: preview
-  observedAt: '2026-10-30'
-
-# Exact Helm chart versions in this Phoenix BYOC release.
+  observedAt: '2026-11-10'
 versions:
-  clickhouse: "25.1.8.25"
-  clickhouseChart: "0.1.0"
-  fuseDevicePlugin: "0.1.0"
-  cortexPostgresql: "0.1.0"
-  ingressNginx: "4.12.2"
-  opensandboxController: "0.2.3"
-  phoenixGateway: "0.5.0"
-  phoenixWeb: "0.2.4"
-  phoenixWebFrontend: "0.1.1"
-  phoenixWorkflowEngine: "0.2.7"
-  postgresql: "2.0.4"
-  postgresqlBootstrap: "0.1.2"
-  redis: "1.6.18"
-
-# Preview application sources frozen on 2026-10-30.
-# Existing CI-built images; infrastructure pins remain unchanged.
+  clickhouse: 25.1.8.25
+  clickhouseChart: 0.1.0
+  fuseDevicePlugin: 0.1.0
+  cortexPostgresql: 0.1.0
+  ingressNginx: 4.12.2
+  opensandboxController: 0.2.3
+  phoenixGateway: 0.5.0
+  phoenixWeb: 0.2.4
+  phoenixWebFrontend: 0.1.1
+  phoenixWorkflowEngine: 0.2.8
+  postgresql: 2.0.4
+  postgresqlBootstrap: 0.1.2
+  redis: 1.6.18
 images:
   fuseDevicePlugin:
     name: fuse-device-plugin
@@ -56,13 +51,13 @@ images:
   phoenixAgent:
     name: phoenix-agent
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-agent
-    tag: sha-a3f3609376cde6e61f2856a76df6ad461f6ceab9
-    digest: sha256:12ff7b459f7942d15b78b85d06560562ae2a034b6597366b37f1ea3cc14c791a
+    tag: sha-ba492b4c587eda3b6f21fa48475979cfd189fd6f
+    digest: sha256:8b463048e8564f9978d63333a0e21be41342f3bba37901658ff26060302c4902
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
-    tag: sha-34430765908eeaef442dcf3c2651f319799f5e47
-    digest: sha256:aa9e3921a5b09ac345bc6459676686499653252add75902067aa55dda47fc643
+    tag: sha-a5d376e6cfc579d1368ae11ee9ff96f82715235f
+    digest: sha256:aa0f0b504ee0a0016cd11a3d7d914f1f7e7b874fa5aba59384459c77096803b8
   phoenixLab:
     name: phoenix-lab
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab
@@ -71,20 +66,20 @@ images:
   phoenixOpensandbox:
     name: phoenix-opensandbox
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-opensandbox
-    tag: sha-98839e41e8a7c6e1d6b78feff5bbf9f086dcfa73
-    digest: sha256:f504b27936b4ad269ff91f3bb29a13db1fee97bf8eac6c062e53e490a30580bb
+    tag: sha-2cdbffd40b80bf55779ee03b7893a5f12edd8ff2
+    digest: sha256:fdbf35797a437705e9d177b8f49c9685209235aaf96573850d49a73aa4efab21
   phoenixWeb:
     name: phoenix-web
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web
-    tag: sha-6ed895a91f520df3e041d630bee18bebc01cd66b
-    digest: sha256:a2b906a37daad02b33ef5854e283658f1211c0b548ef9ae3df978dedfa393b0d
+    tag: sha-90d83bd7a2a8e1429c023e73516a595d9355ba75
+    digest: sha256:52c20cf2c04403f33f8b27cc48fb777ec4bd4c1d5d39a452d91bccbb71d17b54
   phoenixWebFrontend:
     name: phoenix-web-frontend
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-web-frontend
-    tag: sha-6ed895a91f520df3e041d630bee18bebc01cd66b
-    digest: sha256:4cdd3583e3be4752e689421cabf8d0819e49c298ea5ea89574e18f9762678676
+    tag: sha-90d83bd7a2a8e1429c023e73516a595d9355ba75
+    digest: sha256:c5d09d725a16cd44defb4862a29baa670e9cc25656391985d9df4b0939b00450
   phoenixWorkflowEngine:
     name: phoenix-workflow-engine
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-workflow-engine
-    tag: sha-98839e41e8a7c6e1d6b78feff5bbf9f086dcfa73
-    digest: sha256:fea28271ae6a163d1b616f71a36d8760a9cdcb419312fb2d0e6389ec2f3c20bd
+    tag: sha-2cdbffd40b80bf55779ee03b7893a5f12edd8ff2
+    digest: sha256:2ca57dcb7b500d926bbd86a7d697226be5dcd2efe460d4eb36483e58bfc0e50c

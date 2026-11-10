@@ -1,60 +1,76 @@
-# Upgrade from Phoenix BYOC 0.2.4 to 0.2.5
+# Upgrade from Phoenix BYOC 0.2.5 to 0.2.6
 
-This release updates Web, frontend, Workflow Engine, OpenSandbox, Gateway and
-Agents from Preview. Workflow definitions move into Engine's database catalog.
-The installer prepares the Web database first, upgrades Engine and imports the
-catalog, then upgrades Web and Gateway. Existing databases and Valkey stay in place.
+This release updates Web, frontend, Engine, OpenSandbox, Agents and Gateway
+from the selected Preview commits. Existing PostgreSQL, Valkey, Cortex and
+ClickHouse installations remain in place.
 
-## Before updating
+## Workflow history is preserved by default
 
-Finish active workflows and pause new submissions and any definition-seeding
-jobs until the update completes.
-Keep your existing `values.yaml` and `values.secrets.yaml`; do not replace them
-with examples. Existing GCP VM pool, Workload Identity, domain, storage and
-registry settings should remain in place.
+This BYOC release explicitly disables the new completed-workflow retention.
+Existing customer values inherit `services.workflowEngine.runRetention.enabled: false`; no new values or credentials are required for this upgrade. Keep it
+false throughout the upgrade. Cleanup is not automatically enabled afterward.
+A later opt-in requires a separate customer retention decision; see
+[retention configuration](docs/configuration.md#workflow-history-retention).
 
-Backups are optional for this procedure. For an extra recovery point, back up
-your databases, volumes and configuration before updating. The installer does
-not create backups automatically.
+The release adds the required internal Web permission during rendering while
+preserving existing tokens and identity restrictions, including custom
+`internalServiceTokens`. No manual edit of a populated secrets file is needed.
 
-Use the existing installation tools plus Python 3.9 or newer. AgentFS needs
-Linux sandbox nodes with `/dev/fuse` and permission to run the FUSE plugin and
-sandbox capabilities described in [AgentFS prerequisites](docs/agentfs.md).
-The installer installs the plugin and checks node capacity automatically.
-Keep the existing `fuseDevicePlugin.install` setting. Set it to `false` only
-when reusing a provider managed outside this BYOC installation.
+## Prepare the upgrade
 
-Keep any existing agent bundle namespace and publisher allowlist. The normal
-`--generate-secrets` option preserves populated passwords and tokens.
-No new settings or secrets are required when upgrading from 0.2.4. Preserve the
-pool-secret encryption key already stored in your secrets file.
+The supported starting point is stable 0.2.5. Earlier installations must follow
+the intervening upgrade procedures first. Finish active workflows and pause new
+starts and definition-seeding jobs until the installer completes.
 
-During installation or standalone verification, keep a Ready FUSE-capable node
-available for each configured Linux sandbox class. This is an existing 0.2.2
-check, not a new requirement. Scale-up from an idle zero-node sandbox pool
-still depends on the cluster autoscaler's FUSE resource configuration and was
-not validated by this release.
+Preserve existing `values.yaml`, `values.secrets.yaml`, database credentials,
+PVCs, namespace, GCP VM-pool configuration and Workload Identity bindings. Do
+not replace customer files with the examples. Keep the existing FUSE plugin
+and retained-Agent settings; see [AgentFS prerequisites](docs/agentfs.md).
 
-## Update using your existing Git checkout
+Take a recovery backup of databases, artifact data, snapshots and configuration
+under your deployment's backup policy before enabling cleanup. The installer
+does not take backups, and restoring a database alone may not restore deleted
+artifact or snapshot content.
 
-From the Phoenix BYOC directory, fetch and select the exact release:
+Web adds six migrations for the CI capability, retention fields/concurrent
+indexes/constraints, historical business-record references, and dataset
+repository provenance. The installer must prepare the incoming Web schema
+before upgrading Engine; Engine requires the new retention indexes. When
+application database hooks are disabled, complete the service-owned migrations
+before upgrading Engine. Index creation can extend installation time.
+
+## Select the published release
+
+From your existing BYOC checkout:
 
 ```bash
 git fetch origin --tags
-git checkout v0.2.5
-```
-
-Keep your existing local configuration files. If Git reports tracked local
-changes, preserve them and resolve the conflict before continuing; do not use
-a forced checkout. Confirm your current Kubernetes context is the intended
-customer cluster:
-
-```bash
+git checkout v0.2.6
 kubectl config current-context
 ```
 
-Apply the update using your existing namespace and files (the example assumes
-namespace `phoenix`):
+If Git reports local tracked changes, preserve and resolve them before
+continuing. Do not force checkout. Verify the Kubernetes context points to the
+intended customer cluster.
+
+Alternatively, download `phoenix-byoc-0.2.6.tar.gz` and its checksum from the
+[published release](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.6),
+then verify and extract into a new directory:
+
+```bash
+sha256sum -c phoenix-byoc-0.2.6.tar.gz.sha256
+tar -xzf phoenix-byoc-0.2.6.tar.gz
+cd phoenix-byoc-0.2.6
+sha256sum -c SHA256SUMS
+```
+
+Use the existing customer configuration and secrets paths with the extracted
+release. Never overwrite those files with examples from the archive.
+
+## Apply and verify
+
+Use the existing namespace and files
+(the example assumes namespace `phoenix`):
 
 ```bash
 ./scripts/install.sh \
@@ -64,50 +80,48 @@ namespace `phoenix`):
   --generate-secrets
 ```
 
-Valkey is already included in 0.2.2. Do not add `--discard-redis-state` for this
-upgrade. Older Redis-based installations need the separate
-[legacy migration procedure](docs/redis.md#existing-redis-installations).
+For the bundled topology, `--generate-secrets` preserves existing populated
+credentials and synchronizes newly introduced fields. It does not rotate them.
+External dependency installations must follow their existing explicit-secret
+contract; do not enable bundled dependencies to use this flag.
 
-The installer performs database migrations and verifies application readiness.
-Wait until it exits successfully with `Phoenix verification passed in namespace
-phoenix` before starting new workflows. Use your namespace in place of `phoenix`
-if different. Do not run two installers at once or create another administrator.
+Keep the existing ordered Web database preparation, Engine migration, then
+application rollout. Do not run installers concurrently, reset workflow
+catalog markers, delete customer definitions or create a new administrator.
+Valkey is unchanged; do not add `--discard-redis-state` for this upgrade.
 
-Afterward, sign in with your existing account and start a new workflow. Existing
-workflow history and definition data are retained. New workflows use the database
-catalog; running workflows keep their pinned content. Application-specific workflow
-definitions are managed through the updated platform.
-
-If migration reports an invalid legacy definition, stop and share the named
-record and error with Phoenix support. Do not delete definitions or reset the
-catalog import marker. The installer stops before upgrading Web when Engine's
-migration fails. A completed import is not repeated on a retry.
-
-Do not downgrade by simply rerunning the previous installer. See
-[rollback requirements](docs/rollback.md#rolling-back-from-025) for the required
-Web-before-Engine sequence and limits for newly published workflows.
-
-## Alternative: release archive
-
-Download `phoenix-byoc-0.2.5.tar.gz` and its `.sha256` file from the
-[release page](https://github.com/canonix-engineering/phoenix-byoc/releases/tag/v0.2.5).
-Verify and extract them into a new directory:
+Wait for the installer to exit successfully, including its verification step,
+before starting new workflows. Standalone verification uses the same inputs:
 
 ```bash
-sha256sum -c phoenix-byoc-0.2.5.tar.gz.sha256
-tar -xzf phoenix-byoc-0.2.5.tar.gz
-cd phoenix-byoc-0.2.5
-sha256sum -c SHA256SUMS
+./scripts/verify.sh \
+  --namespace phoenix \
+  --values ./values.yaml \
+  --secrets ./values.secrets.yaml
 ```
 
-On macOS use `shasum -a 256 -c`. Run the same install command with paths to your
-existing values and secrets. `DELIVERY.json` records the exact source commit;
-`image-index.json` and `chart-index.json` list the pinned artifacts.
+Sign in with the existing account and exercise a new workflow. Deployment
+readiness alone does not verify every workflow feature. If a migration fails,
+stop and share the named migration and sanitized error with Phoenix support;
+do not delete data or reset migration state to force progress.
 
-## If the update fails
+## Recovery limits
 
-Keep new workflows paused and share the error with Phoenix support. Retain
-logs privately and redact credentials before sharing. Do not delete volumes,
-regenerate secrets or force a rollback. Database migrations are not undone by
-Helm rollback. See [upgrade recovery](docs/upgrades.md) and
-[AgentFS rollback restrictions](docs/agentfs.md#existing-workflows-and-rollback).
+Do not run database down-migrations or the previous installer as a generic
+rollback. Retention removes the usage-account foreign key and makes the
+pull-request run reference nullable on run deletion. Restoring old foreign keys
+can fail after cleanup removes referenced runs. Old images cannot recover
+removed workflow history or artifact/snapshot content. Coordinate recovery with
+Phoenix support using the pre-upgrade backups and the exact migration state.
+The previous workflow-catalog constraints still apply; see
+[the 0.2.5 rollback guidance](docs/rollback.md#rolling-back-from-025).
+
+## Qualification
+
+The upgrade from 0.2.5 was applied with the maintained installer on the AWS
+`phoenix-byoc` simulation. Installation verification passed. The six new Web
+migrations were applied, original database records and PVC identities were
+preserved, and existing configuration and secret values were retained.
+The running Artifact API reports retention disabled. A workflow smoke check
+completed with a non-root FUSE workspace, and an existing workflow artifact was
+verified unchanged. No customer GCP test was performed.

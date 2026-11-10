@@ -207,6 +207,13 @@ services:
       limits:
         memory: 512Mi
   workflowEngine:
+    # Opt in only after all runtime writers have been upgraded and the customer
+    # has chosen a history retention policy. Disabled preserves existing history.
+    runRetention:
+      enabled: false
+      ttlSeconds: 1209600
+      attemptPreviousSnapshotsToKeep: 0
+      batchSize: 100
     apiReplicas: 1
     apiResources:
       requests:
