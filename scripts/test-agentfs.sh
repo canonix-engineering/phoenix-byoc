@@ -18,7 +18,7 @@ if (cd "$repo_root" && helmfile template --skip-deps --quiet >"$test_dir/old.yam
 fi
 grep -q 'AgentFS requires phoenixWorkflowEngine chart' "$test_dir/old.log" || { cat "$test_dir/old.log" >&2; exit 1; }
 yq -i '
-  .versions.phoenixWorkflowEngine = "0.2.6" |
+  del(.versions.phoenixWorkflowEngine) |
   .services.opensandbox.fuse.retainedImages = ["registry.example/agent:old-a"] |
   .fuseDevicePlugin.nodeSelector.pool = "customer-sandbox"
 ' "$test_dir/values.yaml"

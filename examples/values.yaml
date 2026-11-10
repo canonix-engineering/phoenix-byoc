@@ -201,6 +201,13 @@ services:
       limits:
         memory: 512Mi
   workflowEngine:
+    # Keep disabled during the 0.2.5 -> 0.2.6 upgrade. Enable only after a
+    # separate retention decision; enabling can delete existing historical runs.
+    runRetention:
+      enabled: false
+      ttlSeconds: 1209600
+      attemptPreviousSnapshotsToKeep: 0
+      batchSize: 100
     apiReplicas: 1
     apiResources:
       requests:

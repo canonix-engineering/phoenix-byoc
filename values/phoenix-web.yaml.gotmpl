@@ -30,8 +30,35 @@
 {{- $actionCableAllowedOrigins = printf "%s,%s" .Values.application.actionCableAllowedOrigins $internalActionCableOrigin }}
 {{- end }}
 {{- if not $internalServiceTokens }}
-{{- $internalServiceTokens = printf `[{"identity":"phoenix-gateway","token":%q,"scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write","workflow:evals:read","workflow:evals:write"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
+{{- $internalServiceTokens = printf `[{"identity":"phoenix-gateway","token":%q,"scopes":["workflow:artifacts:read","workflow:context:read","workflow:events:write","workflow:evals:read","workflow:evals:write","workflow:retention:write"],"tenant_ids":[],"app_slugs":[]}]` .Values.secrets.application.workflowEngineToken }}
 {{- end }}
+
+{{- /* Add the release-required scope to the existing Engine identity only.
+      Preserve tokens, other identities, tenant/app restrictions and saved files. */}}
+{{- $identities := $internalServiceTokens | fromJson }}
+{{- if not (kindIs "slice" $identities) }}
+{{- fail "internalServiceTokens must be a JSON array of identities" }}
+{{- end }}
+{{- $matches := 0 }}
+{{- range $identity := $identities }}
+{{- if not (kindIs "map" $identity) }}
+{{- fail "internalServiceTokens must contain identity objects" }}
+{{- end }}
+{{- if eq (index $identity "token") $.Values.secrets.application.workflowEngineToken }}
+{{- $matches = add1 $matches }}
+{{- $scopes := index $identity "scopes" | default (list) }}
+{{- if not (kindIs "slice" $scopes) }}
+{{- fail "Internal service-token scopes must be an array" }}
+{{- end }}
+{{- if not (has "workflow:retention:write" $scopes) }}
+{{- $_ := set $identity "scopes" (append $scopes "workflow:retention:write") }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if ne (int $matches) 1 }}
+{{- fail "internalServiceTokens must contain exactly one identity matching workflowEngineToken" }}
+{{- end }}
+{{- $internalServiceTokens = $identities | toJson }}
 
 image:
   repository: {{ $repository | quote }}

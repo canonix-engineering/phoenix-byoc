@@ -1,19 +1,20 @@
 # Upgrade from Phoenix BYOC 0.2.5 to 0.2.6
 
-**Incomplete candidate: do not install.** Gateway's intended Preview image is
-not yet available, retention policy is under review, and AWS upgrade rehearsal
-has not been performed. The commands below apply only after the final stable
-release has been published and this warning has been removed.
+This release updates Web, frontend, Engine, OpenSandbox, Agents and Gateway
+from the selected Preview commits. Existing PostgreSQL, Valkey, Cortex and
+ClickHouse installations remain in place.
 
-## Review retention before updating
+## Workflow history is preserved by default
 
-The incoming Engine enables completed-workflow cleanup by default. Its upstream
-policy expires terminal runs after 1,209,600 seconds (14 days) and retains zero
-previous attempt snapshots. Existing historical runs can qualify immediately.
-Deletion of workflow history, associated artifacts and snapshots cannot be
-undone by returning to old images. CSG's retention policy and its supported
-configuration must be settled before publication. Do not assume the previous
-release's history-preservation behavior continues indefinitely.
+This BYOC release explicitly disables the new completed-workflow retention.
+Existing customer values inherit `services.workflowEngine.runRetention.enabled: false`; no new values or credentials are required for this upgrade. Keep it
+false throughout the upgrade. Cleanup is not automatically enabled afterward.
+A later opt-in requires a separate customer retention decision; see
+[retention configuration](docs/configuration.md#workflow-history-retention).
+
+The release adds the required internal Web permission during rendering while
+preserving existing tokens and identity restrictions, including custom
+`internalServiceTokens`. No manual edit of a populated secrets file is needed.
 
 ## Prepare the upgrade
 
@@ -68,7 +69,7 @@ release. Never overwrite those files with examples from the archive.
 
 ## Apply and verify
 
-After the stable release is qualified, use the existing namespace and files
+Use the existing namespace and files
 (the example assumes namespace `phoenix`):
 
 ```bash
@@ -115,12 +116,12 @@ Phoenix support using the pre-upgrade backups and the exact migration state.
 The previous workflow-catalog constraints still apply; see
 [the 0.2.5 rollback guidance](docs/rollback.md#rolling-back-from-025).
 
-## Qualification status
+## Qualification
 
-Candidate fixture rendering and schema validation passed: 66 resources,
-63 valid and three skipped for unavailable CRD schemas. Eight updated Preview
-Deployments and Engine's runtime Agent reference matched candidate digests.
-Gateway remains on its previous published image. These are Preview and static
-checks, not an upgrade rehearsal on the AWS `phoenix-byoc` installation or a
-customer GCP test. Final mixed-version compatibility, customer image access,
-retention configuration and recovery qualification remain pending.
+The upgrade from 0.2.5 was applied with the maintained installer on the AWS
+`phoenix-byoc` simulation. Installation verification passed. The six new Web
+migrations were applied, original database records and PVC identities were
+preserved, and existing configuration and secret values were retained.
+The running Artifact API reports retention disabled. A workflow smoke check
+completed with a non-root FUSE workspace, and an existing workflow artifact was
+verified unchanged. No customer GCP test was performed.

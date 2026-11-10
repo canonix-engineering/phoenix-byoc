@@ -13,7 +13,7 @@ versions:
   phoenixGateway: 0.5.0
   phoenixWeb: 0.2.4
   phoenixWebFrontend: 0.1.1
-  phoenixWorkflowEngine: 0.2.7
+  phoenixWorkflowEngine: 0.2.8
   postgresql: 2.0.4
   postgresqlBootstrap: 0.1.2
   redis: 1.6.18
@@ -56,8 +56,8 @@ images:
   phoenixGateway:
     name: phoenix-gateway
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-gateway
-    tag: sha-34430765908eeaef442dcf3c2651f319799f5e47
-    digest: sha256:aa9e3921a5b09ac345bc6459676686499653252add75902067aa55dda47fc643
+    tag: sha-a5d376e6cfc579d1368ae11ee9ff96f82715235f
+    digest: sha256:aa0f0b504ee0a0016cd11a3d7d914f1f7e7b874fa5aba59384459c77096803b8
   phoenixLab:
     name: phoenix-lab
     repository: 526563839763.dkr.ecr.us-east-1.amazonaws.com/phoenix-lab

@@ -55,6 +55,13 @@
 {{- $adminUrl = printf "postgresql://postgres:%s@postgresql-postgresql:%v/postgres?sslmode=disable" .Values.secrets.postgresql.superuserPassword .Values.postgresql.external.port }}
 {{- end }}
 
+{{- if not (semverCompare ">=0.2.8" .Values.versions.phoenixWorkflowEngine) }}
+{{- fail "Run retention controls require phoenixWorkflowEngine chart >=0.2.8" }}
+{{- end }}
+
+workflowRunRetention:
+{{ toYaml .Values.services.workflowEngine.runRetention | indent 2 }}
+
 image:
   repository: {{ $engineRepository | quote }}
   tag: {{ $engineTag | quote }}

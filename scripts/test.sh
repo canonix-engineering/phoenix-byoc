@@ -661,6 +661,8 @@ sed -E 's/CHANGE_ME_[A-Z0-9_]*/test-only/g; s/GENERATE_(HEX_(32|64)|BASE64_32)/t
 # Use the real identity fallback instead of treating arbitrary placeholder text
 # as a valid JSON service-token override.
 yq -i '.secrets.application.internalServiceTokens = ""' "$example_tmp/secrets.yaml"
+# The pool-secret key is validated as exactly 32 decoded bytes, not arbitrary text.
+yq -i '.secrets.application.devBoxSecretsKey = "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE="' "$example_tmp/secrets.yaml"
 example_render_dir="$repo_root/.rendered/test-customer-example"
 mkdir -p "$example_render_dir"
 (
@@ -866,5 +868,9 @@ bash "$repo_root/scripts/test-release-preparation.sh"
 bash "$repo_root/scripts/test-agentfs.sh"
 
 bash "$repo_root/scripts/test-evals.sh"
+
+python3 "$repo_root/tests/check_retention_render.py" \
+  "$repo_root/.rendered/test-bundled/all.yaml" \
+  "$repo_root/tests/fixtures/values.secrets.yaml"
 
 echo "Static BYOC tests passed."
