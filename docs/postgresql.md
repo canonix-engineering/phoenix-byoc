@@ -50,7 +50,7 @@ postgresql:
 
 If `postgresql.hooks.phoenixWeb=true`, BYOC first creates or updates the
 `phoenix_web` role and primary database, then runs the Phoenix Web schema
-migrations and `db:workflow_definitions:bootstrap`. The insert-only bootstrap
+migrations and, for legacy Web images, `db:workflow_definitions:bootstrap`. The insert-only bootstrap
 fills missing legacy definitions without replacing existing JSON. Engine then
 imports the catalog once before the new Web processes start. This separates
 database preparation from application startup. After Workflow Engine is available, the
@@ -68,7 +68,7 @@ If the hooks are disabled, the customer is responsible for creating the roles
 and databases and running the required migrations.
 
 For upgrades with the Web hooks disabled, run a database-only job using the new
-Web image (`bin/rails db:migrate db:workflow_definitions:bootstrap`) before
+Web image (`bin/rails db:migrate`, plus `db:workflow_definitions:bootstrap` only for legacy Web images) before
 upgrading Engine. Do not deploy new Web servers or workers first. Fresh databases
 need the primary schema loaded before bootstrap. Application seeds and
 rematerialization must wait for the upgraded Engine. An invalid legacy definition

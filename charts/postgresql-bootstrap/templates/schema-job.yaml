@@ -31,11 +31,14 @@ spec:
           image: {{ printf "%s:%s" (required "image.repository is required" .Values.image.repository) (required "image.tag is required" .Values.image.tag) | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - /rails/bin/rails
+            - sh
+            - -ec
           args:
-            - db:create
-            - db:migrate
-            - db:workflow_definitions:bootstrap
+            - |
+              if [ -f /rails/db/migrate/20261124100000_record_workflow_definition_on_triggers.rb ]; then
+                exec /rails/bin/rails db:create db:migrate
+              fi
+              exec /rails/bin/rails db:create db:migrate db:workflow_definitions:bootstrap
           env:
             - name: DATABASE_HOST
               value: {{ required "externalDatabase.host is required" .Values.externalDatabase.host | quote }}

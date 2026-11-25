@@ -15,7 +15,7 @@ versions:
   phoenixWebFrontend: 0.1.1
   phoenixWorkflowEngine: 0.2.9
   postgresql: 2.0.4
-  postgresqlBootstrap: 0.1.2
+  postgresqlBootstrap: 0.1.3
   redis: 1.6.18
 images:
   fuseDevicePlugin:

@@ -55,6 +55,28 @@ generates new supported `GENERATE_*` values and refreshes derived internal URLs.
 external `CHANGE_ME_*` fields stop preflight and are reported by path until the
 customer supplies them.
 
+## Upgrade to the Engine-owned workflow catalog
+
+On the first upgrade that moves workflow definitions into Engine, the ordinary
+installer coordinates Web and Engine in the selected namespace. It closes
+submissions, **cancels all open runs**, including queued runs and detached
+children, and checks for outstanding external executions. Cancellation is
+permanent. Jobs with a retained external lease or sandbox can require provider
+cleanup before the upgrade proceeds. New installs and subsequent upgrades skip
+the cancellation step.
+
+For installations with managed migrations, the installer runs the Web schema
+hook after all writers stop, upgrades Engine and restores Web initialization.
+It checks the SDLC catalog and a sampled historical run pin, then removes its
+maintenance pod. The namespace ConfigMap records the upgrade phase and, during
+drain, the run IDs used to verify external cleanup.
+
+On failure, inspect `kubectl -n "$namespace" get configmap phoenix-catalog-cutover -o jsonpath='{.data.phase}'`
+and rerun the same release with the same values. The installer recovers forward.
+Rolling back the binaries after schema changes requires a matching restore point
+from the installation's own backup policy. Customer-managed database hooks
+retain their existing migration ownership.
+
 ## Enable evaluations on an existing installation
 
 The eval defaults fix is a source change after `0.2.3`; use a release containing
